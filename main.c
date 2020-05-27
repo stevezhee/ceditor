@@ -1,5 +1,4 @@
-ksdk
-#include <stdio.h>
+ksd#include <stdio.h>
 #include <stdbool.h>
 #include <SDL.h>
 #include <SDL_ttf.h>
