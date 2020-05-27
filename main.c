@@ -1,4 +1,4 @@
-// hello, world
+// stuff // hello, world
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -846,15 +846,12 @@ void stInit(state_t *st, int argc, char **argv)
 
 void quitEvent(state_t *st)
 {
-printf("here:\n");
-    for(int i = 0; i < st->docs.numElems; ++i)
+    for(int i = NUM_BUILTIN_BUFFERS; i < st->docs.numElems; ++i)
     {
-printf("writing file:\n");
-        doc_t *doc = arrayElemAt(&st->docs, i + NUM_BUILTIN_BUFFERS);
+        doc_t *doc = arrayElemAt(&st->docs, i);
 assert(doc);
         docWrite(doc);
     }
-printf("done writing:\n");
     TTF_Quit();
     SDL_Quit();
     exit(0);
