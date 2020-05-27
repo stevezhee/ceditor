@@ -185,7 +185,6 @@ typedef struct cursor_s cursor_t;
 void cursorSetOffsetString(cursor_t *cursor, int offset, char *s0, int len)
 {
     offset = clamp(0, offset, len);
-    
     int row = 0;
     
     char *s = s0;
@@ -429,7 +428,7 @@ void stSetViewFocus(state_t *st, uint i)
 void cursorRender(view_t *view, viewport_t *viewport, state_t *st)
 {
     SDL_Rect rect;
-    
+
     rect.x = view->cursor.column * st->font.charSkip + viewport->scrollX;
     rect.y = 2 + view->cursor.row * st->font.lineSkip + viewport->scrollY;
     rect.w = st->font.charSkip;
@@ -440,7 +439,7 @@ void cursorRender(view_t *view, viewport_t *viewport, state_t *st)
         setDrawColor(st->renderer, CURSOR_BACKGROUND_COLOR);
         fillRect(st->renderer, &rect);
     }
-    
+
     setDrawColor(st->renderer, CURSOR_COLOR);
     rect.w = CURSOR_WIDTH;
     fillRect(st->renderer, &rect);
@@ -473,12 +472,12 @@ void docRender(doc_t *doc, viewport_t *viewport, state_t *st)
     resetCharRect(&st->font, viewport->scrollX, viewport->scrollY);
 
     if(!doc->contents.start) return;
-    
+
     for(char *p = doc->contents.start; p < (char*)(doc->contents.start) + doc->contents.numElems; p++)
     {
         renderAndAdvChar(&st->font, *p);
     }
-    
+
     renderEOF(&st->font);
 }
 
@@ -498,10 +497,10 @@ void selectionRender(int aRow, int aCol, int bRow, int bCol, viewport_t *viewpor
 {
     assert(viewport);
     assert(st);
-    
+
     int n = bRow - aRow;
     int vCols = viewport->rect.w / st->font.charSkip;
-    
+
     if (n == 0) // single, partial line
     {
         fillSelectionRect(st, viewport, aRow, aCol, 1, 1 + bCol - aCol);
@@ -531,12 +530,12 @@ bool noActiveSearch(viewport_t *viewport, state_t *st)
 void searchRender(viewport_t *viewport, state_t *st)
 {
     if (noActiveSearch(viewport, st)) return;
-    
+
     setDrawColor(st->renderer, SEARCH_COLOR);
-    
+
     view_t *view = arrayElemAt(&st->views, viewport->refView);
     doc_t *doc = arrayElemAt(&st->docs, view->refDoc);
-    
+
     for(int i = 0; i < st->results.numElems; ++i)
     {
         cursor_t cursor;
@@ -554,23 +553,23 @@ void searchRender(viewport_t *viewport, state_t *st)
 void viewRender(view_t *view, viewport_t *viewport, state_t *st)
 {
     assert(view);
-    
+
+    if (st->selectionInProgress) {
+      cursorRender(view, viewport, st);
+      return;
+    }
+
     int aCol = view->cursor.column;
     int bCol = view->selection.column;
     int aRow = view->cursor.row;
     int bRow = view->selection.row;
-
-    if (aRow == bRow && aCol == bCol) {
-        cursorRender(view, viewport, st);
-        return;
-    }
 
     if ((bRow < aRow) || ((aRow == bRow) && (bCol < aCol)))
     {
         swap(int, aCol, bCol);
         swap(int, aRow, bRow);
     }
-    
+
     setDrawColor(st->renderer, SELECTION_COLOR);
     selectionRender(aRow, aCol, bRow, bCol, viewport, st);
 }
@@ -890,7 +889,7 @@ void setSelectFromXY(state_t *st, int x, int y)
     setSelectFromXYMotion(st, x, y);
 
     view_t *view = stViewFocus(st);
-    
+
     cursorSetRowCol(&view->selection, view->selection.row, view->selection.column, stDocFocus(st));
 }
 
@@ -901,10 +900,16 @@ void setCursorFromXY(state_t *st, int x, int y)
     memcpy(&view->cursor, &view->selection, sizeof(cursor_t));
 }
 
+bool cursorEq(cursor_t *a, cursor_t *b)
+{
+  return (a->row == b->row && a->column == b->column);
+}
+
 void mouseButtonUpEvent(state_t *st)
 {
-    st->selectionInProgress = false;
     setSelectFromXY(st, st->event.button.x, st->event.button.y);
+    view_t *view = stViewFocus(st);
+    if (cursorEq(&view->cursor, &view->selection)) st->selectionInProgress = false;
 }
 
 void mouseButtonDownEvent(state_t *st)
