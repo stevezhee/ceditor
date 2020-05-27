@@ -1,3 +1,4 @@
+ksdk
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL.h>
@@ -1188,7 +1189,11 @@ void playMacro(state_t *st)
     backwardSOL(st);
     doc_t *doc = stDocFocus(st);
     view_t *view = stViewFocus(st);
-    if (!doc->contents.start) return;
+    if (!doc->contents.start)
+      {
+          builtinsPopFocus(st);
+          return;
+      }
     char *s = doc->contents.start + view->cursor.offset;
     builtinsPopFocus(st);
 
