@@ -138,6 +138,7 @@ uint arrayGetFocus(dynamicArray_t *arr)
 {
     return arr->offset;
 }
+
 typedef dynamicArray_t string_t; // contains characters
 
 typedef enum { INSERT, DELETE } commandTag_t;
@@ -162,7 +163,7 @@ int countLines(char *s, uint len)
 {
     int n = 0;
     char *end = s + len;
-    
+
     while(s < end)
     {
         if (*s == '\n') n++;
@@ -182,16 +183,20 @@ struct cursor_s {
 
 typedef struct cursor_s cursor_t;
 
+void cursorCopy(cursor_t *dst, cursor_t *src)
+{
+  memcpy(dst, src, sizeof(cursor_t));
+}
 void cursorSetOffsetString(cursor_t *cursor, int offset, char *s0, int len)
 {
     offset = clamp(0, offset, len);
     int row = 0;
-    
+
     char *s = s0;
     char *done = s + offset;
-    
+
     char *nl = s;
-    
+
     while (s < done)
     {
         if (*s == '\n') {
@@ -200,7 +205,7 @@ void cursorSetOffsetString(cursor_t *cursor, int offset, char *s0, int len)
         }
         s++;
     }
-    
+
     cursor->offset = offset;
     cursor->row = row;
     int col = (int)(s - nl);
@@ -216,11 +221,11 @@ void cursorSetOffset(cursor_t *cursor, int offset, doc_t *doc)
 void cursorSetRowColString(cursor_t *cursor, int row0, int col0, char *s0, int len)
 {
     int row = 0;
-    
+
     char *s = s0;
     char *eof = s + len;
     char *lastEOL = s - 1;
-    
+
     while (s < eof && row < row0)
     {
         if (*s == '\n') {
@@ -235,7 +240,7 @@ void cursorSetRowColString(cursor_t *cursor, int row0, int col0, char *s0, int l
     {
         s++;
     }
-    
+
     cursor->offset = (int)(s - s0);
     cursor->row = row;
     int col = (int)(s - lastEOL - 1);
@@ -251,7 +256,7 @@ void cursorSetRowCol(cursor_t *cursor, int row, int col, doc_t *doc)
 void cursorTest()
 {
     cursor_t cursor;
-    
+
     typedef struct {
         int offset;
         char *s;
@@ -259,19 +264,19 @@ void cursorTest()
         int expectedRow;
         int expectedCol;
     } ctTest_t;
-    
+
     ctTest_t test[] = {
         { 0, "", 0, 0, 0 },
         { 1, "", 0, 0, 0 },
-        
+
         { 0, "a", 0, 0, 0 },
         { 1, "a", 1, 0, 1 },
         { 2, "a", 1, 0, 1 },
-        
+
         { 0, "\n", 0, 0, 0 },
         { 1, "\n", 1, 1, 0 },
         { 2, "\n", 1, 1, 0 },
-        
+
         { 99, "kdkd\n\nkdkd\ndd", 13, 3, 2 },
         { 5, "kdkd\n\nkdkd\ndd", 5, 1, 0 },
         { 10, "kdkd\n\nkdkd\ndd", 10, 2, 4 },
@@ -290,7 +295,7 @@ void cursorTest()
         assert(cursor.row == test[i].expectedRow);
         assert(cursor.column == test[i].expectedCol);
     }
-    
+
     typedef struct {
         int row;
         int col;
@@ -369,6 +374,7 @@ struct state_s
     font_t font;
     SDL_Event event;
     bool isRecording;
+    bool selectionActive;
     bool selectionInProgress;
     int pushedFocus;
     windowDirty_t dirty;
@@ -554,7 +560,7 @@ void viewRender(view_t *view, viewport_t *viewport, state_t *st)
 {
     assert(view);
 
-    if (st->selectionInProgress) {
+    if (!st->selectionInProgress && !st->selectionActive) {
       cursorRender(view, viewport, st);
       return;
     }
@@ -577,13 +583,13 @@ void viewRender(view_t *view, viewport_t *viewport, state_t *st)
 void viewportRender(viewport_t *viewport, state_t *st)
 {
     setViewport(st->renderer, &viewport->rect);
-    
+
     SDL_Rect bkgd;
     bkgd.x = 0;
     bkgd.y = 0;
     bkgd.w = viewport->rect.w;
     bkgd.h = viewport->rect.h;
-    
+
     color_t color = viewColors[viewport == stViewportFocus(st)];
     setDrawColor(st->renderer, color);
     fillRect(st->renderer, &bkgd); // background
@@ -617,14 +623,14 @@ void docInsert(doc_t *doc, uint offset, char *s, uint len)
     // BAL: add to undo
     uint n = doc->contents.numElems + len;
     if (n > doc->contents.maxElems) arrayGrow(&doc->contents, n);
-    
+
     char *p = doc->contents.start + offset;
     uint nl = countLines(s, len);
     doc->numLines += nl;
     memmove(p + len, p, doc->contents.numElems - offset);
     memcpy(p, s, len);
     doc->contents.numElems = n;
-    
+
     if (doc->filepath[0] != '*' && nl > 0) // BAL: hacky to use the '*'
     {
         docWrite(doc);
@@ -663,7 +669,7 @@ void docWrite(doc_t *doc)
 
     if (fclose(fp) != 0)
         die("unable to close file");
-    
+
     docGitCommit(doc);
 }
 
@@ -682,11 +688,11 @@ void docRead(doc_t *doc)
     arrayGrow(&doc->contents, clamp(4096, 2*doc->contents.numElems, UINT_MAX - 1));
 
     if (fread(doc->contents.start, sizeof(char), stat.st_size, fp) != stat.st_size) die("unable to read in file");
-    
+
     if (fclose(fp) != 0) die("unable to close file");
-    
+
     doc->numLines = countLines(doc->contents.start, doc->contents.numElems);
-    
+
 }
 
 void docInit(doc_t *doc, char *filepath)
@@ -709,12 +715,12 @@ void stRenderFull(state_t *st)
 {
     setDrawColor(st->renderer, BACKGROUND_COLOR);
     clearViewport(st->renderer);
-        
+
     for(int i = 0; i < st->viewports.numElems; ++i)
     {
         viewportRender(arrayElemAt(&st->viewports, i), st);
     }
-    
+
     SDL_RenderPresent(st->renderer);
 }
 
@@ -722,20 +728,20 @@ void stResize(state_t *st)
 {
     int w;
     int h;
-    
+
     SDL_GetWindowSize(st->window.window, &w, &h);
     st->window.width = w;
     st->window.height = h;
-    
+
     w = (w - BORDER_WIDTH) / 3;
     h = h - 2*BORDER_WIDTH;
-    
+
     viewport_t *v0 = arrayElemAt(&st->viewports, SECONDARY_VIEWPORT);
     v0->rect.x = BORDER_WIDTH;
     v0->rect.y = BORDER_WIDTH;
     v0->rect.w = w - BORDER_WIDTH;
     v0->rect.h = h;
-    
+
     viewport_t *v1 = arrayElemAt(&st->viewports, MAIN_VIEWPORT);
     v1->rect.x = BORDER_WIDTH + v0->rect.x + v0->rect.w;
     v1->rect.y = BORDER_WIDTH;
@@ -785,24 +791,24 @@ void stInit(state_t *st, int argc, char **argv)
 {
     argc--;
     argv++;
-    
+
     initMacros();
-    
+
     if (argc < 1) die("expected filepath(s)");
     memset(st, 0, sizeof(state_t));
-    
+
     arrayInit(&st->docs, sizeof(doc_t));
     arrayInit(&st->views, sizeof(view_t));
     arrayInit(&st->viewports, sizeof(viewport_t));
     arrayInit(&st->results, sizeof(uint));
-    
+
     if (SDL_Init(SDL_INIT_VIDEO) != 0) die(SDL_GetError());
 
     windowInit(&st->window, INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT);
     st->renderer = dieIfNull(SDL_CreateRenderer(st->window.window, -1, SDL_RENDERER_SOFTWARE));
-    
+
     initFont(&st->font, st->renderer, INIT_FONT_FILE, INIT_FONT_SIZE);
-    
+
     keysymInit();
 
     for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
@@ -811,20 +817,20 @@ void stInit(state_t *st, int argc, char **argv)
         docInit(doc, builtinBufferTitle[i]);
         viewInit(arrayPushUninit(&st->views), i);
     }
-    
+
     for(int i = 0; i < argc; ++i) {
         doc_t *doc = arrayPushUninit(&st->docs);
         docInit(doc, argv[i]);
         docRead(doc);
         viewInit(arrayPushUninit(&st->views), NUM_BUILTIN_BUFFERS + i);
     }
-  
+
     for(int i = 0; i < NUM_VIEWPORTS; ++i)
     {
         viewport_t *v = arrayPushUninit(&st->viewports);
         viewportInit(v, i);
     }
-        
+
     buffersBufInit(st);
 
     message(st, "hello from the beyond\n");
@@ -835,7 +841,7 @@ void stInit(state_t *st, int argc, char **argv)
     stSetViewFocus(st, BUFFERS_BUF);
     stSetViewportFocus(st, MAIN_VIEWPORT);
     stSetViewFocus(st, NUM_BUILTIN_BUFFERS);
-    
+
     stResize(st);
 }
 
@@ -866,38 +872,30 @@ void windowEvent(state_t *st)
 
 #define AUTO_SCROLL_HEIGHT 4
 
-void setSelectFromXYMotion(state_t  *st, int x, int y)
+int viewportWidth(viewport_t *viewport)
 {
-//    if (y < st->font.lineSkip * AUTO_SCROLL_HEIGHT)
-//    {
-//        viewportScrollY(st, 1);
-//    }
-//    if (y > st->window.height - AUTO_SCROLL_HEIGHT * st->font.lineSkip)
-//    {
-//        viewportScrollY(st, -1);
-//    }
-    viewport_t *v = stViewportFocus(st);
+  return viewport->rect.w;
+}
+int viewportColumns(viewport_t *viewport, state_t *st)
+{
+  return viewportWidth(viewport) / st->font.charSkip;
+}
+
+void setCursorFromXYMotion(cursor_t *cursor, state_t  *st, int x, int y)
+{
+    viewport_t *viewport = stViewportFocus(st);
     view_t *view = stViewFocus(st);
-    view->selection.column = clamp(0, (x - v->rect.x) / st->font.charSkip, v->rect.w / st->font.charSkip);
-    view->selection.row = (y - v->scrollY - v->rect.y) / st->font.lineSkip;
+    cursor->column =
+      clamp(0, (x - viewport->rect.x) / st->font.charSkip, viewportColumns(viewport, st));
+    cursor->row = (y - viewport->scrollY - viewport->rect.y) / st->font.lineSkip;
     // BAL: don't do bounds checking until mouse button up for speed
     // when this is more efficient, remove
 }
 
-void setSelectFromXY(state_t *st, int x, int y)
+void setCursorFromXY(cursor_t *cursor, state_t *st, int x, int y)
 {
-    setSelectFromXYMotion(st, x, y);
-
-    view_t *view = stViewFocus(st);
-
-    cursorSetRowCol(&view->selection, view->selection.row, view->selection.column, stDocFocus(st));
-}
-
-void setCursorFromXY(state_t *st, int x, int y)
-{
-    setSelectFromXY(st, x, y);
-    view_t *view = stViewFocus(st);
-    memcpy(&view->cursor, &view->selection, sizeof(cursor_t));
+  setCursorFromXYMotion(cursor, st, x, y);
+  cursorSetRowCol(cursor, cursor->row, cursor->column, stDocFocus(st));
 }
 
 bool cursorEq(cursor_t *a, cursor_t *b)
@@ -905,18 +903,37 @@ bool cursorEq(cursor_t *a, cursor_t *b)
   return (a->row == b->row && a->column == b->column);
 }
 
+void selectChars(state_t *st)
+{
+  view_t *view = stViewFocus(st);
+  cursorCopy(&view->selection, &view->cursor);
+  st->selectionInProgress = true;
+  st->selectionActive = true;
+}
+
+void selectionEnd(state_t *st)
+{
+  view_t *view = stViewFocus(st);
+  st->selectionInProgress = false;
+  st->selectionActive = !(cursorEq(&view->cursor, &view->selection));
+}
+void selectionCancel(state_t *st)
+{
+  st->selectionInProgress = false;
+  st->selectionActive = false;
+}
 void mouseButtonUpEvent(state_t *st)
 {
-    setSelectFromXY(st, st->event.button.x, st->event.button.y);
-    view_t *view = stViewFocus(st);
-    if (cursorEq(&view->cursor, &view->selection)) st->selectionInProgress = false;
+  view_t *view = stViewFocus(st);
+  setCursorFromXY(&view->selection, st, st->event.button.x, st->event.button.y);
+    selectionEnd(st);
 }
 
 void mouseButtonDownEvent(state_t *st)
 {
     int i = 0;
     viewport_t *viewport;
-    
+
     while (true) // find selected viewport
     {
         SDL_Point p;
@@ -929,15 +946,17 @@ void mouseButtonDownEvent(state_t *st)
     };
 
     stSetViewportFocus(st, i);
-    st->selectionInProgress = true;
-    setCursorFromXY(st, st->event.button.x, st->event.button.y);
+    view_t *view = stViewFocus(st);
+    setCursorFromXY(&view->cursor, st, st->event.button.x, st->event.button.y);
+    selectChars(st);
 }
 
 void mouseMotionEvent(state_t *st)
 {
     if (st->selectionInProgress)
     {
-        setSelectFromXYMotion(st, st->event.motion.x, st->event.motion.y);
+      view_t *view = stViewFocus(st);
+      setCursorFromXYMotion(&view->selection, st, st->event.motion.x, st->event.motion.y);
         return;
     }
     st->dirty = NOT_DIRTY;
@@ -952,9 +971,9 @@ void viewportScrollY(viewport_t *viewport, int dR, state_t *st)
 {
     view_t *view = arrayElemAt(&st->views, viewport->refView);
     doc_t *doc = arrayElemAt(&st->docs, view->refDoc);
-    
+
     viewport->scrollY += dR * st->font.lineSkip;
-    
+
     viewport->scrollY = clamp(viewportHeight(viewport) - docHeight(doc,st) - st->font.lineSkip, viewport->scrollY, 0);
 }
 
@@ -988,31 +1007,36 @@ void keyDownEvent(state_t *st)
     }
 }
 
+cursor_t *activeCursor(state_t *st)
+{
+  view_t *view = stViewFocus(st);
+  if (st->selectionInProgress || st->selectionActive)
+    {
+      return &view->selection;
+    }
+  return &view->cursor;
+}
+
 void stMoveCursorOffset(state_t *st, int offset)
 {
-    view_t *view = stViewFocus(st);
-    doc_t *doc = stDocFocus(st);
-    cursorSetOffset(&view->cursor, offset, doc);
-    memcpy(&view->selection, &view->cursor, sizeof(cursor_t));
+    cursorSetOffset(activeCursor(st), offset, stDocFocus(st));
     viewportTrackSelection(stViewportFocus(st), st);
 }
 
 void stMoveCursorRowCol(state_t *st, int row, int col)
 {
-    view_t *focus = stViewFocus(st);
-    cursorSetRowCol(&focus->cursor, row, col, stDocFocus(st));
-    memcpy(&focus->selection, &focus->cursor, sizeof(cursor_t));
+    cursorSetRowCol(activeCursor(st), row, col, stDocFocus(st));
     viewportTrackSelection(stViewportFocus(st), st);
 }
 
 void backwardChar(state_t *st)
 {
-    stMoveCursorOffset(st, stViewFocus(st)->cursor.offset - 1);
+  stMoveCursorOffset(st, activeCursor(st)->offset - 1);
 }
 
 void forwardChar(state_t *st)
 {
-    stMoveCursorOffset(st, stViewFocus(st)->cursor.offset + 1);
+  stMoveCursorOffset(st, activeCursor(st)->offset + 1);
 }
 
 void setNavigateMode(state_t *st)
@@ -1033,12 +1057,11 @@ void setNavigateModeAndDoKeyPress(state_t *st, uchar c)
 
 void moveLines(state_t *st, int dRow)
 {
-    view_t *focus = stViewFocus(st);
-    int col = focus->cursor.preferredColumn;
+  cursor_t *cursor = activeCursor(st);
+    int col = cursor->preferredColumn;
 
-    stMoveCursorRowCol(st, focus->cursor.row + dRow, col);
-    focus->cursor.preferredColumn = col;
-    focus->selection.preferredColumn = col;
+    stMoveCursorRowCol(st, cursor->row + dRow, col);
+    cursor->preferredColumn = col;
 }
 
 void backwardLine(state_t *st)
@@ -1073,19 +1096,19 @@ void forwardEOF(state_t *st)
 
 void backwardSOL(state_t *st)
 {
-    stMoveCursorRowCol(st, stViewFocus(st)->cursor.row, 0);
+    stMoveCursorRowCol(st, activeCursor(st)->row, 0);
 }
 
 void forwardEOL(state_t *st)
 {
-    stMoveCursorRowCol(st, stViewFocus(st)->cursor.row, INT_MAX);
+    stMoveCursorRowCol(st, activeCursor(st)->row, INT_MAX);
 }
 
 void insertString(state_t *st, char *s, uint len)
 {
     if (!s || len == 0) return;
     st->dirty = DOC_DIRTY;
-    docInsert(stDocFocus(st), stViewFocus(st)->cursor.offset, s, len);
+    docInsert(stDocFocus(st), activeCursor(st)->offset, s, len);
 }
 
 void insertCString(state_t *st, char *s)
@@ -1116,20 +1139,18 @@ void getOffsetAndLength(state_t *st, int *offset, int *length)
     view_t *view = stViewFocus(st);
     cursor_t *cur = &view->cursor;
     cursor_t *sel = &view->selection;
-     
+
     if (cur->offset > sel->offset)
     {
         swap(cursor_t *, cur, sel);
     }
-    
+
     int off = cur->offset;
     int len = sel->offset - off + 1;
-            
+
     uint n = stDocFocus(st)->contents.numElems;
     *offset = min(off, n);
     *length = min(len, n - off);
-    
-    memcpy(sel, cur, sizeof(cursor_t));
 }
 
 void copy(state_t *st, char *s, uint len)
@@ -1145,15 +1166,16 @@ void copy(state_t *st, char *s, uint len)
 void delete(state_t *st)
 {
     // BAL: add to undo
-    
+
     int offset;
     int length;
-    
+
     getOffsetAndLength(st, &offset, &length);
+    selectionCancel(st);
     if (length <= 0) return;
     st->dirty = DOC_DIRTY;
     doc_t *doc = stDocFocus(st);
-    
+
     if (doc->filepath[0] != '*') copy(st, doc->contents.start + offset, length); // BAL: this was causing problems with search...
 
     docDelete(doc, offset, length);
@@ -1162,7 +1184,7 @@ void delete(state_t *st)
 void playMacroString(state_t *st, char *s, uint len)
 {
     char *done = s + len;
-    
+
     while (s < done)
     {
         doKeyPress(st, *s);
@@ -1236,14 +1258,14 @@ void computeSearchResults(state_t *st)
     doc_t *doc = arrayElemAt(&st->docs, view->refDoc);
 
     builtinsPushFocus(st, SEARCH_BUF);
-    
+
     view_t *viewFind = stViewFocus(st);
     doc_t *find = stDocFocus(st);
-    
+
     cursor_t cursorFind;
-    memcpy(&cursorFind, &viewFind->cursor, sizeof(cursor_t));
+    cursorCopy(&cursorFind, &viewFind->cursor);
     cursorSetRowCol(&cursorFind, cursorFind.row, 0, find);
-    
+
     char *search = find->contents.start + cursorFind.offset;
     if (!search) goto nofree;
     char *replace = dieIfNull(strdup(search));
@@ -1279,14 +1301,14 @@ void setSearchMode(state_t *st)
       //  setCursorToSearch(st);
         return;
     }
-    
+
     st->searchRefView = stViewportFocus(st)->refView;
-    
+
     // insert null at the end of the doc
     doc_t *doc = stDocFocus(st);
     docInsert(doc, doc->contents.numElems, "", 1);
     doc->contents.numElems--;
-    
+
     builtinsPushFocus(st, SEARCH_BUF);
     setInsertMode(st);
     backwardSOF(st);
@@ -1297,14 +1319,14 @@ void setSearchMode(state_t *st)
 void gotoView(state_t *st)
 {
     int frame = st->viewports.offset;
-    
+
     if (frame == BUILTINS_VIEWPORT) frame = MAIN_VIEWPORT;
-    
+
     stSetViewportFocus(st, BUILTINS_VIEWPORT);
     stSetViewFocus(st, BUFFERS_BUF);
-    
+
     view_t *view = stViewFocus(st);
-    
+
     stSetViewportFocus(st, frame);
     stSetViewFocus(st, view->cursor.row);
 }
@@ -1349,12 +1371,12 @@ int main(int argc, char **argv)
     assert(sizeof(void*) == 8);
 
     cursorTest();
-        
+
     state_t st;
-    
+
     stInit(&st, argc, argv);
     stRenderFull(&st);
-    
+
     while (SDL_WaitEvent(&st.event))
     {
         st.dirty = FOCUS_DIRTY;
@@ -1425,7 +1447,7 @@ CORE:
     jump to prev/next change
     collapse/expand selection (code folding)
     reload file when changed outside of editor
- 
+
 VIS:
     Display line/column/offset info
     Display line number of every line
@@ -1435,14 +1457,14 @@ VIS:
     resize nested parens
     buffer list screen
     display multiple characters as one (e.g. lambda)
- 
+
 MACRO:
     switch between viewports
     comment/uncomment region
     indent/outdent region
     more move, delete, insert commands
     select all
- 
+
 DONE:
 indent/outdent line
 split screen

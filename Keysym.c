@@ -63,7 +63,7 @@ void keysymInit(void)
     
     keyHandler[NAVIGATE_MODE]['P'] = (keyHandler_t)pasteBefore;
 //    
-//    keyHandler[NAVIGATE_MODE]['v'] = selectChars;
+    keyHandler[NAVIGATE_MODE]['v'] = (keyHandler_t)selectChars;
 //    keyHandler[NAVIGATE_MODE]['V'] = selectLines;
 //    
     keyHandler[NAVIGATE_MODE][KEY_LEFT] = (keyHandler_t)backwardChar;
