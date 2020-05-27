@@ -1,4 +1,5 @@
- d f#include <stdio.h>
+// hello
+#include <stdio.h>
 #include <stdbool.h>
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -8,7 +9,7 @@
 #include "Keysym.h"
 #include <sys/stat.h>
 #include <limits.h>
-dkfsdfj
+
 void insertCString(state_t *st, char *s);
 void insertString(state_t *st, char *s, uint len);
 
@@ -844,12 +845,15 @@ void stInit(state_t *st, int argc, char **argv)
 
 void quitEvent(state_t *st)
 {
+printf("here:\n");
     for(int i = 0; i < st->docs.numElems; ++i)
     {
+printf("writing file:\n");
         doc_t *doc = arrayElemAt(&st->docs, i + NUM_BUILTIN_BUFFERS);
 assert(doc);
         docWrite(doc);
     }
+printf("done writing:\n");
     TTF_Quit();
     SDL_Quit();
     exit(0);
