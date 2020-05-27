@@ -1,4 +1,4 @@
-#include <stdio.h>
+ d f#include <stdio.h>
 #include <stdbool.h>
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -847,6 +847,7 @@ void quitEvent(state_t *st)
     for(int i = 0; i < st->docs.numElems; ++i)
     {
         doc_t *doc = arrayElemAt(&st->docs, i + NUM_BUILTIN_BUFFERS);
+assert(doc);
         docWrite(doc);
     }
     TTF_Quit();
