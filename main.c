@@ -1,4 +1,4 @@
-ksd#include <stdio.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -8,7 +8,7 @@ ksd#include <stdio.h>
 #include "Keysym.h"
 #include <sys/stat.h>
 #include <limits.h>
-
+dkfsdfj
 void insertCString(state_t *st, char *s);
 void insertString(state_t *st, char *s, uint len);
 
