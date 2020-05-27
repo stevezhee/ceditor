@@ -844,9 +844,9 @@ void stInit(state_t *st, int argc, char **argv)
 
 void quitEvent(state_t *st)
 {
-    for(int i = NUM_BUILTIN_BUFFERS; i < st->docs.numElems; ++i)
+    for(int i = 0; i < st->docs.numElems; ++i)
     {
-        doc_t *doc = arrayElemAt(&st->docs, i);
+        doc_t *doc = arrayElemAt(&st->docs, i + NUM_BUILTIN_BUFFERS);
         docWrite(doc);
     }
     TTF_Quit();
@@ -1188,6 +1188,7 @@ void playMacro(state_t *st)
     backwardSOL(st);
     doc_t *doc = stDocFocus(st);
     view_t *view = stViewFocus(st);
+    if (!doc->contents.start) return;
     char *s = doc->contents.start + view->cursor.offset;
     builtinsPopFocus(st);
 
