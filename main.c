@@ -642,7 +642,7 @@ void docGitAdd(doc_t *doc)
 {
     if (DEMO_MODE) return;
     sprintf(systemBuf, "git add %s", doc->filepath);
-    if (system(systemBuf) != 0) die("git add failed");
+    system(systemBuf);
 }
 
 void docGitCommit(doc_t *doc)
@@ -650,9 +650,7 @@ void docGitCommit(doc_t *doc)
     if (DEMO_MODE) return;
     docGitAdd(doc);
     sprintf(systemBuf, "git commit -m\"cp\" %s", doc->filepath);
-    
-    if (system(systemBuf) != 0)
-         die("git commit failed");
+    system(systemBuf);
 }
 
 void docWrite(doc_t *doc)
