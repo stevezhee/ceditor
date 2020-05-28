@@ -15,7 +15,7 @@ uint16_t unicode[256];
 static inline void initCharTexture(font_t *font, TTF_Font *ttfFont, uchar c)
 {
     uint16_t s[2];
-    
+
     s[0] = unicode[c];
     s[1] = 0;
 
@@ -43,7 +43,7 @@ static inline void initFontData(font_t *font)
     {
         initCharTexture(font, ttfFont, c);
     }
-    
+
     font->lineSkip = TTF_FontLineSkip(ttfFont);
     TTF_CloseFont(ttfFont);
 
@@ -65,7 +65,7 @@ void reinitFont(font_t *font)
     {
         SDL_DestroyTexture(font->charTexture[c]);
     }
-    
+
     initFontData(font);
 }
 
@@ -78,7 +78,7 @@ void initFont(font_t *font, SDL_Renderer *renderer, const char* file, unsigned i
     font->renderer = renderer;
     font->filepath = file;
     font->size = size;
-    
+
     unicodeInit();
     initFontData(font);
 }
@@ -128,12 +128,7 @@ void renderChar(font_t *font, uchar c)
         renderEOL(font);
         return;
       default:
-   //     if (c >= '!' && c <= '~')
-     //   {
-            renderCh(font, c);
-       //     return;
-      //  }
-   //     renderUnknownCh(font);
+        renderCh(font, c);
         return;
     }
 }
@@ -159,7 +154,7 @@ void unicodeInit(void)
 unicode[KEY_CTRL] = 0x21d1;
 
     unicode[KEY_ALT] = 0x21d3;
-    
+
 unicode[KEY_ESCAPE] = 0x3b5;
 unicode[KEY_PRINTSCREEN] = 0x3c0;
 unicode[KEY_SCROLLLOCK] = 0x3c3;

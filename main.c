@@ -656,14 +656,14 @@ void gitInit(void)
 }
 void docGitAdd(doc_t *doc)
 {
-    if (DEMO_MODE) return;
+    if (DEMO_MODE || NO_GIT) return;
     sprintf(systemBuf, "git add %s", doc->filepath);
     system(systemBuf);
 }
 
 void docGitCommit(doc_t *doc)
 {
-    if (DEMO_MODE) return;
+    if (DEMO_MODE || NO_GIT) return;
     docGitAdd(doc);
     sprintf(systemBuf, "git commit -m\"cp\" %s", doc->filepath);
     system(systemBuf);
@@ -1437,6 +1437,8 @@ int main(int argc, char **argv)
 /*
 TODO:
 CORE:
+    command line args/config to set config items (e.g. demo mode)
+    status bar that has filename, row/col, modified, etc.
     cursor per viewport
     select/cut/copy/paste with mouse
     multiple files
