@@ -9,19 +9,19 @@
 void insertCString(state_t *st, char *s);
 void insertString(state_t *st, char *s, uint len);
 
-void viewportTrackSelection(viewport_t *viewport, state_t *st);
-void viewportScrollY(viewport_t *viewport, int dR, state_t *st);
-void viewportRender(viewport_t *viewport, state_t *st); // BAL: viewportFocusRender
+void frameTrackSelection(frame_t *frame, state_t *st);
+void frameScrollY(frame_t *frame, int dR, state_t *st);
+void frameRender(frame_t *frame, state_t *st); // BAL: frameFocusRender
 void stRender(state_t *st);
 
-viewport_t *stViewportFocus(state_t *st)
+frame_t *stFrameFocus(state_t *st)
 {
-    return arrayFocus(&st->viewports);
+    return arrayFocus(&st->frames);
 }
 
 view_t *stViewFocus(state_t *st)
 {
-    return arrayElemAt(&st->views, stViewportFocus(st)->refView);
+    return arrayElemAt(&st->views, stFrameFocus(st)->refView);
 }
 
 doc_t *stDocFocus(state_t *st)
@@ -29,22 +29,22 @@ doc_t *stDocFocus(state_t *st)
     return arrayElemAt(&st->docs, stViewFocus(st)->refDoc);
 }
 
-int viewportHeight(viewport_t *viewport)
+int frameHeight(frame_t *frame)
 {
-    return viewport->rect.h;
+    return frame->rect.h;
 }
 
-uint viewportRows(viewport_t *viewport, state_t *st)
+uint frameRows(frame_t *frame, state_t *st)
 {
-    return viewportHeight(viewport) / st->font.lineSkip;
+    return frameHeight(frame) / st->font.lineSkip;
 }
 
-void stSetViewportFocus(state_t *st, int i)
+void stSetFrameFocus(state_t *st, int i)
 {
-    int j = arrayFocusOffset(&st->viewports);
+    int j = arrayFocusOffset(&st->frames);
     if (i != j)
     {
-        arraySetFocus(&st->viewports, i);
+        arraySetFocus(&st->frames, i);
         st->dirty = WINDOW_DIRTY;
         printf("file:%s\n", stDocFocus(st)->filepath);
     }
@@ -53,14 +53,14 @@ void stSetViewportFocus(state_t *st, int i)
 void stSetViewFocus(state_t *st, uint i)
 {
     i = clamp(0, i, st->views.numElems - 1);
-    viewport_t *viewport = stViewportFocus(st);
-    viewport->refView = i;
+    frame_t *frame = stFrameFocus(st);
+    frame->refView = i;
     printf("file:%s\n", stDocFocus(st)->filepath);
 }
 
-void viewportInit(viewport_t *v, uint i)
+void frameInit(frame_t *v, uint i)
 {
-    memset(v, 0, sizeof(viewport_t));
+    memset(v, 0, sizeof(frame_t));
     v->refView = i;
 }
 
@@ -70,9 +70,9 @@ void viewInit(view_t *view, uint i)
     view->refDoc = i;
 }
 
-void docRender(doc_t *doc, viewport_t *viewport, state_t *st)
+void docRender(doc_t *doc, frame_t *frame, state_t *st)
 {
-    resetCharRect(&st->font, viewport->scrollX, viewport->scrollY);
+    resetCharRect(&st->font, frame->scrollX, frame->scrollY);
 
     if(!doc->contents.start) return;
 
@@ -84,21 +84,21 @@ void docRender(doc_t *doc, viewport_t *viewport, state_t *st)
     renderEOF(&st->font);
 }
 
-bool noActiveSearch(viewport_t *viewport, state_t *st)
+bool noActiveSearch(frame_t *frame, state_t *st)
 {
     return
-      viewport->refView != st->searchRefView ||
+      frame->refView != st->searchRefView ||
       st->searchLen == 0 ||
       st->results.numElems == 0;
 }
 
-void searchRender(viewport_t *viewport, state_t *st)
+void searchRender(frame_t *frame, state_t *st)
 {
-    if (noActiveSearch(viewport, st)) return;
+    if (noActiveSearch(frame, st)) return;
 
     setDrawColor(st->renderer, SEARCH_COLOR);
 
-    view_t *view = arrayElemAt(&st->views, viewport->refView);
+    view_t *view = arrayElemAt(&st->views, frame->refView);
     doc_t *doc = arrayElemAt(&st->docs, view->refDoc);
 
     for(int i = 0; i < st->results.numElems; ++i)
@@ -111,16 +111,16 @@ void searchRender(viewport_t *viewport, state_t *st)
         cursorSetOffset(&cursor, *off + st->searchLen - 1, doc); // BAL: don't start over every time...
         int bRow = cursor.row;
         int bCol = cursor.column;
-        selectionRender(aRow, aCol, bRow, bCol, viewport, st);
+        selectionRender(aRow, aCol, bRow, bCol, frame, st);
     }
 }
 
-void viewRender(view_t *view, viewport_t *viewport, state_t *st)
+void viewRender(view_t *view, frame_t *frame, state_t *st)
 {
     assert(view);
 
     if (!view->selectionInProgress && !view->selectionActive) {
-      cursorRender(view, viewport, st);
+      cursorRender(view, frame, st);
       return;
     }
 
@@ -138,35 +138,35 @@ void viewRender(view_t *view, viewport_t *viewport, state_t *st)
     if (view->selectionLines)
       {
         aCol = 0;
-        bCol = viewportColumns(viewport, st);
+        bCol = frameColumns(frame, st);
       }
     setDrawColor(st->renderer, SELECTION_COLOR);
-    selectionRender(aRow, aCol, bRow, bCol, viewport, st);
+    selectionRender(aRow, aCol, bRow, bCol, frame, st);
 }
 
-void viewportRender(viewport_t *viewport, state_t *st)
+void frameRender(frame_t *frame, state_t *st)
 {
-    setViewport(st->renderer, &viewport->rect);
+    setViewport(st->renderer, &frame->rect);
 
     SDL_Rect bkgd;
     bkgd.x = 0;
     bkgd.y = 0;
-    bkgd.w = viewport->rect.w;
-    bkgd.h = viewport->rect.h;
+    bkgd.w = frame->rect.w;
+    bkgd.h = frame->rect.h;
 
-    color_t color = viewColors[viewport == stViewportFocus(st)];
+    color_t color = viewColors[frame == stFrameFocus(st)];
     setDrawColor(st->renderer, color);
     fillRect(st->renderer, &bkgd); // background
 
-    view_t *view = arrayElemAt(&st->views, viewport->refView);
-    searchRender(viewport, st);
-    viewRender(view, viewport, st);
-    docRender(arrayElemAt(&st->docs, view->refDoc), viewport, st);
+    view_t *view = arrayElemAt(&st->views, frame->refView);
+    searchRender(frame, st);
+    viewRender(view, frame, st);
+    docRender(arrayElemAt(&st->docs, view->refDoc), frame, st);
 }
 
 void stRender(state_t *st) // BAL: rename stFocusRender
 {
-    viewportRender(stViewportFocus(st), st);
+    frameRender(stFrameFocus(st), st);
     SDL_RenderPresent(st->renderer);
 }
 
@@ -203,11 +203,11 @@ void windowInit(window_t *win, int width, int height)
 void stRenderFull(state_t *st)
 {
     setDrawColor(st->renderer, BACKGROUND_COLOR);
-    clearViewport(st->renderer);
+    clearFrame(st->renderer);
 
-    for(int i = 0; i < st->viewports.numElems; ++i)
+    for(int i = 0; i < st->frames.numElems; ++i)
     {
-        viewportRender(arrayElemAt(&st->viewports, i), st);
+        frameRender(arrayElemAt(&st->frames, i), st);
     }
 
     SDL_RenderPresent(st->renderer);
@@ -225,19 +225,19 @@ void stResize(state_t *st)
     w = (w - BORDER_WIDTH) / 3;
     h = h - 2*BORDER_WIDTH;
 
-    viewport_t *v0 = arrayElemAt(&st->viewports, SECONDARY_VIEWPORT);
+    frame_t *v0 = arrayElemAt(&st->frames, SECONDARY_FRAME);
     v0->rect.x = BORDER_WIDTH;
     v0->rect.y = BORDER_WIDTH;
     v0->rect.w = w - BORDER_WIDTH;
     v0->rect.h = h;
 
-    viewport_t *v1 = arrayElemAt(&st->viewports, MAIN_VIEWPORT);
+    frame_t *v1 = arrayElemAt(&st->frames, MAIN_FRAME);
     v1->rect.x = BORDER_WIDTH + v0->rect.x + v0->rect.w;
     v1->rect.y = BORDER_WIDTH;
     v1->rect.w = w + w / 2 - BORDER_WIDTH;
     v1->rect.h = h;
 
-    viewport_t *v2 = arrayElemAt(&st->viewports, BUILTINS_VIEWPORT);
+    frame_t *v2 = arrayElemAt(&st->frames, BUILTINS_FRAME);
     v2->rect.x = BORDER_WIDTH + v1->rect.x + v1->rect.w;
     v2->rect.y = BORDER_WIDTH;
     v2->rect.w = st->window.width - v2->rect.x - BORDER_WIDTH;
@@ -248,14 +248,14 @@ void stResize(state_t *st)
 
 void builtinsPushFocus(state_t *st, int i)
 {
-  st->pushedFocus = arrayFocusOffset(&st->viewports);
-  stSetViewportFocus(st, BUILTINS_VIEWPORT);
+  st->pushedFocus = arrayFocusOffset(&st->frames);
+  stSetFrameFocus(st, BUILTINS_FRAME);
   stSetViewFocus(st, i);
 }
 
 void builtinsPopFocus(state_t *st)
 {
-    stSetViewportFocus(st, st->pushedFocus);
+    stSetFrameFocus(st, st->pushedFocus);
 }
 
 void message(state_t *st, char *s)
@@ -289,7 +289,7 @@ void stInit(state_t *st, int argc, char **argv)
 
     arrayInit(&st->docs, sizeof(doc_t));
     arrayInit(&st->views, sizeof(view_t));
-    arrayInit(&st->viewports, sizeof(viewport_t));
+    arrayInit(&st->frames, sizeof(frame_t));
     arrayInit(&st->results, sizeof(uint));
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) die(SDL_GetError());
@@ -315,21 +315,21 @@ void stInit(state_t *st, int argc, char **argv)
         viewInit(arrayPushUninit(&st->views), NUM_BUILTIN_BUFFERS + i);
     }
 
-    for(int i = 0; i < NUM_VIEWPORTS; ++i)
+    for(int i = 0; i < NUM_FRAMES; ++i)
     {
-        viewport_t *v = arrayPushUninit(&st->viewports);
-        viewportInit(v, i);
+        frame_t *v = arrayPushUninit(&st->frames);
+        frameInit(v, i);
     }
 
     buffersBufInit(st);
 
     message(st, "hello from the beyond\n");
 
-    stSetViewportFocus(st, SECONDARY_VIEWPORT);
+    stSetFrameFocus(st, SECONDARY_FRAME);
     stSetViewFocus(st, MESSAGE_BUF);
-    stSetViewportFocus(st, BUILTINS_VIEWPORT);
+    stSetFrameFocus(st, BUILTINS_FRAME);
     stSetViewFocus(st, BUFFERS_BUF);
-    stSetViewportFocus(st, MAIN_VIEWPORT);
+    stSetFrameFocus(st, MAIN_FRAME);
     stSetViewFocus(st, NUM_BUILTIN_BUFFERS);
 
     stResize(st);
@@ -362,11 +362,11 @@ void windowEvent(state_t *st)
 
 void setCursorFromXYMotion(cursor_t *cursor, state_t  *st, int x, int y)
 {
-    viewport_t *viewport = stViewportFocus(st);
+    frame_t *frame = stFrameFocus(st);
     view_t *view = stViewFocus(st);
     cursor->column =
-      clamp(0, (x - viewport->rect.x) / st->font.charSkip, viewportColumns(viewport, st));
-    cursor->row = (y - viewport->scrollY - viewport->rect.y) / st->font.lineSkip;
+      clamp(0, (x - frame->rect.x) / st->font.charSkip, frameColumns(frame, st));
+    cursor->row = (y - frame->scrollY - frame->rect.y) / st->font.lineSkip;
     // BAL: don't do bounds checking until mouse button up for speed
     // when this is more efficient, remove
 }
@@ -422,20 +422,20 @@ void mouseButtonUpEvent(state_t *st)
 void mouseButtonDownEvent(state_t *st)
 {
     int i = 0;
-    viewport_t *viewport;
+    frame_t *frame;
 
-    while (true) // find selected viewport
+    while (true) // find selected frame
     {
         SDL_Point p;
         p.x = st->event.button.x;
         p.y = st->event.button.y;
-        viewport = arrayElemAt(&st->viewports, i);
-        if (SDL_PointInRect(&p, &viewport->rect)) break;
+        frame = arrayElemAt(&st->frames, i);
+        if (SDL_PointInRect(&p, &frame->rect)) break;
         i++;
-        if (i == NUM_VIEWPORTS) return;
+        if (i == NUM_FRAMES) return;
     };
 
-    stSetViewportFocus(st, i);
+    stSetFrameFocus(st, i);
     view_t *view = stViewFocus(st);
     setCursorFromXY(&view->cursor, st, st->event.button.x, st->event.button.y);
     selectChars(st);
@@ -457,19 +457,19 @@ int docHeight(doc_t *doc, state_t *st)
     return doc->numLines * st->font.lineSkip;
 }
 
-void viewportScrollY(viewport_t *viewport, int dR, state_t *st)
+void frameScrollY(frame_t *frame, int dR, state_t *st)
 {
-    view_t *view = arrayElemAt(&st->views, viewport->refView);
+    view_t *view = arrayElemAt(&st->views, frame->refView);
     doc_t *doc = arrayElemAt(&st->docs, view->refDoc);
 
-    viewport->scrollY += dR * st->font.lineSkip;
+    frame->scrollY += dR * st->font.lineSkip;
 
-    viewport->scrollY = clamp(viewportHeight(viewport) - docHeight(doc,st) - st->font.lineSkip, viewport->scrollY, 0);
+    frame->scrollY = clamp(frameHeight(frame) - docHeight(doc,st) - st->font.lineSkip, frame->scrollY, 0);
 }
 
 void mouseWheelEvent(state_t *st)
 {
-    viewportScrollY(stViewportFocus(st), st->event.wheel.y, st);
+    frameScrollY(stFrameFocus(st), st->event.wheel.y, st);
 }
 
 void doKeyPress(state_t *st, uchar c)
@@ -510,13 +510,13 @@ cursor_t *activeCursor(state_t *st)
 void stMoveCursorOffset(state_t *st, int offset)
 {
     cursorSetOffset(activeCursor(st), offset, stDocFocus(st));
-    viewportTrackSelection(stViewportFocus(st), st);
+    frameTrackSelection(stFrameFocus(st), st);
 }
 
 void stMoveCursorRowCol(state_t *st, int row, int col)
 {
     cursorSetRowCol(activeCursor(st), row, col, stDocFocus(st));
-    viewportTrackSelection(stViewportFocus(st), st);
+    frameTrackSelection(stFrameFocus(st), st);
 }
 
 void backwardChar(state_t *st)
@@ -566,12 +566,12 @@ void forwardLine(state_t *st)
 
 void backwardPage(state_t *st)
 {
-    moveLines(st, -max(1, viewportRows(stViewportFocus(st), st) - AUTO_SCROLL_HEIGHT));
+    moveLines(st, -max(1, frameRows(stFrameFocus(st), st) - AUTO_SCROLL_HEIGHT));
 }
 
 void forwardPage(state_t *st)
 {
-    moveLines(st, max(1, viewportRows(stViewportFocus(st), st) - AUTO_SCROLL_HEIGHT));
+    moveLines(st, max(1, frameRows(stFrameFocus(st), st) - AUTO_SCROLL_HEIGHT));
 }
 
 void backwardSOF(state_t *st)
@@ -724,9 +724,9 @@ void playMacro(state_t *st)
 
 void setCursorToSearch(state_t *st)
 {
-    viewport_t *viewport = stViewportFocus(st);
-    if (noActiveSearch(viewport, st)) return;
-    view_t *view = arrayElemAt(&st->views, viewport->refView);
+    frame_t *frame = stFrameFocus(st);
+    if (noActiveSearch(frame, st)) return;
+    view_t *view = arrayElemAt(&st->views, frame->refView);
     doc_t *doc = arrayElemAt(&st->docs, view->refDoc);
     uint *off = arrayFocus(&st->results);
     cursorSetOffset(&view->cursor, *off, doc);
@@ -790,19 +790,19 @@ nofree:
 
 void setSearchMode(state_t *st)
 {
-    if ((stViewportFocus(st)->refView) == SEARCH_BUF)
+    if ((stFrameFocus(st)->refView) == SEARCH_BUF)
     {
       // builtinsPopFocus(st);
       //  computeSearchResults(st);
 
-      stSetViewportFocus(st, MAIN_VIEWPORT);
+      stSetFrameFocus(st, MAIN_FRAME);
 
       //  stSetViewFocus(st, st->searchRefView);
       //  setCursorToSearch(st);
         return;
     }
 
-    st->searchRefView = stViewportFocus(st)->refView;
+    st->searchRefView = stFrameFocus(st)->refView;
 
     // insert null at the end of the doc
     doc_t *doc = stDocFocus(st);
@@ -818,16 +818,16 @@ void setSearchMode(state_t *st)
 
 void gotoView(state_t *st)
 {
-    int frame = st->viewports.offset;
+    int frame = st->frames.offset;
 
-    if (frame == BUILTINS_VIEWPORT) frame = MAIN_VIEWPORT;
+    if (frame == BUILTINS_FRAME) frame = MAIN_FRAME;
 
-    stSetViewportFocus(st, BUILTINS_VIEWPORT);
+    stSetFrameFocus(st, BUILTINS_FRAME);
     stSetViewFocus(st, BUFFERS_BUF);
 
     view_t *view = stViewFocus(st);
 
-    stSetViewportFocus(st, frame);
+    stSetFrameFocus(st, frame);
     stSetViewFocus(st, view->cursor.row);
 }
 
@@ -847,18 +847,18 @@ void startStopRecording(state_t *st)
     // if 1st line is empty delete it
 }
 
-void viewportTrackSelection(viewport_t *viewport, state_t *st)
+void frameTrackSelection(frame_t *frame, state_t *st)
 {
-    view_t *view = arrayElemAt(&st->views, viewport->refView);
-    int scrollR = viewport->scrollY / st->font.lineSkip;
+    view_t *view = arrayElemAt(&st->views, frame->refView);
+    int scrollR = frame->scrollY / st->font.lineSkip;
     int dR = view->selection.row + scrollR;
     if (dR < AUTO_SCROLL_HEIGHT)
     {
-        viewportScrollY(viewport, AUTO_SCROLL_HEIGHT - dR, st);
+        frameScrollY(frame, AUTO_SCROLL_HEIGHT - dR, st);
     } else {
-        int lastRow = viewportRows(viewport, st) - AUTO_SCROLL_HEIGHT;
+        int lastRow = frameRows(frame, st) - AUTO_SCROLL_HEIGHT;
         if (dR > lastRow) {
-            viewportScrollY(viewport, lastRow - dR, st);
+            frameScrollY(frame, lastRow - dR, st);
         }
     }
 }
@@ -925,7 +925,7 @@ TODO:
 CORE:
     command line args/config to set config items (e.g. demo mode)
     status bar that has filename, row/col, modified, etc.
-    cursor per viewport
+    cursor per frame
     select/cut/copy/paste with mouse
     multiple files
     create new file
@@ -939,7 +939,7 @@ CORE:
     jump to next error
     tab completion
     help screen
-    status bar per viewport
+    status bar per frame
     reload file when changed outside of editor
     sort lines
     check spelling
@@ -959,7 +959,7 @@ VIS:
     display multiple characters as one (e.g. lambda)
 
 MACRO:
-    switch between viewports
+    switch between frames
     comment/uncomment region
     indent/outdent region
     more move, delete, insert commands

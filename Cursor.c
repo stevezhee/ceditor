@@ -84,12 +84,12 @@ void cursorSetRowCol(cursor_t *cursor, int row, int col, doc_t *doc)
     cursorSetRowColString(cursor, row, col, doc->contents.start, doc->contents.numElems);
 }
 
-void cursorRender(view_t *view, viewport_t *viewport, state_t *st)
+void cursorRender(view_t *view, frame_t *frame, state_t *st)
 {
   SDL_Rect rect;
 
-  rect.x = view->cursor.column * st->font.charSkip + viewport->scrollX;
-  rect.y = 2 + view->cursor.row * st->font.lineSkip + viewport->scrollY;
+  rect.x = view->cursor.column * st->font.charSkip + frame->scrollX;
+  rect.y = 2 + view->cursor.row * st->font.lineSkip + frame->scrollY;
   rect.w = st->font.charSkip;
   rect.h = st->font.lineSkip;
 
@@ -104,40 +104,40 @@ void cursorRender(view_t *view, viewport_t *viewport, state_t *st)
   fillRect(st->renderer, &rect);
 }
 
-void fillSelectionRect(state_t *st, viewport_t *viewport, uint row, uint col, uint h, uint w)
+void fillSelectionRect(state_t *st, frame_t *frame, uint row, uint col, uint h, uint w)
 {
     SDL_Rect rect;
-    rect.x = col * st->font.charSkip + viewport->scrollX;
-    rect.y = row * st->font.lineSkip + SELECTION_RECT_GAP + viewport->scrollY;
+    rect.x = col * st->font.charSkip + frame->scrollX;
+    rect.y = row * st->font.lineSkip + SELECTION_RECT_GAP + frame->scrollY;
     rect.h = h * st->font.lineSkip - SELECTION_RECT_GAP;
     rect.w = w * st->font.charSkip;
     fillRect(st->renderer, &rect);
 }
 
-void selectionRender(int aRow, int aCol, int bRow, int bCol, viewport_t *viewport, state_t *st)
+void selectionRender(int aRow, int aCol, int bRow, int bCol, frame_t *frame, state_t *st)
 {
-    assert(viewport);
+    assert(frame);
     assert(st);
 
     int n = bRow - aRow;
-    int vCols = viewportColumns(viewport, st);
+    int vCols = frameColumns(frame, st);
 
     if (n == 0) // single, partial line
     {
-        fillSelectionRect(st, viewport, aRow, aCol, 1, 1 + bCol - aCol);
+        fillSelectionRect(st, frame, aRow, aCol, 1, 1 + bCol - aCol);
         return;
     }
 
     // partial line, full lines, partial line
-    fillSelectionRect(st, viewport, aRow, aCol, 1, vCols - aCol); // 1st partial line
+    fillSelectionRect(st, frame, aRow, aCol, 1, vCols - aCol); // 1st partial line
 
     n += aRow - 1;
     while (aRow < n) {
         aRow++;
-        fillSelectionRect(st, viewport, aRow, 0, 1, vCols); // full lines
+        fillSelectionRect(st, frame, aRow, 0, 1, vCols); // full lines
     }
 
-    fillSelectionRect(st, viewport, aRow + 1, 0, 1, bCol + 1); // partial line
+    fillSelectionRect(st, frame, aRow + 1, 0, 1, bCol + 1); // partial line
 }
 
 void cursorTest()

@@ -34,7 +34,7 @@ void *dieIfNull(void *p);
 void fillRect(SDL_Renderer *renderer, const SDL_Rect *rect);
 void setBlendMode(SDL_Renderer *renderer, SDL_BlendMode m);
 void setDrawColor(SDL_Renderer *renderer, color_t c);
-void clearViewport(SDL_Renderer *renderer);
+void clearFrame(SDL_Renderer *renderer);
 void setViewport(SDL_Renderer *renderer, SDL_Rect *r);
 void fillRect(SDL_Renderer *renderer, const SDL_Rect *rect);
 
@@ -71,7 +71,7 @@ enum { HELP_BUF, MESSAGE_BUF, BUFFERS_BUF, MACRO_BUF, COPY_BUF, SEARCH_BUF, CONF
 
 extern char *builtinBufferTitle[NUM_BUILTIN_BUFFERS];
 
-enum { SECONDARY_VIEWPORT, MAIN_VIEWPORT, BUILTINS_VIEWPORT, NUM_VIEWPORTS };
+enum { SECONDARY_FRAME, MAIN_FRAME, BUILTINS_FRAME, NUM_FRAMES };
 
 extern uint16_t unicode[256];
 
@@ -139,7 +139,7 @@ struct view_s // BAL: this needs to be renamed
 
 typedef struct view_s view_t;
 
-struct viewport_s // BAL: this should be a "view"
+struct frame_s // BAL: this should be a "view"
 {
   SDL_Rect rect;
   int scrollX;
@@ -147,7 +147,7 @@ struct viewport_s // BAL: this should be a "view"
   uint refView;
 };
 
-typedef struct viewport_s viewport_t;
+typedef struct frame_s frame_t;
 
 struct window_s
 {
@@ -158,7 +158,7 @@ struct window_s
 
 typedef struct window_s window_t;
 
-typedef dynamicArray_t viewportBuffer_t;
+typedef dynamicArray_t frameBuffer_t;
 typedef dynamicArray_t searchBuffer_t; // contains result offsets
 typedef dynamicArray_t docsBuffer_t;
 typedef dynamicArray_t viewsBuffer_t;
@@ -167,7 +167,7 @@ struct state_s
 {
   docsBuffer_t docs;
   viewsBuffer_t views;
-  viewportBuffer_t viewports;
+  frameBuffer_t frames;
   searchBuffer_t results;
   window_t window;
   SDL_Renderer *renderer;
@@ -184,8 +184,8 @@ struct state_s
 typedef struct state_s state_t;
 
 // BAL: these don't belong here
-int viewportWidth(viewport_t *viewport);
-int viewportColumns(viewport_t *viewport, state_t *st);
+int frameWidth(frame_t *frame);
+int frameColumns(frame_t *frame, state_t *st);
 
 #define KEY_UNKNOWN 0
 #define KEY_SHIFT_RETURN 1

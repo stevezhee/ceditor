@@ -36,7 +36,7 @@ void setDrawColor(SDL_Renderer *renderer, color_t c)
   if (SDL_SetRenderDrawColor(renderer, c >> 24, (c >> 16) & 0xff, (c >> 8) & 0xff, alpha) != 0) die(SDL_GetError());
 }
 
-void clearViewport(SDL_Renderer *renderer)
+void clearFrame(SDL_Renderer *renderer)
 {
   if (SDL_RenderClear(renderer) != 0) die(SDL_GetError());
 }
@@ -52,13 +52,13 @@ void fillRect(SDL_Renderer *renderer, const SDL_Rect *rect)
 }
 
 // BAL: these don't belong here
-int viewportWidth(viewport_t *viewport)
+int frameWidth(frame_t *frame)
 {
-  return viewport->rect.w;
+  return frame->rect.w;
 }
 
-int viewportColumns(viewport_t *viewport, state_t *st)
+int frameColumns(frame_t *frame, state_t *st)
 {
-  return viewportWidth(viewport) / st->font.charSkip;
+  return frameWidth(frame) / st->font.charSkip;
 }
 
