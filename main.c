@@ -24,13 +24,7 @@ void setBlendMode(SDL_Renderer *renderer, SDL_BlendMode m)
 void setDrawColor(SDL_Renderer *renderer, color_t c)
 {
     color_t alpha = c & 0xff;
-    if (alpha == 0xff)
-    {
-        setBlendMode(renderer, SDL_BLENDMODE_NONE);
-    } else
-    {
-        setBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    }
+    setBlendMode(renderer, alpha == 0xff ? SDL_BLENDMODE_NONE : SDL_BLENDMODE_BLEND);
     if (SDL_SetRenderDrawColor(renderer, c >> 24, (c >> 16) & 0xff, (c >> 8) & 0xff, alpha) != 0) die(SDL_GetError());
 }
 
@@ -1162,7 +1156,7 @@ void getOffsetAndLength(state_t *st, int *offset, int *length)
         cursorSetRowCol(cur, cur->row, 0, stDocFocus(st));
         cursorSetRowCol(sel, sel->row, INT_MAX, stDocFocus(st));
       }
- 
+
     int off = cur->offset;
     int len = sel->offset - off + 1;
 
