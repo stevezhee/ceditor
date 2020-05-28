@@ -376,6 +376,7 @@ struct state_s
     bool isRecording;
     bool selectionActive;
     bool selectionInProgress;
+    bool selectionLines;
     int pushedFocus;
     windowDirty_t dirty;
     uint searchLen;
@@ -473,6 +474,17 @@ void viewInit(view_t *view, uint i)
     view->refDoc = i;
 }
 
+#define AUTO_SCROLL_HEIGHT 4
+
+int viewportWidth(viewport_t *viewport)
+{
+  return viewport->rect.w;
+}
+int viewportColumns(viewport_t *viewport, state_t *st)
+{
+  return viewportWidth(viewport) / st->font.charSkip;
+}
+
 void docRender(doc_t *doc, viewport_t *viewport, state_t *st)
 {
     resetCharRect(&st->font, viewport->scrollX, viewport->scrollY);
@@ -505,7 +517,7 @@ void selectionRender(int aRow, int aCol, int bRow, int bCol, viewport_t *viewpor
     assert(st);
 
     int n = bRow - aRow;
-    int vCols = viewport->rect.w / st->font.charSkip;
+    int vCols = viewportColumns(viewport, st);
 
     if (n == 0) // single, partial line
     {
@@ -528,9 +540,9 @@ void selectionRender(int aRow, int aCol, int bRow, int bCol, viewport_t *viewpor
 bool noActiveSearch(viewport_t *viewport, state_t *st)
 {
     return
-    viewport->refView != st->searchRefView ||
-    st->searchLen == 0 ||
-    st->results.numElems == 0;
+      viewport->refView != st->searchRefView ||
+      st->searchLen == 0 ||
+      st->results.numElems == 0;
 }
 
 void searchRender(viewport_t *viewport, state_t *st)
@@ -576,6 +588,11 @@ void viewRender(view_t *view, viewport_t *viewport, state_t *st)
         swap(int, aRow, bRow);
     }
 
+    if (st->selectionLines)
+      {
+        aCol = 0;
+        bCol = viewportColumns(viewport, st);
+      }
     setDrawColor(st->renderer, SELECTION_COLOR);
     selectionRender(aRow, aCol, bRow, bCol, viewport, st);
 }
@@ -870,17 +887,6 @@ void windowEvent(state_t *st)
     }
 }
 
-#define AUTO_SCROLL_HEIGHT 4
-
-int viewportWidth(viewport_t *viewport)
-{
-  return viewport->rect.w;
-}
-int viewportColumns(viewport_t *viewport, state_t *st)
-{
-  return viewportWidth(viewport) / st->font.charSkip;
-}
-
 void setCursorFromXYMotion(cursor_t *cursor, state_t  *st, int x, int y)
 {
     viewport_t *viewport = stViewportFocus(st);
@@ -909,6 +915,12 @@ void selectChars(state_t *st)
   cursorCopy(&view->selection, &view->cursor);
   st->selectionInProgress = true;
   st->selectionActive = true;
+}
+
+void selectLines(state_t *st)
+{
+  selectChars(st);
+  st->selectionLines = true;
 }
 
 void selectionEnd(state_t *st)
@@ -1145,6 +1157,12 @@ void getOffsetAndLength(state_t *st, int *offset, int *length)
         swap(cursor_t *, cur, sel);
     }
 
+    if (st->selectionLines)
+      {
+        cursorSetRowCol(cur, cur->row, 0, stDocFocus(st));
+        cursorSetRowCol(sel, sel->row, INT_MAX, stDocFocus(st));
+      }
+ 
     int off = cur->offset;
     int len = sel->offset - off + 1;
 

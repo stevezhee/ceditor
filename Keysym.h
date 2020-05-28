@@ -41,6 +41,7 @@ void setNavigateMode(state_t *st);
 void forwardPage(state_t *st);
 void backwardPage(state_t *st);
 void selectChars(state_t *st);
+void selectLines(state_t *st);
 
 // void appendLine(state_t *st);
 // void prependLine(state_t *st);

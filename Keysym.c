@@ -54,18 +54,18 @@ void keysymInit(void)
         keyHandler[NAVIGATE_MODE][i] = doNothing;
         keyHandler[INSERT_MODE][i] = setNavigateModeAndDoKeyPress;
     }
-    
+
     keyHandler[NAVIGATE_MODE][KEY_DELETE] = (keyHandler_t)delete;
-    
+
     keyHandler[NAVIGATE_MODE]['x'] = (keyHandler_t)delete;
-    
+
     //    keyHandler[NAVIGATE_MODE][KEY_SHIFT_RETURN] = (keyHandler_t)prependLine;
-    
+
     keyHandler[NAVIGATE_MODE]['P'] = (keyHandler_t)pasteBefore;
-//    
+
     keyHandler[NAVIGATE_MODE]['v'] = (keyHandler_t)selectChars;
-//    keyHandler[NAVIGATE_MODE]['V'] = selectLines;
-//    
+    keyHandler[NAVIGATE_MODE]['V'] = (keyHandler_t)selectLines;
+
     keyHandler[NAVIGATE_MODE][KEY_LEFT] = (keyHandler_t)backwardChar;
     keyHandler[NAVIGATE_MODE][KEY_RIGHT] = (keyHandler_t)forwardChar;
     keyHandler[NAVIGATE_MODE][KEY_UP] = (keyHandler_t)backwardLine;
