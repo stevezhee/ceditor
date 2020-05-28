@@ -9,6 +9,19 @@
 #ifndef DynamicArray_h
 #define DynamicArray_h
 
-#include <stdio.h>
+#include "Util.h"
+
+void arrayGrow(dynamicArray_t *arr, int maxElems);
+void arrayReinit(dynamicArray_t *arr);
+void arrayInit(dynamicArray_t *arr, int elemSize);
+void *arrayPushUninit(dynamicArray_t *arr);
+void arrayPush(dynamicArray_t *arr, void *elem);
+void *arrayPop(dynamicArray_t *arr);
+void *arrayElemAt(dynamicArray_t *arr, int i);
+void *arrayPeek(dynamicArray_t *arr);
+int arrayFocusOffset(dynamicArray_t *arr);
+void *arrayFocus(dynamicArray_t *arr);
+void arraySetFocus(dynamicArray_t *arr, int i);
+void *arrayBoundary(dynamicArray_t *arr);
 
 #endif /* DynamicArray_h */

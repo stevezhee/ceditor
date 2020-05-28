@@ -6,9 +6,7 @@
 //  Copyright © 2020 Brett Letner. All rights reserved.
 //
 
-#include <assert.h>
 #include "Keysym.h"
-#include "Util.h"
 
 const char shiftChars[] = "\"....<_>?)!@#$%^&*(.:.+.............................{|}..~ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 // BAL: really need this for shift characters?  Nothing in SDL lib?

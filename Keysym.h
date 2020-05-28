@@ -9,7 +9,6 @@
 #ifndef Keysym_h
 #define Keysym_h
 
-#include <SDL.h>
 #include "Util.h"
 
 typedef void (*keyHandler_t)(state_t *st, uchar c);

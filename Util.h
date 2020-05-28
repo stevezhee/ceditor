@@ -9,6 +9,17 @@
 #ifndef Util_h
 #define Util_h
 
+#include <SDL.h>
+#include <SDL_ttf.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <sys/stat.h>
+#include <limits.h>
+#include <stdbool.h>
+
 #define min(x, y) ((x) <= (y) ? (x) : (y))
 #define max(x, y) ((x) >= (y) ? (x) : (y))
 #define swap(ty, x, y) { ty tmp = x; x = y; y = tmp; }
@@ -16,13 +27,20 @@
 
 struct state_s;
 typedef struct state_s state_t;
+typedef int color_t;
 
 void die(const char *msg);
+void *dieIfNull(void *p);
+void fillRect(SDL_Renderer *renderer, const SDL_Rect *rect);
+void setBlendMode(SDL_Renderer *renderer, SDL_BlendMode m);
+void setDrawColor(SDL_Renderer *renderer, color_t c);
+void clearViewport(SDL_Renderer *renderer);
+void setViewport(SDL_Renderer *renderer, SDL_Rect *r);
+void fillRect(SDL_Renderer *renderer, const SDL_Rect *rect);
 
 typedef enum { NAVIGATE_MODE, INSERT_MODE, SEARCH_MODE, NUM_MODES } editorMode_t;
 typedef unsigned char uchar;
 typedef enum { NOT_DIRTY = 0b0, DOC_DIRTY = 0b1, FOCUS_DIRTY = 0b10, WINDOW_DIRTY = 0b100 } windowDirty_t;
-typedef int color_t;
 extern color_t viewColors[];
 extern char *macro[255];
 
@@ -36,13 +54,17 @@ extern char *macro[255];
 #define INIT_WINDOW_HEIGHT 800
 #define INIT_FONT_SIZE 24
 #define INIT_FONT_FILE "./assets/SourceCodePro-Semibold.ttf"
+#define SELECTION_RECT_GAP 8
+#define AUTO_SCROLL_HEIGHT 4
+
+extern color_t viewColors[];
 
 #define CURSOR_WIDTH 3
 #define BORDER_WIDTH 4
 #define BACKGROUND_COLOR 0xa0a0a0ff
 #define DISPLAY_NEWLINES false
 #define DISPLAY_EOF false
-#define DEMO_MODE false
+#define DEMO_MODE true
 #define NO_GIT true
 
 enum { HELP_BUF, MESSAGE_BUF, BUFFERS_BUF, MACRO_BUF, COPY_BUF, SEARCH_BUF, CONFIG_BUF, NUM_BUILTIN_BUFFERS };  // BAL: DIRECTORY_BUF for loading files?  or just put in config?
@@ -52,6 +74,118 @@ extern char *builtinBufferTitle[NUM_BUILTIN_BUFFERS];
 enum { SECONDARY_VIEWPORT, MAIN_VIEWPORT, BUILTINS_VIEWPORT, NUM_VIEWPORTS };
 
 extern uint16_t unicode[256];
+
+typedef struct {
+  int lineSkip;
+  int charSkip;
+  SDL_Renderer *renderer; // BAL: remove(?)
+  SDL_Texture *charTexture[1024]; // BAL: ['~' + 1];
+  SDL_Rect charRect; // BAL: remove
+  SDL_Rect cursorRect; // BAL: remove
+  const char *filepath;
+  unsigned int size;
+} font_t;
+
+struct dynamicArray_s {
+  void *start;
+  int numElems;
+  int maxElems;
+  int elemSize;
+  int offset;
+};
+
+typedef struct dynamicArray_s dynamicArray_t;
+
+typedef dynamicArray_t string_t; // contains characters
+
+typedef enum { INSERT, DELETE } commandTag_t;
+
+struct command_s {
+  commandTag_t tag;
+  string_t arg;
+};
+
+typedef struct command_s command_t;
+typedef dynamicArray_t undoStack_t; // contains commands
+
+struct doc_s {
+  char *filepath;
+  string_t contents;
+  undoStack_t undoStack;
+  int numLines;
+};
+
+typedef struct doc_s doc_t;
+
+struct cursor_s {
+  int offset;
+  int row;
+  int column;
+  int preferredColumn;
+};
+
+typedef struct cursor_s cursor_t;
+
+struct view_s // BAL: this needs to be renamed
+{
+  cursor_t cursor;
+  cursor_t selection;
+  editorMode_t mode;
+  uint refDoc;
+  bool selectionActive;
+  bool selectionInProgress;
+  bool selectionLines;
+};
+
+typedef struct view_s view_t;
+
+struct viewport_s // BAL: this should be a "view"
+{
+  SDL_Rect rect;
+  int scrollX;
+  int scrollY;
+  uint refView;
+};
+
+typedef struct viewport_s viewport_t;
+
+struct window_s
+{
+  SDL_Window *window;
+  int width;
+  int height;
+};
+
+typedef struct window_s window_t;
+
+typedef dynamicArray_t viewportBuffer_t;
+typedef dynamicArray_t searchBuffer_t; // contains result offsets
+typedef dynamicArray_t docsBuffer_t;
+typedef dynamicArray_t viewsBuffer_t;
+
+struct state_s
+{
+  docsBuffer_t docs;
+  viewsBuffer_t views;
+  viewportBuffer_t viewports;
+  searchBuffer_t results;
+  window_t window;
+  SDL_Renderer *renderer;
+  font_t font;
+  SDL_Event event;
+  bool isRecording;
+  int pushedFocus;
+  windowDirty_t dirty;
+  uint searchLen;
+  uint searchRefView;
+  bool searchDirty;
+};
+
+typedef struct state_s state_t;
+
+// BAL: these don't belong here
+int viewportWidth(viewport_t *viewport);
+int viewportColumns(viewport_t *viewport, state_t *st);
 
 #define KEY_UNKNOWN 0
 #define KEY_SHIFT_RETURN 1

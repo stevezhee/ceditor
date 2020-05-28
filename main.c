@@ -1,385 +1,16 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <SDL.h>
-#include <SDL_ttf.h>
-#include <assert.h>
+#include "Cursor.h"
+#include "Doc.h"
+#include "DynamicArray.h"
 #include "Font.h"
-#include "Util.h"
 #include "Keysym.h"
-#include <sys/stat.h>
-#include <limits.h>
+#include "Util.h"
+#include "Search.h"
 
 void insertCString(state_t *st, char *s);
 void insertString(state_t *st, char *s, uint len);
 
-char *builtinBufferTitle[NUM_BUILTIN_BUFFERS] = { "*help", "*messages", "*buffers", "*macros", "*copy buffer", "*searches", "*config" };
-
-color_t viewColors[] = { VIEW_COLOR, FOCUS_VIEW_COLOR };
-
-void setBlendMode(SDL_Renderer *renderer, SDL_BlendMode m)
-{
-    if (SDL_SetRenderDrawBlendMode(renderer, m) != 0) die(SDL_GetError());
-}
-
-void setDrawColor(SDL_Renderer *renderer, color_t c)
-{
-    color_t alpha = c & 0xff;
-    setBlendMode(renderer, alpha == 0xff ? SDL_BLENDMODE_NONE : SDL_BLENDMODE_BLEND);
-    if (SDL_SetRenderDrawColor(renderer, c >> 24, (c >> 16) & 0xff, (c >> 8) & 0xff, alpha) != 0) die(SDL_GetError());
-}
-
-void clearViewport(SDL_Renderer *renderer)
-{
-    if (SDL_RenderClear(renderer) != 0) die(SDL_GetError());
-}
-
-void setViewport(SDL_Renderer *renderer, SDL_Rect *r)
-{
-    if (SDL_RenderSetViewport(renderer, r) != 0) die(SDL_GetError());
-}
-
-void fillRect(SDL_Renderer *renderer, const SDL_Rect *rect)
-{
-    if (SDL_RenderFillRect(renderer, rect) != 0) die(SDL_GetError());
-}
-
-struct dynamicArray_s {
-    void *start;
-    uint numElems;
-    uint maxElems;
-    uint elemSize;
-    uint offset;
-};
-
-typedef struct dynamicArray_s dynamicArray_t;
-
-void *dieIfNull(void *p)
-{
-    if (!p) die("unexpected null pointer");
-    return p;
-}
-
-void arrayGrow(dynamicArray_t *arr, uint maxElems)
-{
-    maxElems = max(1, maxElems);
-    if (maxElems <= arr->maxElems) return;
-    arr->maxElems = maxElems;
-    arr->start = dieIfNull(realloc(arr->start, arr->elemSize * maxElems));
-}
-
-void arrayReinit(dynamicArray_t *arr)
-{
-    arr->offset = 0;
-    arr->numElems = 0;
-}
-
-void arrayInit(dynamicArray_t *arr, uint elemSize)
-{
-    memset(arr, 0, sizeof(dynamicArray_t));
-    arr->elemSize = elemSize;
-}
-
-void *arrayPushUninit(dynamicArray_t *arr)
-{
-    if (arr->numElems == arr->maxElems)
-    {
-        arrayGrow(arr, arr->maxElems * 2);
-    }
-    assert(arr->start);
-    void *p = arr->start + arr->numElems * arr->elemSize;
-    arr->numElems++;
-    return p;
-}
-
-void arrayPush(dynamicArray_t *arr, void *elem)
-{
-    memcpy(arrayPushUninit(arr), elem, sizeof(arr->elemSize));
-}
-
-void *arrayPop(dynamicArray_t *arr)
-{
-    assert(arr->start);
-    if (arr->numElems == 0) return NULL;
-    arr->numElems--;
-    return (arr->start + arr->numElems * arr->elemSize);
-}
-
-void *arrayElemAt(dynamicArray_t *arr, int i)
-{
-    if (i < 0 || !arr->start || i >= arr->numElems)
-    {
-        return NULL;
-    }
-
-    return arr->start + i * arr->elemSize;
-}
-
-void *arrayPeek(dynamicArray_t *arr)
-{
-    return arrayElemAt(arr, arr->numElems - 1);
-}
-
-void *arrayFocus(dynamicArray_t *arr)
-{
-    return arrayElemAt(arr, arr->offset);
-}
-
-void arraySetFocus(dynamicArray_t *arr, uint i)
-{
-    arr->offset = clamp(0, i, (int)arr->numElems - 1);
-}
-uint arrayGetFocus(dynamicArray_t *arr)
-{
-    return arr->offset;
-}
-
-typedef dynamicArray_t string_t; // contains characters
-
-typedef enum { INSERT, DELETE } commandTag_t;
-
-struct command_s {
-    commandTag_t tag;
-    string_t arg;
-};
-
-typedef struct command_s command_t;
-
-typedef dynamicArray_t undoStack_t; // contains commands
-
-struct doc_s {
-    char *filepath;
-    string_t contents;
-    undoStack_t undoStack;
-    int numLines;
-};
-
-int countLines(char *s, uint len)
-{
-    int n = 0;
-    char *end = s + len;
-
-    while(s < end)
-    {
-        if (*s == '\n') n++;
-        s++;
-    }
-    return n;
-}
-
-typedef struct doc_s doc_t;
-
-struct cursor_s {
-    int offset;
-    int row;
-    int column;
-    int preferredColumn;
-};
-
-typedef struct cursor_s cursor_t;
-
-void cursorCopy(cursor_t *dst, cursor_t *src)
-{
-  memcpy(dst, src, sizeof(cursor_t));
-}
-void cursorSetOffsetString(cursor_t *cursor, int offset, char *s0, int len)
-{
-    offset = clamp(0, offset, len);
-    int row = 0;
-
-    char *s = s0;
-    char *done = s + offset;
-
-    char *nl = s;
-
-    while (s < done)
-    {
-        if (*s == '\n') {
-            nl = s + 1;
-            row++;
-        }
-        s++;
-    }
-
-    cursor->offset = offset;
-    cursor->row = row;
-    int col = (int)(s - nl);
-    cursor->column = col;
-    cursor->preferredColumn = col;
-}
-
-void cursorSetOffset(cursor_t *cursor, int offset, doc_t *doc)
-{
-    cursorSetOffsetString(cursor, offset, doc->contents.start, doc->contents.numElems);
-}
-
-void cursorSetRowColString(cursor_t *cursor, int row0, int col0, char *s0, int len)
-{
-    int row = 0;
-
-    char *s = s0;
-    char *eof = s + len;
-    char *lastEOL = s - 1;
-
-    while (s < eof && row < row0)
-    {
-        if (*s == '\n') {
-            row++;
-            lastEOL = s;
-        }
-        s++;
-    }
-    s = min(eof, lastEOL + 1);
-    char *done = min(eof, s + col0);
-    while (s < done && *s != '\n')
-    {
-        s++;
-    }
-
-    cursor->offset = (int)(s - s0);
-    cursor->row = row;
-    int col = (int)(s - lastEOL - 1);
-    cursor->column = col;
-    cursor->preferredColumn = col;
-}
-
-void cursorSetRowCol(cursor_t *cursor, int row, int col, doc_t *doc)
-{
-    cursorSetRowColString(cursor, row, col, doc->contents.start, doc->contents.numElems);
-}
-
-void cursorTest()
-{
-    cursor_t cursor;
-
-    typedef struct {
-        int offset;
-        char *s;
-        int expectedOffset;
-        int expectedRow;
-        int expectedCol;
-    } ctTest_t;
-
-    ctTest_t test[] = {
-        { 0, "", 0, 0, 0 },
-        { 1, "", 0, 0, 0 },
-
-        { 0, "a", 0, 0, 0 },
-        { 1, "a", 1, 0, 1 },
-        { 2, "a", 1, 0, 1 },
-
-        { 0, "\n", 0, 0, 0 },
-        { 1, "\n", 1, 1, 0 },
-        { 2, "\n", 1, 1, 0 },
-
-        { 99, "kdkd\n\nkdkd\ndd", 13, 3, 2 },
-        { 5, "kdkd\n\nkdkd\ndd", 5, 1, 0 },
-        { 10, "kdkd\n\nkdkd\ndd", 10, 2, 4 },
-    };
-
-
-    for(int i = 0; i < sizeof(test) / sizeof(ctTest_t); ++i)
-    {
-        cursorSetOffsetString(&cursor, test[i].offset, test[i].s, (int)strlen(test[i].s));
-        assert(cursor.offset == test[i].expectedOffset);
-        assert(cursor.row == test[i].expectedRow);
-        assert(cursor.column == test[i].expectedCol);
-        cursorSetOffsetString(&cursor, 0, "", 0);
-        cursorSetRowColString(&cursor, test[i].expectedRow, test[i].expectedCol, test[i].s, (int)strlen(test[i].s));
-        assert(cursor.offset == test[i].expectedOffset);
-        assert(cursor.row == test[i].expectedRow);
-        assert(cursor.column == test[i].expectedCol);
-    }
-
-    typedef struct {
-        int row;
-        int col;
-        char *s;
-        int expectedOffset;
-        int expectedRow;
-        int expectedCol;
-    } ctTest2_t;
-
-    ctTest2_t test2[] = {
-        { 55, 55, "kdkd\n\nkdkd\ndd", 13, 3, 2 },
-        { 55, 0, "kdkd\n\nkdkd\ndd", 11, 3, 0 },
-        { 2, 55, "kdkd\n\nkdkd\ndd", 10, 2, 4 },
-        { 3, 55, "kdkd\n\nkdkd\ndd\n", 13, 3, 2 },
-    };
-
-    for(int i = 0; i < sizeof(test2) / sizeof(ctTest2_t); ++i)
-    {
-        cursorSetRowColString(&cursor, test2[i].row, test2[i].col, test2[i].s, (int)strlen(test2[i].s));
-        assert(cursor.offset == test2[i].expectedOffset);
-        assert(cursor.row == test2[i].expectedRow);
-        assert(cursor.column == test2[i].expectedCol);
-        cursorSetOffsetString(&cursor, test2[i].expectedOffset, test2[i].s, (int)strlen(test2[i].s));
-        assert(cursor.offset == test2[i].expectedOffset);
-        assert(cursor.row == test2[i].expectedRow);
-        assert(cursor.column == test2[i].expectedCol);
-    }
-}
-
-struct view_s // BAL: this needs to be renamed
-{
-    cursor_t cursor;
-    cursor_t selection;
-    editorMode_t mode;
-    uint refDoc;
-};
-
-typedef struct view_s view_t;
-
-struct viewport_s // BAL: this should be a "view"
-{
-    SDL_Rect rect;
-    int scrollX;
-    int scrollY;
-    uint refView;
-};
-
-typedef struct viewport_s viewport_t;
 void viewportTrackSelection(viewport_t *viewport, state_t *st);
 void viewportScrollY(viewport_t *viewport, int dR, state_t *st);
-
-typedef dynamicArray_t docsBuffer_t;
-typedef dynamicArray_t viewsBuffer_t;
-//typedef dynamicArray_t messageBuffer_t;
-
-struct window_s
-{
-    SDL_Window *window;
-    int width;
-    int height;
-};
-
-typedef struct window_s window_t;
-
-typedef dynamicArray_t viewportBuffer_t;
-typedef dynamicArray_t searchBuffer_t; // contains result offsets
-
-struct state_s
-{
-    docsBuffer_t docs;
-    viewsBuffer_t views;
-    viewportBuffer_t viewports;
-    searchBuffer_t results;
-    window_t window;
-    SDL_Renderer *renderer;
-    font_t font;
-    SDL_Event event;
-    bool isRecording;
-    bool selectionActive;
-    bool selectionInProgress;
-    bool selectionLines;
-    int pushedFocus;
-    windowDirty_t dirty;
-    uint searchLen;
-    uint searchRefView;
-    bool searchDirty;
-};
-
-typedef struct state_s state_t;
-
 void viewportRender(viewport_t *viewport, state_t *st); // BAL: viewportFocusRender
 void stRender(state_t *st);
 
@@ -410,12 +41,12 @@ uint viewportRows(viewport_t *viewport, state_t *st)
 
 void stSetViewportFocus(state_t *st, int i)
 {
-    i = clamp(0, i, st->viewports.numElems - 1);
-    int j = arrayGetFocus(&st->viewports);
+    int j = arrayFocusOffset(&st->viewports);
     if (i != j)
     {
         arraySetFocus(&st->viewports, i);
         st->dirty = WINDOW_DIRTY;
+        printf("file:%s\n", stDocFocus(st)->filepath);
     }
 }
 
@@ -424,26 +55,7 @@ void stSetViewFocus(state_t *st, uint i)
     i = clamp(0, i, st->views.numElems - 1);
     viewport_t *viewport = stViewportFocus(st);
     viewport->refView = i;
-}
-
-void cursorRender(view_t *view, viewport_t *viewport, state_t *st)
-{
-    SDL_Rect rect;
-
-    rect.x = view->cursor.column * st->font.charSkip + viewport->scrollX;
-    rect.y = 2 + view->cursor.row * st->font.lineSkip + viewport->scrollY;
-    rect.w = st->font.charSkip;
-    rect.h = st->font.lineSkip;
-
-    if (view->mode == NAVIGATE_MODE)
-    {
-        setDrawColor(st->renderer, CURSOR_BACKGROUND_COLOR);
-        fillRect(st->renderer, &rect);
-    }
-
-    setDrawColor(st->renderer, CURSOR_COLOR);
-    rect.w = CURSOR_WIDTH;
-    fillRect(st->renderer, &rect);
+    printf("file:%s\n", stDocFocus(st)->filepath);
 }
 
 void viewportInit(viewport_t *v, uint i)
@@ -452,31 +64,10 @@ void viewportInit(viewport_t *v, uint i)
     v->refView = i;
 }
 
-void cursorInit(cursor_t *c)
-{
-    memset(c, 0, sizeof(cursor_t));
-}
-
-void *arrayBoundary(dynamicArray_t *arr)
-{
-    return arr->start + arr->numElems * arr->elemSize;
-}
-
 void viewInit(view_t *view, uint i)
 {
     memset(view, 0, sizeof(view_t));
     view->refDoc = i;
-}
-
-#define AUTO_SCROLL_HEIGHT 4
-
-int viewportWidth(viewport_t *viewport)
-{
-  return viewport->rect.w;
-}
-int viewportColumns(viewport_t *viewport, state_t *st)
-{
-  return viewportWidth(viewport) / st->font.charSkip;
 }
 
 void docRender(doc_t *doc, viewport_t *viewport, state_t *st)
@@ -491,44 +82,6 @@ void docRender(doc_t *doc, viewport_t *viewport, state_t *st)
     }
 
     renderEOF(&st->font);
-}
-
-#define SELECTION_RECT_GAP 8
-
-void fillSelectionRect(state_t *st, viewport_t *viewport, uint row, uint col, uint h, uint w)
-{
-    SDL_Rect rect;
-    rect.x = col * st->font.charSkip + viewport->scrollX;
-    rect.y = row * st->font.lineSkip + SELECTION_RECT_GAP + viewport->scrollY;
-    rect.h = h * st->font.lineSkip - SELECTION_RECT_GAP;
-    rect.w = w * st->font.charSkip;
-    fillRect(st->renderer, &rect);
-}
-
-void selectionRender(int aRow, int aCol, int bRow, int bCol, viewport_t *viewport, state_t *st)
-{
-    assert(viewport);
-    assert(st);
-
-    int n = bRow - aRow;
-    int vCols = viewportColumns(viewport, st);
-
-    if (n == 0) // single, partial line
-    {
-        fillSelectionRect(st, viewport, aRow, aCol, 1, 1 + bCol - aCol);
-        return;
-    }
-
-    // partial line, full lines, partial line
-    fillSelectionRect(st, viewport, aRow, aCol, 1, vCols - aCol); // 1st partial line
-
-    n += aRow - 1;
-    while (aRow < n) {
-        aRow++;
-        fillSelectionRect(st, viewport, aRow, 0, 1, vCols); // full lines
-    }
-
-    fillSelectionRect(st, viewport, aRow + 1, 0, 1, bCol + 1); // partial line
 }
 
 bool noActiveSearch(viewport_t *viewport, state_t *st)
@@ -566,7 +119,7 @@ void viewRender(view_t *view, viewport_t *viewport, state_t *st)
 {
     assert(view);
 
-    if (!st->selectionInProgress && !st->selectionActive) {
+    if (!view->selectionInProgress && !view->selectionActive) {
       cursorRender(view, viewport, st);
       return;
     }
@@ -582,7 +135,7 @@ void viewRender(view_t *view, viewport_t *viewport, state_t *st)
         swap(int, aRow, bRow);
     }
 
-    if (st->selectionLines)
+    if (view->selectionLines)
       {
         aCol = 0;
         bCol = viewportColumns(viewport, st);
@@ -617,37 +170,6 @@ void stRender(state_t *st) // BAL: rename stFocusRender
     SDL_RenderPresent(st->renderer);
 }
 
-void docWrite(doc_t *doc);
-
-void docDelete(doc_t *doc, uint offset, uint len) // BAL: update cursors?
-{
-    char *p = doc->contents.start + offset;
-    int n = countLines(p, len);
-    doc->numLines -= n;
-    doc->contents.numElems -= len;
-    memmove(p, p + len, doc->contents.numElems - offset);
-    if (doc->filepath[0] != '*' && n > 0) docWrite(doc);
-}
-
-void docInsert(doc_t *doc, uint offset, char *s, uint len)
-{
-    // BAL: add to undo
-    uint n = doc->contents.numElems + len;
-    if (n > doc->contents.maxElems) arrayGrow(&doc->contents, n);
-
-    char *p = doc->contents.start + offset;
-    uint nl = countLines(s, len);
-    doc->numLines += nl;
-    memmove(p + len, p, doc->contents.numElems - offset);
-    memcpy(p, s, len);
-    doc->contents.numElems = n;
-
-    if (doc->filepath[0] != '*' && nl > 0) // BAL: hacky to use the '*'
-    {
-        docWrite(doc);
-    }
-}
-
 char systemBuf[1024];  // BAL: use string_t
 
 void gitInit(void)
@@ -668,50 +190,7 @@ void docGitCommit(doc_t *doc)
     sprintf(systemBuf, "git commit -m\"cp\" %s", doc->filepath);
     system(systemBuf);
 }
-
-void docWrite(doc_t *doc)
-{
-    if (DEMO_MODE) return;
-    FILE *fp = fopen(doc->filepath, "w");
-    if (fp == NULL) die("unable to open file for write");
-
-    if (fwrite(doc->contents.start, sizeof(char), doc->contents.numElems, fp) != doc->contents.numElems)
-        die("unable to write file");
-
-    if (fclose(fp) != 0)
-        die("unable to close file");
-
-    docGitCommit(doc);
-}
-
-void docRead(doc_t *doc)
-{
-   // BAL: FILE *fp = fopen(doc->filepath, "a+"); // create file if it doesn't exist
-    FILE *fp = fopen(doc->filepath, "r"); // create file if it doesn't exist
-
-    if (!fp) die("unable to open file");
-    fseek(fp, 0, SEEK_SET);
-
-    struct stat stat;
-    if (fstat(fileno(fp), &stat) != 0) die("unable to get file size");
-
-    doc->contents.numElems = (uint)stat.st_size;
-    arrayGrow(&doc->contents, clamp(4096, 2*doc->contents.numElems, UINT_MAX - 1));
-
-    if (fread(doc->contents.start, sizeof(char), stat.st_size, fp) != stat.st_size) die("unable to read in file");
-
-    if (fclose(fp) != 0) die("unable to close file");
-
-    doc->numLines = countLines(doc->contents.start, doc->contents.numElems);
-
-}
-
-void docInit(doc_t *doc, char *filepath)
-{
-    doc->filepath = filepath;
-    arrayInit(&doc->contents, sizeof(char));
-    arrayInit(&doc->undoStack, sizeof(command_t));
-}
+// BAL: put back in docGitCommit(doc);
 
 void windowInit(window_t *win, int width, int height)
 {
@@ -720,7 +199,6 @@ void windowInit(window_t *win, int width, int height)
     win->width = width;
     win->height = height;
 }
-
 
 void stRenderFull(state_t *st)
 {
@@ -770,10 +248,11 @@ void stResize(state_t *st)
 
 void builtinsPushFocus(state_t *st, int i)
 {
-    st->pushedFocus = arrayGetFocus(&st->viewports);
-    stSetViewportFocus(st, BUILTINS_VIEWPORT);
-    stSetViewFocus(st, i);
+  st->pushedFocus = arrayFocusOffset(&st->viewports);
+  stSetViewportFocus(st, BUILTINS_VIEWPORT);
+  stSetViewFocus(st, i);
 }
+
 void builtinsPopFocus(state_t *st)
 {
     stSetViewportFocus(st, st->pushedFocus);
@@ -907,26 +386,31 @@ void selectChars(state_t *st)
 {
   view_t *view = stViewFocus(st);
   cursorCopy(&view->selection, &view->cursor);
-  st->selectionInProgress = true;
-  st->selectionActive = true;
+  view->selectionInProgress = true;
+  view->selectionActive = true;
+  view->selectionLines = false;
 }
 
 void selectLines(state_t *st)
 {
+  view_t *view = stViewFocus(st);
   selectChars(st);
-  st->selectionLines = true;
+  view->selectionLines = true;
 }
 
 void selectionEnd(state_t *st)
 {
   view_t *view = stViewFocus(st);
-  st->selectionInProgress = false;
-  st->selectionActive = !(cursorEq(&view->cursor, &view->selection));
+  view->selectionInProgress = false;
+  view->selectionActive = !(cursorEq(&view->cursor, &view->selection));
+  view->selectionLines = false;
 }
 void selectionCancel(state_t *st)
 {
-  st->selectionInProgress = false;
-  st->selectionActive = false;
+  view_t *view = stViewFocus(st);
+  view->selectionInProgress = false;
+  view->selectionActive = false;
+  view->selectionLines = false;
 }
 void mouseButtonUpEvent(state_t *st)
 {
@@ -959,9 +443,9 @@ void mouseButtonDownEvent(state_t *st)
 
 void mouseMotionEvent(state_t *st)
 {
-    if (st->selectionInProgress)
+    view_t *view = stViewFocus(st);
+    if (view->selectionInProgress)
     {
-      view_t *view = stViewFocus(st);
       setCursorFromXYMotion(&view->selection, st, st->event.motion.x, st->event.motion.y);
         return;
     }
@@ -1016,7 +500,7 @@ void keyDownEvent(state_t *st)
 cursor_t *activeCursor(state_t *st)
 {
   view_t *view = stViewFocus(st);
-  if (st->selectionInProgress || st->selectionActive)
+  if (view->selectionInProgress || view->selectionActive)
     {
       return &view->selection;
     }
@@ -1151,7 +635,7 @@ void getOffsetAndLength(state_t *st, int *offset, int *length)
         swap(cursor_t *, cur, sel);
     }
 
-    if (st->selectionLines)
+    if (view->selectionLines)
       {
         cursorSetRowCol(cur, cur->row, 0, stDocFocus(st));
         cursorSetRowCol(sel, sel->row, INT_MAX, stDocFocus(st));
@@ -1188,7 +672,8 @@ void delete(state_t *st)
     st->dirty = DOC_DIRTY;
     doc_t *doc = stDocFocus(st);
 
-    if (doc->filepath[0] != '*') copy(st, doc->contents.start + offset, length); // BAL: this was causing problems with search...
+    if (doc->filepath[0] != '*')
+      copy(st, doc->contents.start + offset, length); // BAL: this was causing problems with search...
 
     docDelete(doc, offset, length);
 }
@@ -1307,8 +792,11 @@ void setSearchMode(state_t *st)
 {
     if ((stViewportFocus(st)->refView) == SEARCH_BUF)
     {
+      // builtinsPopFocus(st);
       //  computeSearchResults(st);
-      //  stSetViewportFocus(st, MAIN_VIEWPORT);
+
+      stSetViewportFocus(st, MAIN_VIEWPORT);
+
       //  stSetViewFocus(st, st->searchRefView);
       //  setCursorToSearch(st);
         return;
@@ -1381,8 +869,6 @@ int main(int argc, char **argv)
     assert(sizeof(int) == 4);
     assert(sizeof(unsigned int) == 4);
     assert(sizeof(void*) == 8);
-
-    cursorTest();
 
     state_t st;
 

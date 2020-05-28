@@ -9,21 +9,7 @@
 #ifndef Font_h
 #define Font_h
 
-// BAL: #include <stdio.h>
-#include <SDL_ttf.h>
-#include <SDL.h>
-#include <stdbool.h>
-
-typedef struct {
-    int lineSkip;
-    int charSkip;
-    SDL_Renderer *renderer; // BAL: remove(?)
-    SDL_Texture *charTexture[1024]; // BAL: ['~' + 1];
-    SDL_Rect charRect; // BAL: remove
-    SDL_Rect cursorRect; // BAL: remove
-    const char *filepath;
-    unsigned int size;
-} font_t;
+#include "Util.h"
 
 void initFont(font_t *font, SDL_Renderer *renderer, const char* file, unsigned int size);
 void reinitFont(font_t *font);

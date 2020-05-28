@@ -7,8 +7,7 @@
 //
 
 #include "Font.h"
-#include "Util.h"
-#include <SDL.h>
+
 SDL_Color white={255,255,255};
 uint16_t unicode[256];
 

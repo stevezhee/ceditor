@@ -9,6 +9,6 @@
 #ifndef Search_h
 #define Search_h
 
-#include <stdio.h>
+#include "Util.h"
 
 #endif /* Search_h */
