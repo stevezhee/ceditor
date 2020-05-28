@@ -4,7 +4,7 @@ CFILES=$(shell ls *.c)
 OFILES=$(CFILES:.c=.o)
 
 all: ceditor
-	./ceditor *.[ch]
+	./ceditor *.txt *.[ch]
 
 ceditor: $(OFILES)
 	clang $(LIBS) -o $@ $^
