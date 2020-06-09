@@ -9,32 +9,24 @@
 #include "Doc.h"
 #include "DynamicArray.h"
 
-static int countLines(char *s, uint len);
+static int countLines(char *s, int len);
 
-void docDelete(doc_t *doc, uint offset, uint len) // BAL: update cursors?
+void docDelete(doc_t *doc, int offset, int len)
 {
-  char *p = doc->contents.start + offset;
-  int n = countLines(p, len);
+  int n = countLines(arrayElemAt(&doc->contents, offset), len);
   doc->numLines -= n;
-  doc->contents.numElems -= len;
-  memmove(p, p + len, doc->contents.numElems - offset);
-  if (doc->filepath[0] != '*' && n > 0) docWrite(doc);
+  arrayDelete(&doc->contents, offset, len);
+  if (doc->filepath[0] != '*' && n > 0) docWrite(doc);  // BAL: hacky to use the '*' and this shouldn't be here, just mark it as dirty or something
 }
 
-void docInsert(doc_t *doc, uint offset, char *s, uint len)
+void docInsert(doc_t *doc, int offset, char *s, int len)
 {
-  // BAL: add to undo
-  uint n = doc->contents.numElems + len;
-  if (n > doc->contents.maxElems) arrayGrow(&doc->contents, n);
+  int n = countLines(s, len);
+  doc->numLines += n;
 
-  char *p = doc->contents.start + offset;
-  uint nl = countLines(s, len);
-  doc->numLines += nl;
-  memmove(p + len, p, doc->contents.numElems - offset);
-  memcpy(p, s, len);
-  doc->contents.numElems = n;
+  arrayInsert(&doc->contents, offset, s, len);
 
-  if (doc->filepath[0] != '*' && nl > 0) // BAL: hacky to use the '*'
+  if (doc->filepath[0] != '*' && n > 0) // BAL: hacky to use the '*' and this shouldn't be here, just mark it as dirty or something
     {
       docWrite(doc);
     }
@@ -72,8 +64,8 @@ void docRead(doc_t *doc)
   struct stat stat;
   if (fstat(fileno(fp), &stat) != 0) die("unable to get file size");
 
-  doc->contents.numElems = (uint)stat.st_size;
-  arrayGrow(&doc->contents, clamp(4096, 2*doc->contents.numElems, UINT_MAX - 1));
+  doc->contents.numElems = (int)stat.st_size;
+  arrayGrow(&doc->contents, clamp(4096, 2*doc->contents.numElems, INT_MAX - 1));
 
   if (fread(doc->contents.start, sizeof(char), stat.st_size, fp) != stat.st_size) die("unable to read in file");
 
@@ -82,7 +74,7 @@ void docRead(doc_t *doc)
   doc->numLines = countLines(doc->contents.start, doc->contents.numElems);
 }
 
-static int countLines(char *s, uint len)
+static int countLines(char *s, int len)
 {
   int n = 0;
   char *end = s + len;

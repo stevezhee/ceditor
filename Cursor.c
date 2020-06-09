@@ -95,13 +95,13 @@ void cursorRender(view_t *view, frame_t *frame, state_t *st)
 
   if (view->mode == NAVIGATE_MODE)
     {
-      setDrawColor(st->renderer, CURSOR_BACKGROUND_COLOR);
-      fillRect(st->renderer, &rect);
+      setDrawColor(CURSOR_BACKGROUND_COLOR);
+      // BAL: fillRect(st->renderer, &rect);
     }
 
-  setDrawColor(st->renderer, CURSOR_COLOR);
+  setDrawColor(CURSOR_COLOR);
   rect.w = CURSOR_WIDTH;
-  fillRect(st->renderer, &rect);
+  // BAL: fillRect(st->renderer, &rect);
 }
 
 void fillSelectionRect(state_t *st, frame_t *frame, uint row, uint col, uint h, uint w)
@@ -111,7 +111,7 @@ void fillSelectionRect(state_t *st, frame_t *frame, uint row, uint col, uint h, 
     rect.y = row * st->font.lineSkip + SELECTION_RECT_GAP + frame->scrollY;
     rect.h = h * st->font.lineSkip - SELECTION_RECT_GAP;
     rect.w = w * st->font.charSkip;
-    fillRect(st->renderer, &rect);
+    // BAL: fillRect(st->renderer, &rect);
 }
 
 void selectionRender(int aRow, int aCol, int bRow, int bCol, frame_t *frame, state_t *st)

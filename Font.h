@@ -11,7 +11,7 @@
 
 #include "Util.h"
 
-void initFont(font_t *font, SDL_Renderer *renderer, const char* file, unsigned int size);
+void initFont(font_t *font, const char* file, unsigned int size);
 void reinitFont(font_t *font);
 void resetCharRect(font_t *font, int scrollX, int scrollY);
 void renderEOF(font_t *font);

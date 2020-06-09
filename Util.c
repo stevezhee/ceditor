@@ -8,6 +8,8 @@
 
 #include "Util.h"
 
+SDL_Renderer *renderer;
+
 char *builtinBufferTitle[NUM_BUILTIN_BUFFERS] = { "*help", "*messages", "*buffers", "*macros", "*copy buffer", "*searches", "*config" };
 
 color_t viewColors[] = { VIEW_COLOR, FOCUS_VIEW_COLOR };
@@ -24,33 +26,59 @@ void *dieIfNull(void *p)
   return p;
 }
 
-void setBlendMode(SDL_Renderer *renderer, SDL_BlendMode m)
+void setBlendMode(SDL_BlendMode m)
 {
   if (SDL_SetRenderDrawBlendMode(renderer, m) != 0) die(SDL_GetError());
 }
 
-void setDrawColor(SDL_Renderer *renderer, color_t c)
+void setDrawColor(color_t c)
 {
   color_t alpha = c & 0xff;
-  setBlendMode(renderer, alpha == 0xff ? SDL_BLENDMODE_NONE : SDL_BLENDMODE_BLEND);
+  setBlendMode(alpha == 0xff ? SDL_BLENDMODE_NONE : SDL_BLENDMODE_BLEND);
+  int r = c >> 24;
+  int g = (c >> 16) & 0xff;
+  int b = (c >> 8) & 0xff;
   if (SDL_SetRenderDrawColor(renderer, c >> 24, (c >> 16) & 0xff, (c >> 8) & 0xff, alpha) != 0) die(SDL_GetError());
 }
 
-void clearFrame(SDL_Renderer *renderer)
+void setTextureColorMod(SDL_Texture *t, color_t c)
+{
+  int r = c >> 24;
+  int g = (c >> 16) & 0xff;
+  int b = (c >> 8) & 0xff;
+  if (SDL_SetTextureColorMod(t, r, g, b) != 0) die(SDL_GetError());
+}
+
+void rendererClear(void)
 {
   if (SDL_RenderClear(renderer) != 0) die(SDL_GetError());
 }
 
-void setViewport(SDL_Renderer *renderer, SDL_Rect *r)
+void setViewport(SDL_Rect *r)
 {
   if (SDL_RenderSetViewport(renderer, r) != 0) die(SDL_GetError());
 }
 
-void fillRect(SDL_Renderer *renderer, const SDL_Rect *rect)
+void fillRect(int width, int height)
 {
-  if (SDL_RenderFillRect(renderer, rect) != 0) die(SDL_GetError());
+  SDL_Rect r;
+  r.x = 0;
+  r.y = 0;
+  r.w = width;
+  r.h = height;
+  if (SDL_RenderFillRect(renderer, &r) != 0) die(SDL_GetError());
 }
 
+char *getClipboardText(void)
+{
+  if (!SDL_HasClipboardText()) return NULL;
+  return dieIfNull(SDL_GetClipboardText());
+}
+
+void setClipboardText(const char *text)
+{
+  if (SDL_SetClipboardText(text) != 0) die(SDL_GetError());
+}
 // BAL: these don't belong here
 int frameWidth(frame_t *frame)
 {

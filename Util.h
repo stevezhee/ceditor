@@ -31,19 +31,18 @@ typedef int color_t;
 
 void die(const char *msg);
 void *dieIfNull(void *p);
-void fillRect(SDL_Renderer *renderer, const SDL_Rect *rect);
-void setBlendMode(SDL_Renderer *renderer, SDL_BlendMode m);
-void setDrawColor(SDL_Renderer *renderer, color_t c);
-void clearFrame(SDL_Renderer *renderer);
-void setViewport(SDL_Renderer *renderer, SDL_Rect *r);
-void fillRect(SDL_Renderer *renderer, const SDL_Rect *rect);
+void fillRect(int width, int height);
+void setBlendMode(SDL_BlendMode m);
+void setDrawColor(color_t c);
+void rendererClear(void);
+void setViewport(SDL_Rect *r);
 
 typedef enum { NAVIGATE_MODE, INSERT_MODE, SEARCH_MODE, NUM_MODES } editorMode_t;
 typedef unsigned char uchar;
 typedef enum { NOT_DIRTY = 0b0, DOC_DIRTY = 0b1, FOCUS_DIRTY = 0b10, WINDOW_DIRTY = 0b100 } windowDirty_t;
 extern color_t viewColors[];
 extern char *macro[255];
-
+void setTextureColorMod(SDL_Texture *t, color_t c);
 #define FOCUS_VIEW_COLOR 0x000000ff
 #define VIEW_COLOR 0x303030ff
 #define CURSOR_COLOR 0xffff00ff
@@ -75,16 +74,19 @@ enum { SECONDARY_FRAME, MAIN_FRAME, BUILTINS_FRAME, NUM_FRAMES };
 
 extern uint16_t unicode[256];
 
-typedef struct {
+extern SDL_Renderer *renderer;
+
+struct font_s {
   int lineSkip;
   int charSkip;
-  SDL_Renderer *renderer; // BAL: remove(?)
-  SDL_Texture *charTexture[1024]; // BAL: ['~' + 1];
+  SDL_Texture *charTexture[256]; // BAL: ['~' + 1];
   SDL_Rect charRect; // BAL: remove
   SDL_Rect cursorRect; // BAL: remove
   const char *filepath;
   unsigned int size;
-} font_t;
+};
+
+typedef struct font_s font_t;
 
 struct dynamicArray_s {
   void *start;
@@ -170,7 +172,6 @@ struct state_s
   frameBuffer_t frames;
   searchBuffer_t results;
   window_t window;
-  SDL_Renderer *renderer;
   font_t font;
   SDL_Event event;
   bool isRecording;
@@ -179,6 +180,9 @@ struct state_s
   uint searchLen;
   uint searchRefView;
   bool searchDirty;
+  int downX;
+  int downY;
+  bool mouseMoveInProgress;
 };
 
 typedef struct state_s state_t;

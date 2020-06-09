@@ -25,7 +25,7 @@ static inline void initCharTexture(font_t *font, TTF_Font *ttfFont, uchar c)
       return;
   }
     // BAL:  die(TTF_GetError());
-  font->charTexture[c] = SDL_CreateTextureFromSurface(font->renderer, srfc);
+  font->charTexture[c] = SDL_CreateTextureFromSurface(renderer, srfc);
   if(font->charTexture[c] == NULL) die(TTF_GetError());
 
   SDL_FreeSurface(srfc);
@@ -70,11 +70,10 @@ void reinitFont(font_t *font)
 
 void unicodeInit(void);
 
-void initFont(font_t *font, SDL_Renderer *renderer, const char* file, unsigned int size)
+void initFont(font_t *font, const char* file, unsigned int size)
 {
     if (TTF_Init() != 0) die(TTF_GetError());
 
-    font->renderer = renderer;
     font->filepath = file;
     font->size = size;
 
@@ -87,10 +86,9 @@ void resetCharRect(font_t *font, int scrollX, int scrollY)
     font->charRect.x = font->cursorRect.w + scrollX;
     font->charRect.y = font->cursorRect.w + scrollY;
 }
-
 static void inline renderCh(font_t *font, int c)
 {
-    SDL_RenderCopy(font->renderer, font->charTexture[c], NULL, &font->charRect);
+    SDL_RenderCopy(renderer, font->charTexture[c], NULL, &font->charRect);
 }
 
 void renderEOF(font_t *font)

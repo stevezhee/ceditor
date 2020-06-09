@@ -96,7 +96,7 @@ void searchRender(frame_t *frame, state_t *st)
 {
     if (noActiveSearch(frame, st)) return;
 
-    setDrawColor(st->renderer, SEARCH_COLOR);
+    setDrawColor(SEARCH_COLOR);
 
     view_t *view = arrayElemAt(&st->views, frame->refView);
     doc_t *doc = arrayElemAt(&st->docs, view->refDoc);
@@ -140,13 +140,13 @@ void viewRender(view_t *view, frame_t *frame, state_t *st)
         aCol = 0;
         bCol = frameColumns(frame, st);
       }
-    setDrawColor(st->renderer, SELECTION_COLOR);
+    setDrawColor(SELECTION_COLOR);
     selectionRender(aRow, aCol, bRow, bCol, frame, st);
 }
 
 void frameRender(frame_t *frame, state_t *st)
 {
-    setViewport(st->renderer, &frame->rect);
+    setViewport(&frame->rect);
 
     SDL_Rect bkgd;
     bkgd.x = 0;
@@ -155,8 +155,8 @@ void frameRender(frame_t *frame, state_t *st)
     bkgd.h = frame->rect.h;
 
     color_t color = viewColors[frame == stFrameFocus(st)];
-    setDrawColor(st->renderer, color);
-    fillRect(st->renderer, &bkgd); // background
+    setDrawColor(color);
+    // fillRect(st->renderer, &bkgd); // background
 
     view_t *view = arrayElemAt(&st->views, frame->refView);
     searchRender(frame, st);
@@ -167,7 +167,492 @@ void frameRender(frame_t *frame, state_t *st)
 void stRender(state_t *st) // BAL: rename stFocusRender
 {
     frameRender(stFrameFocus(st), st);
-    SDL_RenderPresent(st->renderer);
+    SDL_RenderPresent(renderer);
+}
+
+typedef enum { BOX, HSPC, VSPC, TEXT, COLOR, FONT, SCROLL_Y, WID, OVER, HCAT, VCAT, HCATR, VCATR, NUM_WIDGET_TAGS } widgetTag_t;
+
+struct widget_s;
+
+typedef struct widget_s widget_t;
+
+typedef struct singletonData_s
+{
+  void *a;
+  widget_t *child;
+} singletonData_t;
+
+typedef struct pairData_s
+{
+  widget_t *a;
+  widget_t *b;
+} pairData_t;
+
+struct widget_s
+{
+  widgetTag_t tag;
+  union {
+    int wid;
+    int *length;
+    int *color;
+    int *dy;
+    font_t **font;
+    char **text;
+    widget_t *child;
+  } a;
+  union {
+    widget_t *child;
+  } b;
+};
+
+widget_t *newWidget()
+{
+  return dieIfNull(malloc(sizeof(widget_t)));
+}
+
+widget_t *hspc(int *len)
+{
+  widget_t *p = newWidget();
+  p->tag = HSPC;
+  p->a.length = len;
+  return p;
+}
+
+widget_t *vspc(int *len)
+{
+  widget_t *p = newWidget();
+  p->tag = VSPC;
+  p->a.length = len;
+  return p;
+}
+
+widget_t *box(void)
+{
+  widget_t *p = newWidget();
+  p->tag = BOX;
+  return p;
+}
+
+widget_t *text(char **s)
+{
+  widget_t *p = newWidget();
+  p->tag = TEXT;
+  p->a.text = s;
+  return p;
+}
+
+widget_t *singleton(widgetTag_t tag, void *a, widget_t *b)
+{
+  widget_t *p = newWidget();
+  p->tag = tag;
+  p->a.child = a;
+  p->b.child = b;
+  return p;
+}
+
+#define color(a, b) singleton(COLOR, a, b)
+#define font(a, b) singleton(FONT, a, b)
+#define scrollY(a, b) singleton(SCROLL_Y, a, b)
+
+widget_t *wid(int i, widget_t *a)
+{
+  widget_t *p = newWidget();
+  p->tag = WID;
+  p->a.wid = i;
+  p->b.child = a;
+  return p;
+}
+widget_t *node(widgetTag_t tag, widget_t *a, widget_t *b)
+{
+  widget_t *p = newWidget();
+  p->tag = tag;
+  p->a.child = a;
+  p->b.child = b;
+  return p;
+}
+
+#define over(a, b) node(OVER, a, b)
+#define hcat(a, b) node(HCAT, a, b)
+#define hcatr(a, b) node(HCATR, a, b)
+#define vcat(a, b) node(VCAT, a, b)
+#define vcatr(a, b) node(VCATR, a, b)
+
+typedef struct
+{
+  int x;
+  int y;
+  int w;
+  int h;
+  int color;
+  font_t *font;
+  int dy;
+  int wid;
+} context_t;
+
+context_t context;
+
+int maxLineLength(char *s)
+{
+  assert(s);
+  char c;
+  int rmax = 0;
+  int r = 0;
+  while((c = *s) != '\0')
+    {
+      switch(c) {
+      case '\n':
+        rmax = max(rmax, r + 1);
+        r = 0;
+        break;
+      default:
+        r++;
+      }
+      s++;
+    }
+  return max(rmax, r);
+}
+
+int numLinesCString(char *s)
+{
+  int n = 0;
+  char c;
+  while ((c = *s) != '\0')
+    {
+      if (c == '\n') n++;
+      s++;
+    }
+  printf("numberof lines%d\n", n);
+  return n;
+}
+void drawCString(char *s)
+{
+  assert(s);
+  char c;
+  SDL_Rect rect;
+  rect.x = 0; // context.x;
+  rect.y = context.dy;
+  rect.w = context.font->charSkip;
+  rect.h = context.font->lineSkip;
+  while((c = *s) != '\0')
+    {
+      switch(c) {
+        case '\n':
+          rect.x = 0; // context.x;
+          rect.y += rect.h;
+          break;
+        case ' ':
+          rect.x += rect.w;
+          break;
+        default:
+          setTextureColorMod(context.font->charTexture[c], context.color);// BAL: could just do this once if using a texture map
+          SDL_RenderCopy(renderer, context.font->charTexture[c], NULL, &rect);
+          rect.x += rect.w;
+        }
+      s++;
+    }
+}
+
+int widgetWidth(widget_t *widget)
+{
+  int w = 0;
+
+  switch (widget->tag) {
+  case HCATR: // fall through
+  case HCAT:
+    w = widgetWidth(widget->a.child) + widgetWidth(widget->b.child);
+    break;
+  case OVER: // fall through
+  case VCATR: // fall through
+  case VCAT:
+    w = max(widgetWidth(widget->a.child), widgetWidth(widget->b.child));
+    break;
+  case SCROLL_Y: // fall through
+  case WID: // fall through
+  case COLOR: // fall through
+  case FONT:
+    w = widgetWidth(widget->b.child);
+    break;
+  case HSPC:
+    w = *widget->a.length;
+    break;
+  default: // TEXT, VSPC, BOX
+    break;
+  }
+
+  return min(w, context.w);
+}
+
+int widgetHeight(widget_t *widget)
+{
+  int h = 0;
+  switch (widget->tag)
+    {
+    case OVER: // fall through
+    case HCATR: // fall through
+    case HCAT:
+      h = max(widgetHeight(widget->a.child), widgetHeight(widget->b.child));
+      break;
+    case VCATR: // fall through
+    case VCAT:
+      h = widgetHeight(widget->a.child) + widgetHeight(widget->b.child);
+      break;
+    case SCROLL_Y: // fall through
+    case COLOR: // fall through
+    case WID: // fall through
+    case FONT:
+      h = widgetHeight(widget->b.child);
+      break;
+    case VSPC:
+      h = *widget->a.length;
+      break;
+    default: // TEXT, HSPC, BOX
+      break;
+    }
+  return min(h, context.h);
+}
+void contextSetViewport()
+{
+  SDL_Rect rect;
+  rect.x = context.x;
+  rect.y = context.y;
+  rect.w = context.w;
+  rect.h = context.h;
+  setViewport(&rect);
+}
+
+widget_t *widgetAt(widget_t *widget)
+{
+  assert(context.w >= 0);
+  assert(context.h >= 0);
+  assert(context.x >= 0);
+  assert(context.y >= 0);
+  printf("at: %d %d\n", context.x, context.y);
+  // assert(context.x < context.w);
+  // assert(context.y < context.y);
+  if (context.x >= context.w || context.y >= context.h) return widget;
+
+  switch (widget->tag) {
+  case HCAT: {
+    int w = widgetWidth(widget->a.child);
+    if (context.x < w) {
+      context.w = w;
+      return widgetAt(widget->a.child);
+    }
+    context.w = context.w - w;
+    context.x -= w;
+    return widgetAt(widget->b.child);
+  }
+  case HCATR: {
+    int w = context.w - widgetWidth(widget->b.child);
+    if (context.x < w) {
+      context.w = w;
+      return widgetAt(widget->a.child);
+    }
+    context.w = context.w - w;
+    context.x -= w;
+    return widgetAt(widget->b.child);
+  }
+  case VCAT: {
+    int h = widgetHeight(widget->a.child);
+    if (context.y < h) {
+      context.h = h;
+      return widgetAt(widget->a.child);
+    }
+    context.h = context.h - h;
+    context.y -= h;
+    return widgetAt(widget->b.child);
+  }
+  case VCATR: {
+    int h = context.h - widgetHeight(widget->b.child);
+    if (context.y < h) {
+      context.h = h;
+      return widgetAt(widget->a.child);
+    }
+    context.h = context.h - h;
+    context.y -= h;
+    return widgetAt(widget->b.child);
+  }
+  case OVER:
+    return widgetAt(widget->a.child);
+  case WID: // fall through
+    context.wid = widget->a.wid;
+    return widgetAt(widget->b.child);
+  case COLOR: // fall through
+  case FONT: // fall through
+    return widgetAt(widget->b.child);
+  case SCROLL_Y:
+    return widgetAt(widget->b.child);
+  default: // BOX, HSPC, VSPC, TEXT
+    return widget;
+  }
+}
+void widgetDraw(widget_t *widget)
+{
+  switch (widget->tag) {
+  case HCAT: {
+    int x = context.x;
+    int w = context.w;
+    int wa = widgetWidth(widget->a.child);
+
+    context.x += wa;
+    context.w = context.w - wa;
+    contextSetViewport();
+    widgetDraw(widget->b.child);
+
+    context.x = x;
+    context.w = wa;
+    contextSetViewport();
+    widgetDraw(widget->a.child);
+
+    context.w = w;
+    contextSetViewport();
+    return;
+  }
+  case HCATR: {
+    int x = context.x;
+    int w = context.w;
+
+    context.w = context.w - widgetWidth(widget->b.child);
+    contextSetViewport();
+    widgetDraw(widget->a.child);
+
+    context.x += context.w;
+    context.w = w - context.w;
+    contextSetViewport();
+    widgetDraw(widget->b.child);
+
+    context.x = x;
+    context.w = w;
+    contextSetViewport();
+    return;
+  }
+  case VCAT: {
+    int y = context.y;
+    int h = context.h;
+
+    context.h = widgetHeight(widget->a.child);
+    contextSetViewport();
+    widgetDraw(widget->a.child);
+
+    context.y += context.h;
+    context.h = h - context.h;
+    contextSetViewport();
+    widgetDraw(widget->b.child);
+
+    context.h = h;
+    context.y = y;
+    contextSetViewport();
+    return;
+  }
+  case VCATR: {
+    int y = context.y;
+    int h = context.h;
+
+    context.h = context.h - widgetHeight(widget->b.child);
+    contextSetViewport();
+    widgetDraw(widget->a.child);
+
+    context.y += context.h;
+    context.h = h - context.h;
+    contextSetViewport();
+    widgetDraw(widget->b.child);
+
+    context.h = h;
+    context.y = y;
+    contextSetViewport();
+    return;
+  }
+  case OVER: {
+    widgetDraw(widget->b.child);
+    widgetDraw(widget->a.child);
+    return;
+  }
+  case SCROLL_Y: {
+    int dy = context.dy;
+    context.dy += *widget->a.dy;
+    widgetDraw(widget->b.child);
+    context.dy = dy;
+    return;
+  }
+  case FONT: {
+    font_t *font = context.font;
+    context.font = *widget->a.font;
+    widgetDraw(widget->b.child);
+    context.font = font;
+    return;
+  }
+  case WID:
+    widgetDraw(widget->b.child);
+    return;
+  case COLOR: {
+    int color = context.color;
+    context.color = *widget->a.color;
+    setDrawColor(context.color);
+    widgetDraw(widget->b.child);
+    context.color = color;
+    setDrawColor(context.color);
+    return;
+  }
+  case TEXT:
+    drawCString(*widget->a.text);
+    return;
+  case BOX:
+    fillRect(context.w, context.h);
+    return;
+  default: // HSPC/VSPC
+    return;
+  }
+}
+
+state_t st;
+int frameWidth0 = 0;
+int frameWidth1 = 0;
+int colBlack = 0x000000ff;
+int colGreen = 0x00f000ff;
+int colBlue = 0x0000f0ff;
+int redcol = 0xff0000af;
+char *str0 = "string #0 This is\nstring 0. done\n";
+char *str1 = "string #1\ncheck\ning in\nok\ndone\n";
+char *status0 = "status 0 is ok";
+char *is = "status 1 is ";
+char *red = "red";
+char *alert = " alert.";
+char *str2 = "something,\n something, \nstring two";
+char *status2 = "status two";
+widget_t *status1;
+int dy0 = 0;
+int dy1 = 0;
+int dy2 = 0;
+widget_t *frame0;
+widget_t *frame1;
+widget_t *frame2;
+widget_t *gui;
+
+void contextReinit()
+{
+  context.x = 0;
+  context.y = 0;
+  context.color = 0xffffffff;
+  context.font = &st.font;
+  context.w = st.window.width;
+  context.h = st.window.height;
+  context.dy = 0;
+  context.wid = -1;
+  SDL_Rect rect;
+  rect.x = 0;
+  rect.y = 0;
+  rect.w = context.w;
+  rect.h = context.h;
+  setViewport(&rect);
+  setDrawColor(context.color);
+}
+void stDraw(void)
+{
+  setDrawColor(0x00ff00ff);
+  rendererClear();
+  contextReinit();
+  widgetDraw(gui);
+  SDL_RenderPresent(renderer);
 }
 
 char systemBuf[1024];  // BAL: use string_t
@@ -176,6 +661,7 @@ void gitInit(void)
 {
     if (system("git inint") != 0) die("git init failed");
 }
+
 void docGitAdd(doc_t *doc)
 {
     if (DEMO_MODE || NO_GIT) return;
@@ -202,48 +688,51 @@ void windowInit(window_t *win, int width, int height)
 
 void stRenderFull(state_t *st)
 {
-    setDrawColor(st->renderer, BACKGROUND_COLOR);
-    clearFrame(st->renderer);
+    setDrawColor(BACKGROUND_COLOR);
+    rendererClear();
 
     for(int i = 0; i < st->frames.numElems; ++i)
     {
         frameRender(arrayElemAt(&st->frames, i), st);
     }
 
-    SDL_RenderPresent(st->renderer);
+    SDL_RenderPresent(renderer);
 }
 
-void stResize(state_t *st)
+void stResize(void)
 {
     int w;
     int h;
 
-    SDL_GetWindowSize(st->window.window, &w, &h);
-    st->window.width = w;
-    st->window.height = h;
+    SDL_GetWindowSize(st.window.window, &w, &h);
+    st.window.width = w;
+    st.window.height = h;
 
-    w = (w - BORDER_WIDTH) / 3;
-    h = h - 2*BORDER_WIDTH;
+    frameWidth0 = st.window.width / 3;
+    frameWidth1 = st.window.width / 3;
 
-    frame_t *v0 = arrayElemAt(&st->frames, SECONDARY_FRAME);
-    v0->rect.x = BORDER_WIDTH;
-    v0->rect.y = BORDER_WIDTH;
-    v0->rect.w = w - BORDER_WIDTH;
-    v0->rect.h = h;
+    /* w = (w - BORDER_WIDTH) / 3; */
+    /* h = h - 2*BORDER_WIDTH; */
 
-    frame_t *v1 = arrayElemAt(&st->frames, MAIN_FRAME);
-    v1->rect.x = BORDER_WIDTH + v0->rect.x + v0->rect.w;
-    v1->rect.y = BORDER_WIDTH;
-    v1->rect.w = w + w / 2 - BORDER_WIDTH;
-    v1->rect.h = h;
+    /* frame_t *v0 = arrayElemAt(&st->frames, SECONDARY_FRAME); */
+    /* v0->rect.x = BORDER_WIDTH; */
+    /* v0->rect.y = BORDER_WIDTH; */
+    /* v0->rect.w = w - BORDER_WIDTH; */
+    /* v0->rect.h = h; */
 
-    frame_t *v2 = arrayElemAt(&st->frames, BUILTINS_FRAME);
-    v2->rect.x = BORDER_WIDTH + v1->rect.x + v1->rect.w;
-    v2->rect.y = BORDER_WIDTH;
-    v2->rect.w = st->window.width - v2->rect.x - BORDER_WIDTH;
-    v2->rect.h = h;
+    /* frame_t *v1 = arrayElemAt(&st->frames, MAIN_FRAME); */
+    /* v1->rect.x = BORDER_WIDTH + v0->rect.x + v0->rect.w; */
+    /* v1->rect.y = BORDER_WIDTH; */
+    /* v1->rect.w = w + w / 2 - BORDER_WIDTH; */
+    /* v1->rect.h = h; */
 
-    st->dirty = WINDOW_DIRTY;
+    /* frame_t *v2 = arrayElemAt(&st->frames, BUILTINS_FRAME); */
+    /* v2->rect.x = BORDER_WIDTH + v1->rect.x + v1->rect.w; */
+    /* v2->rect.y = BORDER_WIDTH; */
+    /* v2->rect.w = st->window.width - v2->rect.x - BORDER_WIDTH; */
+    /* v2->rect.h = h; */
+
+    st.dirty = WINDOW_DIRTY;
 }
 
 void builtinsPushFocus(state_t *st, int i)
@@ -277,62 +766,87 @@ void buffersBufInit(state_t *st)
     }
 }
 
+widget_t *frame(color_t *col, widget_t *a, widget_t *b)
+{
+  return over(vcatr(a, b), color(col, box()));
+}
+
 void stInit(state_t *st, int argc, char **argv)
 {
-    argc--;
-    argv++;
+  argc--;
+  argv++;
+  memset(st, 0, sizeof(state_t));
+  //  initMacros();
 
-    initMacros();
 
-    if (argc < 1) die("expected filepath(s)");
-    memset(st, 0, sizeof(state_t));
-
-    arrayInit(&st->docs, sizeof(doc_t));
-    arrayInit(&st->views, sizeof(view_t));
-    arrayInit(&st->frames, sizeof(frame_t));
-    arrayInit(&st->results, sizeof(uint));
+    /* arrayInit(&st->docs, sizeof(doc_t)); */
+    /* arrayInit(&st->views, sizeof(view_t)); */
+    /* arrayInit(&st->frames, sizeof(frame_t)); */
+    /* arrayInit(&st->results, sizeof(uint)); */
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) die(SDL_GetError());
 
     windowInit(&st->window, INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT);
-    st->renderer = dieIfNull(SDL_CreateRenderer(st->window.window, -1, SDL_RENDERER_SOFTWARE));
+    renderer = dieIfNull(SDL_CreateRenderer(st->window.window, -1, SDL_RENDERER_SOFTWARE));
 
-    initFont(&st->font, st->renderer, INIT_FONT_FILE, INIT_FONT_SIZE);
+    initFont(&st->font, INIT_FONT_FILE, INIT_FONT_SIZE);
 
-    keysymInit();
+    status1 = hcat(text(&is), hcat(color(&redcol, text(&red)), text(&alert)));
 
-    for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
-    {
-        doc_t *doc = arrayPushUninit(&st->docs);
-        docInit(doc, builtinBufferTitle[i]);
-        viewInit(arrayPushUninit(&st->views), i);
-    }
+    //frame0 =
+    //  over(frame(&col0, scrollY(&dy0, wid(0, over(text(&str0), hspc(&framwWidth0))), text(&status0));
+    // frame1 = over(frame(&col1, scrollY(&dy1, wid(1, text(&str1))), status1), hspc(&frameWidth1));
+    // frame2 = frame(&col2, scrollY(&dy2, wid(2, text(&str2))), text(&status2));
+    // frame0 = over(vcatr(text(&str0), over(text(&status0), vspc(&st.font.lineSkip))), color(&colGreen, over(box(), hspc(&frameWidth0))));
+    // frame1 = color(&colBlack, over(box(), hspc(&frameWidth1)));
+    // frame2 = color(&colBlue, box());
+    // gui = hcat(frame0, hcat(frame1, frame2));
+    frame0 = over(vcatr(wid(0, text(&str0)), over(text(&status0), vspc(&st->font.lineSkip))), color(&colBlack, over(box(), hspc(&frameWidth0))));
+    frame1 = over(vcatr(wid(1, text(&str1)), over(text(&status2), vspc(&st->font.lineSkip))), color(&colBlue, over(box(), hspc(&frameWidth1))));
+    frame2 = over(vcatr(wid(2, text(&str2)), over(text(&status2), vspc(&st->font.lineSkip))), color(&colGreen, over(box(), hspc(&frameWidth1))));
+    gui = hcat(frame0, hcat(frame1, frame2));
+    stResize();
+    //      hcat(frame0, hcat(frame1, frame2));
+    // over(box(), over(hspc(&frameWidth0), vspc(&framwWidth0)));
 
-    for(int i = 0; i < argc; ++i) {
-        doc_t *doc = arrayPushUninit(&st->docs);
-        docInit(doc, argv[i]);
-        docRead(doc);
-        viewInit(arrayPushUninit(&st->views), NUM_BUILTIN_BUFFERS + i);
-    }
+    /* widget_t *a = wid(42, over(text(&str0), color(&col1, box()))); */
+    /* widget_t *b = wid(17, over(text(&str1), color(&col2, box()))); */
+    /* gui = vcat(a,b); */
 
-    for(int i = 0; i < NUM_FRAMES; ++i)
-    {
-        frame_t *v = arrayPushUninit(&st->frames);
-        frameInit(v, i);
-    }
+    /* keysymInit(); */
 
-    buffersBufInit(st);
+    /* for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) */
+    /* { */
+    /*     doc_t *doc = arrayPushUninit(&st->docs); */
+    /*     docInit(doc, builtinBufferTitle[i]); */
+    /*     viewInit(arrayPushUninit(&st->views), i); */
+    /* } */
 
-    message(st, "hello from the beyond\n");
+    /* for(int i = 0; i < argc; ++i) { */
+    /*     doc_t *doc = arrayPushUninit(&st->docs); */
+    /*     docInit(doc, argv[i]); */
+    /*     docRead(doc); */
+    /*     viewInit(arrayPushUninit(&st->views), NUM_BUILTIN_BUFFERS + i); */
+    /* } */
 
-    stSetFrameFocus(st, SECONDARY_FRAME);
-    stSetViewFocus(st, MESSAGE_BUF);
-    stSetFrameFocus(st, BUILTINS_FRAME);
-    stSetViewFocus(st, BUFFERS_BUF);
-    stSetFrameFocus(st, MAIN_FRAME);
-    stSetViewFocus(st, NUM_BUILTIN_BUFFERS);
+    /* for(int i = 0; i < NUM_FRAMES; ++i) */
+    /* { */
+    /*     frame_t *v = arrayPushUninit(&st->frames); */
+    /*     frameInit(v, i); */
+    /* } */
 
-    stResize(st);
+    /* buffersBufInit(st); */
+
+    /* message(st, "hello from the beyond\n"); */
+
+    /* stSetFrameFocus(st, SECONDARY_FRAME); */
+    /* stSetViewFocus(st, MESSAGE_BUF); */
+    /* stSetFrameFocus(st, BUILTINS_FRAME); */
+    /* stSetViewFocus(st, BUFFERS_BUF); */
+    /* stSetFrameFocus(st, MAIN_FRAME); */
+    /* stSetViewFocus(st, NUM_BUILTIN_BUFFERS); */
+
+    //    stResize(st);
 }
 
 void quitEvent(state_t *st)
@@ -352,7 +866,7 @@ void windowEvent(state_t *st)
 {
     switch (st->event.window.event) {
         case SDL_WINDOWEVENT_SIZE_CHANGED:
-            stResize(st);
+            stResize();
             break;
         default:
             st->dirty = NOT_DIRTY;
@@ -414,42 +928,53 @@ void selectionCancel(state_t *st)
 }
 void mouseButtonUpEvent(state_t *st)
 {
-  view_t *view = stViewFocus(st);
-  setCursorFromXY(&view->selection, st, st->event.button.x, st->event.button.y);
-    selectionEnd(st);
+  /* view_t *view = stViewFocus(st); */
+  /* setCursorFromXY(&view->selection, st, st->event.button.x, st->event.button.y); */
+  /*   selectionEnd(st); */
+  st->mouseMoveInProgress = false;
+  printf("up event %d dx=%d dy=%d\n", context.wid, st->event.button.x - st->downX, st->event.button.y - st->downY);
 }
 
 void mouseButtonDownEvent(state_t *st)
 {
-    int i = 0;
-    frame_t *frame;
+  contextReinit();
+  context.x = st->event.button.x;
+  context.y = st->event.button.y;
+  widget_t *p = widgetAt(gui);
+  st->downX = st->event.button.x; 
+  st->downY = st->event.button.y;
+  st->mouseMoveInProgress = true;
+  printf("down event %d x=%d y=%d\n", context.wid, context.x, context.y);
+    /* int i = 0; */
+    /* frame_t *frame; */
 
-    while (true) // find selected frame
-    {
-        SDL_Point p;
-        p.x = st->event.button.x;
-        p.y = st->event.button.y;
-        frame = arrayElemAt(&st->frames, i);
-        if (SDL_PointInRect(&p, &frame->rect)) break;
-        i++;
-        if (i == NUM_FRAMES) return;
-    };
+    /* while (true) // find selected frame */
+    /* { */
+    /*     SDL_Point p; */
+    /*     p.x = st->event.button.x; */
+    /*     p.y = st->event.button.y; */
+    /*     frame = arrayElemAt(&st->frames, i); */
+    /*     if (SDL_PointInRect(&p, &frame->rect)) break; */
+    /*     i++; */
+    /*     if (i == NUM_FRAMES) return; */
+    /* }; */
 
-    stSetFrameFocus(st, i);
-    view_t *view = stViewFocus(st);
-    setCursorFromXY(&view->cursor, st, st->event.button.x, st->event.button.y);
-    selectChars(st);
+    /* stSetFrameFocus(st, i); */
+    /* view_t *view = stViewFocus(st); */
+    /* setCursorFromXY(&view->cursor, st, st->event.button.x, st->event.button.y); */
+    /* selectChars(st); */
 }
 
 void mouseMotionEvent(state_t *st)
 {
-    view_t *view = stViewFocus(st);
-    if (view->selectionInProgress)
+  //    view_t *view = stViewFocus(st);
+    if (st->mouseMoveInProgress)
     {
-      setCursorFromXYMotion(&view->selection, st, st->event.motion.x, st->event.motion.y);
+      // setCursorFromXYMotion(&view->selection, st, st->event.motion.x, st->event.motion.y);
+      printf("move event %d dx=%d dy=%d\n", context.wid, st->event.button.x - st->downX, st->event.button.y - st->downY);
         return;
     }
-    st->dirty = NOT_DIRTY;
+    // st->dirty = NOT_DIRTY;
 }
 
 int docHeight(doc_t *doc, state_t *st)
@@ -469,7 +994,8 @@ void frameScrollY(frame_t *frame, int dR, state_t *st)
 
 void mouseWheelEvent(state_t *st)
 {
-    frameScrollY(stFrameFocus(st), st->event.wheel.y, st);
+  dy0 += st->event.wheel.y;
+  //    frameScrollY(stFrameFocus(st), st->event.wheel.y, st);
 }
 
 void doKeyPress(state_t *st, uchar c)
@@ -726,8 +1252,8 @@ void setCursorToSearch(state_t *st)
 {
     frame_t *frame = stFrameFocus(st);
     if (noActiveSearch(frame, st)) return;
-    view_t *view = arrayElemAt(&st->views, frame->refView);
-    doc_t *doc = arrayElemAt(&st->docs, view->refDoc);
+    view_t *view = stViewFocus(st);
+    doc_t *doc = stDocFocus(st);
     uint *off = arrayFocus(&st->results);
     cursorSetOffset(&view->cursor, *off, doc);
     cursorSetOffset(&view->selection, *off + st->searchLen - 1, doc);
@@ -870,18 +1396,16 @@ int main(int argc, char **argv)
     assert(sizeof(unsigned int) == 4);
     assert(sizeof(void*) == 8);
 
-    state_t st;
-
     stInit(&st, argc, argv);
-    stRenderFull(&st);
 
     while (SDL_WaitEvent(&st.event))
     {
+      //  stRender(&st);
+
+      stDraw();
+
         st.dirty = FOCUS_DIRTY;
         switch (st.event.type) {
-            case SDL_QUIT:
-                quitEvent(&st);
-                break;
             case SDL_WINDOWEVENT:
                 windowEvent(&st);
                 break;
@@ -897,24 +1421,28 @@ int main(int argc, char **argv)
             case SDL_MOUSEMOTION:
                 mouseMotionEvent(&st);
                 break;
-            case SDL_KEYDOWN:
-                keyDownEvent(&st);
+            /* case SDL_KEYDOWN: */
+            /*     keyDownEvent(&st); */
+            /*     break; */
+            case SDL_QUIT:
+                quitEvent(&st);
                 break;
             default:
                 st.dirty = NOT_DIRTY;
                 break;
         }
-        if (st.dirty & DOC_DIRTY) // BAL: noActiveSearch?
-        {
-            computeSearchResults(&st);
-        }
-        if (st.dirty & WINDOW_DIRTY || st.dirty & DOC_DIRTY)
-        {
-            stRenderFull(&st);
-        } else if (st.dirty & FOCUS_DIRTY || st.dirty & DOC_DIRTY)
-        {
-            stRender(&st);
-        }
+        /* if (st.dirty & DOC_DIRTY) // BAL: noActiveSearch? */
+        /* { */
+        /*     computeSearchResults(&st); */
+        /* } */
+        /* if (st.dirty & WINDOW_DIRTY || st.dirty & DOC_DIRTY) */
+        /* { */
+        /*   stDraw(); */
+        /*   stRenderFull(&st); */
+        /* } else if (st.dirty & FOCUS_DIRTY || st.dirty & DOC_DIRTY) */
+        /* { */
+        /*     stRender(&st); */
+        /* } */
     }
 
   return 0;
