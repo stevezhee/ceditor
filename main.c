@@ -370,6 +370,7 @@ int numLinesCString(char *s)
 
 void drawCStringSelection(int x, int y, char *s, int offset, int len)
 {
+  // BAL: would it look good to bold the characters in addition/instead?
   assert(s);
   int w = context.font->charSkip;
   int h = context.font->lineSkip;
@@ -548,69 +549,67 @@ void drawCursorOrSelection(view_t *view)
   drawCursor(view);
 }
 
-widget_t *widgetAt(widget_t *widget)
+widget_t *widgetAt(widget_t *widget, int x, int y)
 {
   assert(context.w >= 0);
   assert(context.h >= 0);
   assert(context.x >= 0);
   assert(context.y >= 0);
-  //  printf("at: %d %d\n", context.x, context.y);
-  // assert(context.x < context.w);
-  // assert(context.y < context.y);
-  if (context.x >= context.w || context.y >= context.h) return widget;
+  assert(x < context.w);
+  assert(y < context.h);
 
   switch (widget->tag) {
   case HCAT: {
     int w = widgetWidth(widget->a.child);
-    if (context.x < w) {
+    if (x < w) {
       context.w = w;
-      return widgetAt(widget->a.child);
+      return widgetAt(widget->a.child, x, y);
     }
     context.w = context.w - w;
-    context.x -= w;
-    return widgetAt(widget->b.child);
+    context.x += w;
+    return widgetAt(widget->b.child, x - w, y);
   }
   case HCATR: {
     int w = context.w - widgetWidth(widget->b.child);
     if (context.x < w) {
       context.w = w;
-      return widgetAt(widget->a.child);
+      return widgetAt(widget->a.child, x, y);
     }
     context.w = context.w - w;
-    context.x -= w;
-    return widgetAt(widget->b.child);
+    context.x += w;
+    return widgetAt(widget->b.child, x - w, y);
   }
   case VCAT: {
     int h = widgetHeight(widget->a.child);
     if (context.y < h) {
       context.h = h;
-      return widgetAt(widget->a.child);
+      return widgetAt(widget->a.child, x, y);
     }
     context.h = context.h - h;
-    context.y -= h;
-    return widgetAt(widget->b.child);
+    context.y += h;
+    return widgetAt(widget->b.child, x, y - h);
   }
   case VCATR: {
     int h = context.h - widgetHeight(widget->b.child);
     if (context.y < h) {
       context.h = h;
-      return widgetAt(widget->a.child);
+      return widgetAt(widget->a.child, x, y);
     }
     context.h = context.h - h;
-    context.y -= h;
-    return widgetAt(widget->b.child);
+    context.y += h;
+    return widgetAt(widget->b.child, x, y - h);
   }
   case OVER:
-    return widgetAt(widget->a.child);
-  case WID: // fall through
+    return widgetAt(widget->a.child, x, y);
+  case WID:
     context.wid = widget->a.wid;
-    return widgetAt(widget->b.child);
+    return widgetAt(widget->b.child, x, y);
   case COLOR: // fall through
   case FONT: // fall through
-    return widgetAt(widget->b.child);
+    return widgetAt(widget->b.child, x, y);
   case SCROLL_Y:
-    context.y -= *widget->a.dy;
-    return widgetAt(widget->b.child);
+    context.y += *widget->a.dy;
+    return widgetAt(widget->b.child, x, y - *widget->a.dy);
   default: // BOX, HSPC, VSPC, TEXT, VIEW
     return widget;
   }
@@ -1028,7 +1027,7 @@ void selectionCancel()
 void selectionSetRowCol()
 {
   view_t *view = stViewFocus();
-  cursorSetRowCol(&view->selection, view->cursor.row + yToRow(st.event.button.y - st.downY), view->cursor.column + xToColumn(st.event.button.x - st.downX), docFocus());
+  cursorSetRowCol(&view->selection, yToRow(st.event.button.y - st.downY), xToColumn(st.event.button.x - st.downX), docFocus());
 }
 
 void mouseButtonUpEvent()
@@ -1040,23 +1039,23 @@ void mouseButtonUpEvent()
   // view->selectionActive = !(cursorEq(&view->cursor, &view->selection));
   // printf("up event %d dx=%d dy=%d\n", context.wid, st.event.button.x - st.downX, st.event.button.y - st.downY);
 }
+
+// BAL: there is a bug when beginning a selection past the length of a given line
 void mouseButtonDownEvent()
 {
   contextReinit();
-  context.x = st.event.button.x;
-  context.y = st.event.button.y;
-  widget_t *p = widgetAt(gui);
+  widget_t *p = widgetAt(gui, st.event.button.x, st.event.button.y);
   if (context.wid < 0 || context.wid > NUM_FRAMES) return;
   stSetFrameFocus(context.wid);
 
-  st.downX = st.event.button.x;
-  st.downY = st.event.button.y;
-
   st.mouseMoveInProgress = true;
+  st.downX = context.x;
+  st.downY = context.y;
 
   view_t *view = viewFocus();
-  cursorSetRowCol(&view->cursor, yToRow(context.y), xToColumn(context.x), docFocus());
+  cursorSetRowCol(&view->cursor, yToRow(st.event.button.y - st.downY), xToColumn(st.event.button.x - st.downX), docFocus());
   memcpy(&view->selection, &view->cursor, sizeof(cursor_t));
+
   // printf("down event %d x=%d y=%d\n", context.wid, context.x, context.y);
     /* int i = 0; */
     /* frame_t *frame; */
