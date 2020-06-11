@@ -11,41 +11,41 @@
 
 #include "Util.h"
 
-typedef void (*keyHandler_t)(state_t *st, uchar c);
+typedef void (*keyHandler_t)(uchar c);
 extern keyHandler_t keyHandler[NUM_MODES][NUM_KEYS];
 void initMacros(void);
 
 void keysymInit(void);
 uchar getKeyChar(SDL_Keycode c);
 
-void doNothing(state_t *st, uchar c);
-void setNavigateModeAndDoKeyPress(state_t *st, uchar c);
-void forwardEOF(state_t *st);
-void backwardSOF(state_t *st);
-void setSearchMode(state_t *st);
-void gotoView(state_t *st);
-void backwardChar(state_t *st);
-void forwardChar(state_t *st);
-void backwardLine(state_t *st);
-void forwardLine(state_t *st);
-void forwardEOL(state_t *st);
-void backwardSOL(state_t *st);
-void startStopRecording(state_t *st);
-void playMacro(state_t *st);
-void pasteBefore(state_t *st);
-void forwardSearch(state_t *st);
-void backwardSearch(state_t *st);
-void setInsertMode(state_t *st);
-void setNavigateMode(state_t *st);
-void forwardPage(state_t *st);
-void backwardPage(state_t *st);
-void selectChars(state_t *st);
-void selectLines(state_t *st);
+void doNothing(uchar c);
+void setNavigateModeAndDoKeyPress(uchar c);
+void forwardEOF();
+void backwardSOF();
+void setSearchMode();
+void gotoView();
+void backwardChar();
+void forwardChar();
+void backwardLine();
+void forwardLine();
+void forwardEOL();
+void backwardSOL();
+void startStopRecording();
+void playMacro();
+void pasteBefore();
+void forwardSearch();
+void backwardSearch();
+void setInsertMode();
+void setNavigateMode();
+void forwardPage();
+void backwardPage();
+void selectChars();
+void selectLines();
 
-// void appendLine(state_t *st);
-// void prependLine(state_t *st);
-// void setInsertModeAndInsertChar(state_t *st, uchar c);
-void insertChar(state_t *st, uchar c);
-void delete(state_t *st);
-// void backspace(state_t *st);
+// void appendLine();
+// void prependLine();
+// void setInsertModeAndInsertChar(uchar c);
+void insertChar(uchar c);
+void delete();
+// void backspace();
 #endif /* Keysym_h */

@@ -32,6 +32,12 @@ void docInsert(doc_t *doc, int offset, char *s, int len)
     }
 }
 
+char *docCString(doc_t *doc)
+{
+  arrayInsert(&doc->contents, doc->contents.numElems, "", 1);
+  return doc->contents.start;
+}
+
 void docWrite(doc_t *doc)
 {
   if (DEMO_MODE) return;

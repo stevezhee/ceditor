@@ -16,15 +16,10 @@ static inline void initCharTexture(font_t *font, TTF_Font *ttfFont, uchar c)
     uint16_t s[2];
 
     s[0] = unicode[c];
-    s[1] = 0;
+    s[1] = '\0';
 
   SDL_Surface *srfc = TTF_RenderUNICODE_Blended(ttfFont, s, white);
-  if(srfc == NULL)
-  {
-      font->charTexture[c] = NULL;
-      return;
-  }
-    // BAL:  die(TTF_GetError());
+  if(srfc == NULL) die(TTF_GetError());
   font->charTexture[c] = SDL_CreateTextureFromSurface(renderer, srfc);
   if(font->charTexture[c] == NULL) die(TTF_GetError());
 
@@ -38,7 +33,7 @@ static inline void initFontData(font_t *font)
 
     if (ttfFont == NULL) die(TTF_GetError());
 
-    for(int c = 0; c <= 255; c++) // BAL: '~'
+    for(int c = 0; c < 256; ++c)
     {
         initCharTexture(font, ttfFont, c);
     }
@@ -47,7 +42,6 @@ static inline void initFontData(font_t *font)
     TTF_CloseFont(ttfFont);
 
     SDL_QueryTexture(font->charTexture['!'], NULL, NULL, &font->charSkip, &font->charRect.h);
-
     font->charRect.x = 0;
     font->charRect.y = 0;
     font->charRect.w = font->charSkip;
@@ -138,34 +132,30 @@ void renderAndAdvChar(font_t *font, char c)
 
 void unicodeInit(void)
 {
-    memset(unicode, UINT16_MAX, sizeof(unicode));
-    for(int i = '!'; i <= '~'; ++i)
+  memset(unicode, UINT16_MAX, sizeof(unicode));
+  for(int i = '!'; i <= '~'; ++i)
     {
-        unicode[i] = i;
+      unicode[i] = i;
     }
-    unicode['\0'] = 0xa7;
-
-    unicode[KEY_BACKSPACE] = 0x21d0;
-    unicode[KEY_DELETE] = 0x3c7;
-
-unicode[KEY_CTRL] = 0x21d1;
-
-    unicode[KEY_ALT] = 0x21d3;
-
-unicode[KEY_ESCAPE] = 0x3b5;
-unicode[KEY_PRINTSCREEN] = 0x3c0;
-unicode[KEY_SCROLLLOCK] = 0x3c3;
-unicode[KEY_PAUSE] = 0x3c6;
-unicode[KEY_INSERT] = 0x3b9;
-unicode[KEY_HOME] = 0x2302;
-unicode[KEY_PAGEUP] = 0x25b3;
-unicode[KEY_END] = 0x221e;
-unicode[KEY_PAGEDOWN] = 0x25bd;
-unicode[KEY_RIGHT] = 0x2192;
-unicode[KEY_LEFT] = 0x2190;
-unicode[KEY_DOWN] = 0x2193;
-unicode[KEY_UP] = 0x2191;
-unicode['\t'] = 0x21d2;
-//unicode[KEY_SHIFT_TAB] = 0x21d0;
-unicode['\n'] = 0xb6;
+  unicode['\0'] = 0xa7;
+  unicode[KEY_BACKSPACE] = 0x21d0;
+  unicode[KEY_DELETE] = 0x3c7;
+  unicode[KEY_CTRL] = 0x21d1;
+  unicode[KEY_ALT] = 0x21d3;
+  unicode[KEY_ESCAPE] = 0x3b5;
+  unicode[KEY_PRINTSCREEN] = 0x3c0;
+  unicode[KEY_SCROLLLOCK] = 0x3c3;
+  unicode[KEY_PAUSE] = 0x3c6;
+  unicode[KEY_INSERT] = 0x3b9;
+  unicode[KEY_HOME] = 0x2302;
+  unicode[KEY_PAGEUP] = 0x25b3;
+  unicode[KEY_END] = 0x221e;
+  unicode[KEY_PAGEDOWN] = 0x25bd;
+  unicode[KEY_RIGHT] = 0x2192;
+  unicode[KEY_LEFT] = 0x2190;
+  unicode[KEY_DOWN] = 0x2193;
+  unicode[KEY_UP] = 0x2191;
+  unicode['\t'] = 0x21d2;
+  unicode['\n'] = 0xb6;
+  unicode[KEY_SHIFT_TAB] = 0x21d0;
 }

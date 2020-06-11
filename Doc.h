@@ -16,5 +16,6 @@ void docInsert(doc_t *doc, int offset, char *s, int len);
 void docWrite(doc_t *doc);
 void docInit(doc_t *doc, char *filepath);
 void docRead(doc_t *doc);
+char *docCString(doc_t *doc);
 
 #endif /* Doc_h */

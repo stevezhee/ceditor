@@ -43,6 +43,8 @@ void setDrawColor(color_t c)
 
 void setTextureColorMod(SDL_Texture *t, color_t c)
 {
+  assert(t);
+
   int r = c >> 24;
   int g = (c >> 16) & 0xff;
   int b = (c >> 8) & 0xff;
@@ -59,14 +61,18 @@ void setViewport(SDL_Rect *r)
   if (SDL_RenderSetViewport(renderer, r) != 0) die(SDL_GetError());
 }
 
-void fillRect(int width, int height)
+void fillRectAt(int x, int y, int w, int h)
 {
   SDL_Rect r;
-  r.x = 0;
-  r.y = 0;
-  r.w = width;
-  r.h = height;
+  r.x = x;
+  r.y = y;
+  r.w = w;
+  r.h = h;
   if (SDL_RenderFillRect(renderer, &r) != 0) die(SDL_GetError());
+}
+void fillRect(int w, int h)
+{
+  fillRectAt(0, 0, w, h);
 }
 
 char *getClipboardText(void)
@@ -79,14 +85,14 @@ void setClipboardText(const char *text)
 {
   if (SDL_SetClipboardText(text) != 0) die(SDL_GetError());
 }
-// BAL: these don't belong here
-int frameWidth(frame_t *frame)
-{
-  return frame->rect.w;
-}
+/* // BAL: these don't belong here */
+/* int frameWidth(frame_t *frame) */
+/* { */
+/*   return frame->rect.w; */
+/* } */
 
-int frameColumns(frame_t *frame, state_t *st)
-{
-  return frameWidth(frame) / st->font.charSkip;
-}
+/* int frameColumns(frame_t *frame, state_t *st) */
+/* { */
+/*   return frameWidth(frame) / st->font.charSkip; */
+/* } */
 

@@ -31,6 +31,7 @@ typedef int color_t;
 
 void die(const char *msg);
 void *dieIfNull(void *p);
+void fillRectAt(int x, int y, int w, int h);
 void fillRect(int width, int height);
 void setBlendMode(SDL_BlendMode m);
 void setDrawColor(color_t c);
@@ -130,23 +131,32 @@ typedef struct cursor_s cursor_t;
 
 struct view_s // BAL: this needs to be renamed
 {
-  cursor_t cursor;
-  cursor_t selection;
   editorMode_t mode;
-  uint refDoc;
-  bool selectionActive;
   bool selectionInProgress;
   bool selectionLines;
+
+  int refDoc;
+  int scrollY;
+  cursor_t cursor;
+  cursor_t selection;
+  bool selectionActive;
 };
 
 typedef struct view_s view_t;
 
-struct frame_s // BAL: this should be a "view"
+struct frame_s
 {
   SDL_Rect rect;
   int scrollX;
-  int scrollY;
-  uint refView;
+
+  int refView;
+  view_t *view;
+  color_t color;
+  int height;
+  int width;
+  char *text;
+  char **filepath;
+  int *scrollY;
 };
 
 typedef struct frame_s frame_t;
@@ -187,9 +197,9 @@ struct state_s
 
 typedef struct state_s state_t;
 
-// BAL: these don't belong here
-int frameWidth(frame_t *frame);
-int frameColumns(frame_t *frame, state_t *st);
+/* // BAL: these don't belong here */
+/* int frameWidth(frame_t *frame); */
+/* int frameColumns(frame_t *frame); */
 
 #define KEY_UNKNOWN 0
 #define KEY_SHIFT_RETURN 1
