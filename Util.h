@@ -129,16 +129,17 @@ struct cursor_s {
 
 typedef struct cursor_s cursor_t;
 
+typedef enum { NO_SELECT, CHAR_SELECT, LINE_SELECT, NUM_SELECT_MODES } selectMode_t;
+
 struct view_s // BAL: this needs to be renamed
 {
   editorMode_t mode;
-  bool selectionInProgress;
 
   int refDoc;
   int scrollY;
   cursor_t cursor;
   cursor_t selection;
-  bool lineSelectMode;
+  selectMode_t selectMode;
 };
 
 typedef struct view_s view_t;
@@ -191,7 +192,7 @@ struct state_s
   bool searchDirty;
   int downCxtX;
   int downCxtY;
-  bool mouseMoveInProgress;
+  bool mouseSelectionInProgress;
 };
 
 typedef struct state_s state_t;

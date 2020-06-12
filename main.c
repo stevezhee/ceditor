@@ -229,7 +229,7 @@ void viewRender(view_t *view, frame_t *frame)
     /*     swap(int, aRow, bRow); */
     /* } */
 
-    /* if (view->lineSelectMode) */
+    /* if (view->selectMode == LINE_SELECT) */
     /*   { */
     /*     aCol = 0; */
     /*     bCol = frameColumns(frame); */
@@ -542,7 +542,7 @@ void drawSelection(view_t *view)
   int len = b->offset - offset;
   int column = a->column;
   char *s = docCString(docFocus());
-  if(view->lineSelectMode)
+  if(view->selectMode == LINE_SELECT)
     {
       len += distanceToEOL(s + offset + len);
       offset -= column;
@@ -560,7 +560,7 @@ bool cursorEq(cursor_t *a, cursor_t *b)
 
 bool selectionActive(view_t *view)
 {
-  return view->lineSelectMode || !(cursorEq(&view->cursor, &view->selection));
+  return (view->selectMode != NO_SELECT);
 }
 
 void drawCursorOrSelection(view_t *view)
@@ -923,15 +923,15 @@ void stInit(int argc, char **argv)
 
   initFont(&st.font, INIT_FONT_FILE, INIT_FONT_SIZE);
 
-  //  initMacros();
+  initMacros();
 
 
     arrayInit(&st.docs, sizeof(doc_t));
     arrayInit(&st.views, sizeof(view_t));
     arrayInit(&st.frames, sizeof(frame_t));
-    /* arrayInit(&st.results, sizeof(uint)); */
+    arrayInit(&st.results, sizeof(int));
 
-    /* keysymInit(); */
+    keysymInit();
 
     for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
       {
@@ -1021,28 +1021,26 @@ void selectChars()
 {
   view_t *view = stViewFocus();
   cursorCopy(&view->selection, &view->cursor);
-  view->selectionInProgress = true;
-  view->lineSelectMode = false;
+  view->selectMode = CHAR_SELECT;
 }
 
 void selectLines()
 {
   view_t *view = stViewFocus();
-  selectChars();
-  view->lineSelectMode = true;
+  cursorCopy(&view->selection, &view->cursor);
+  view->selectMode = LINE_SELECT;
 }
 
 void selectionEnd()
 {
   view_t *view = stViewFocus();
-  view->selectionInProgress = false;
-  view->lineSelectMode = false;
+  view->selectMode = NO_SELECT;
 }
+
 void selectionCancel()
 {
   view_t *view = stViewFocus();
-  view->selectionInProgress = false;
-  view->lineSelectMode = false;
+  view->selectMode = NO_SELECT;
 }
 
 void selectionSetRowCol()
@@ -1054,61 +1052,36 @@ void selectionSetRowCol()
 
 void mouseButtonUpEvent()
 {
-  /* setCursorFromXY(&view->selection, st, st.event.button.x, st.event.button.y); */
-  /*   selectionEnd(); */
-  st.mouseMoveInProgress = false;
+  st.mouseSelectionInProgress = false;
   selectionSetRowCol();
-  // printf("up event %d dx=%d dy=%d\n", context.wid, st.event.button.x - st.downCxtX, st.event.button.y - st.downCxtY);
+  view_t *view = stViewFocus();
+  if (cursorEq(&view->cursor, &view->selection)) view->selectMode = NO_SELECT;
 }
 
-// BAL: there is a bug when beginning a selection past the length of a given line
 void mouseButtonDownEvent()
 {
   contextReinit();
   widget_t *p = widgetAt(gui, st.event.button.x, st.event.button.y);
   if (context.wid < 0 || context.wid > NUM_FRAMES) return;
 
+  st.mouseSelectionInProgress = true;
   stSetFrameFocus(context.wid);
-  view_t *view = viewFocus();
 
-  view->lineSelectMode = st.event.button.button == SDL_BUTTON_RIGHT;
-  st.mouseMoveInProgress = true;
+  view_t *view = viewFocus();
+  view->selectMode = CHAR_SELECT;
+  if (st.event.button.button == SDL_BUTTON_RIGHT) view->selectMode = LINE_SELECT;
+
   st.downCxtX = context.x;
   st.downCxtY = context.y;
 
-
-  int column = xToColumn(st.event.button.x - st.downCxtX);
-  int row = yToRow(st.event.button.y - st.downCxtY);
-
-  cursorSetRowCol(&view->cursor, row, column, docFocus());
-  memcpy(&view->selection, &view->cursor, sizeof(cursor_t));
-
-  // printf("down event %d x=%d y=%d\n", context.wid, context.x, context.y);
-    /* int i = 0; */
-    /* frame_t *frame; */
-
-    /* while (true) // find selected frame */
-    /* { */
-    /*     SDL_Point p; */
-    /*     p.x = st.event.button.x; */
-    /*     p.y = st.event.button.y; */
-    /*     frame = arrayElemAt(&st.frames, i); */
-    /*     if (SDL_PointInRect(&p, &frame->rect)) break; */
-    /*     i++; */
-    /*     if (i == NUM_FRAMES) return; */
-    /* }; */
-
-    /* stSetFrameFocus(i); */
-    /* view_t *view = stViewFocus(); */
-    /* setCursorFromXY(&view->cursor, st, st.event.button.x, st.event.button.y); */
-    /* selectChars(); */
+  selectionSetRowCol();
+  cursorCopy(&view->cursor, &view->selection);
 }
 
 void mouseMotionEvent()
 {
-    if (st.mouseMoveInProgress)
+    if (st.mouseSelectionInProgress)
     {
-      // setCursorFromXYMotion(&view->selection, st, st.event.motion.x, st.event.motion.y);
       selectionSetRowCol();
       return;
     }
@@ -1160,36 +1133,40 @@ void keyDownEvent()
     }
 }
 
-cursor_t *activeCursor()
-{
-  view_t *view = stViewFocus();
-  if (view->selectionInProgress)
-    {
-      return &view->selection;
-    }
-  return &view->cursor;
-}
+/* cursor_t *cursorFocus() */
+/* { */
+/*   view_t *view = stViewFocus(); */
+/*   if (view->selectionInProgress) */
+/*     { */
+/*       return &view->selection; */
+/*     } */
+/*   return &view->cursor; */
+/* } */
 
+cursor_t *cursorFocus()
+{
+  return &stViewFocus()->cursor;
+}
 void stMoveCursorOffset(int offset)
 {
-    cursorSetOffset(activeCursor(), offset, stDocFocus());
+    cursorSetOffset(cursorFocus(), offset, stDocFocus());
     frameTrackSelection(stFrameFocus());
 }
 
 void stMoveCursorRowCol(int row, int col)
 {
-    cursorSetRowCol(activeCursor(), row, col, stDocFocus());
+    cursorSetRowCol(cursorFocus(), row, col, stDocFocus());
     frameTrackSelection(stFrameFocus());
 }
 
 void backwardChar()
 {
-  stMoveCursorOffset(activeCursor()->offset - 1);
+  stMoveCursorOffset(cursorFocus()->offset - 1);
 }
 
 void forwardChar()
 {
-  stMoveCursorOffset(activeCursor()->offset + 1);
+  stMoveCursorOffset(cursorFocus()->offset + 1);
 }
 
 void setNavigateMode()
@@ -1210,7 +1187,7 @@ void setNavigateModeAndDoKeyPress(uchar c)
 
 void moveLines(int dRow)
 {
-  cursor_t *cursor = activeCursor();
+  cursor_t *cursor = cursorFocus();
     int col = cursor->preferredColumn;
 
     stMoveCursorRowCol(cursor->row + dRow, col);
@@ -1249,19 +1226,19 @@ void forwardEOF()
 
 void backwardSOL()
 {
-    stMoveCursorRowCol(activeCursor()->row, 0);
+    stMoveCursorRowCol(cursorFocus()->row, 0);
 }
 
 void forwardEOL()
 {
-    stMoveCursorRowCol(activeCursor()->row, INT_MAX);
+    stMoveCursorRowCol(cursorFocus()->row, INT_MAX);
 }
 
 void insertString(char *s, uint len)
 {
     if (!s || len == 0) return;
     st.dirty = DOC_DIRTY;
-    docInsert(stDocFocus(), activeCursor()->offset, s, len);
+    docInsert(stDocFocus(), cursorFocus()->offset, s, len);
 }
 
 void insertCString(char *s)
@@ -1298,7 +1275,7 @@ void getOffsetAndLength(int *offset, int *length)
         swap(cursor_t *, cur, sel);
     }
 
-    if (view->lineSelectMode)
+    if (view->selectMode == LINE_SELECT)
       {
         cursorSetRowCol(cur, cur->row, 0, stDocFocus());
         cursorSetRowCol(sel, sel->row, INT_MAX, stDocFocus());
@@ -1555,9 +1532,9 @@ int main(int argc, char **argv)
             case SDL_MOUSEMOTION:
                 mouseMotionEvent();
                 break;
-            /* case SDL_KEYDOWN: */
-            /*     keyDownEvent(); */
-            /*     break; */
+            case SDL_KEYDOWN:
+                keyDownEvent();
+                break;
             case SDL_QUIT:
                 quitEvent();
                 break;
