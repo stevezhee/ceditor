@@ -133,13 +133,12 @@ struct view_s // BAL: this needs to be renamed
 {
   editorMode_t mode;
   bool selectionInProgress;
-  bool selectionLines;
 
   int refDoc;
   int scrollY;
   cursor_t cursor;
   cursor_t selection;
-  bool selectionActive;
+  bool lineSelectMode;
 };
 
 typedef struct view_s view_t;
@@ -190,8 +189,8 @@ struct state_s
   uint searchLen;
   uint searchRefView;
   bool searchDirty;
-  int downX;
-  int downY;
+  int downCxtX;
+  int downCxtY;
   bool mouseMoveInProgress;
 };
 

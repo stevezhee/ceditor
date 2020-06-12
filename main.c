@@ -213,7 +213,7 @@ void viewRender(view_t *view, frame_t *frame)
 {
     /* assert(view); */
 
-    /* if (!view->selectionInProgress && !view->selectionActive) { */
+    /* if (!view->selectionInProgress) { */
     /*   cursorRender(view, frame); */
     /*   return; */
     /* } */
@@ -229,7 +229,7 @@ void viewRender(view_t *view, frame_t *frame)
     /*     swap(int, aRow, bRow); */
     /* } */
 
-    /* if (view->selectionLines) */
+    /* if (view->lineSelectMode) */
     /*   { */
     /*     aCol = 0; */
     /*     bCol = frameColumns(frame); */
@@ -368,13 +368,12 @@ int numLinesCString(char *s)
   return n;
 }
 
-void drawCStringSelection(int x, int y, char *s, int offset, int len)
+void drawCStringSelection(int x, int y, char *s, int len)
 {
   // BAL: would it look good to bold the characters in addition/instead?
   assert(s);
   int w = context.font->charSkip;
   int h = context.font->lineSkip;
-  s += offset;
   char *p = s + len;
   while(s < p)
     {
@@ -514,18 +513,43 @@ void drawCursor(view_t *view)
   setDrawColor(context.color);
 }
 
+int distanceToEOL(char *s)
+{
+  char *p = s;
+  char c = *p;
+
+  while(c != '\n' && c != '\0')
+    {
+      p++;
+      c = *p;
+    }
+  return p - s;
+}
+
 void drawSelection(view_t *view)
 {
 
   cursor_t *a = &view->cursor;
   cursor_t *b = &view->selection;
+
   if (a->offset > b->offset)
     {
       swap(cursor_t*, a, b);
     }
 
   setDrawColor(SELECTION_COLOR);
-  drawCStringSelection(columnToX(a->column), rowToY(a->row), docCString(docFocus()), a->offset, b->offset - a->offset + 1);
+  int offset = a->offset;
+  int len = b->offset - offset;
+  int column = a->column;
+  char *s = docCString(docFocus());
+  if(view->lineSelectMode)
+    {
+      len += distanceToEOL(s + offset + len);
+      offset -= column;
+      len += column;
+      column = 0;
+    }
+  drawCStringSelection(columnToX(column), rowToY(a->row), s + offset, len + 1);
   setDrawColor(context.color);
 }
 
@@ -536,7 +560,7 @@ bool cursorEq(cursor_t *a, cursor_t *b)
 
 bool selectionActive(view_t *view)
 {
-  return !(cursorEq(&view->cursor, &view->selection));
+  return view->lineSelectMode || !(cursorEq(&view->cursor, &view->selection));
 }
 
 void drawCursorOrSelection(view_t *view)
@@ -998,36 +1022,34 @@ void selectChars()
   view_t *view = stViewFocus();
   cursorCopy(&view->selection, &view->cursor);
   view->selectionInProgress = true;
-  view->selectionActive = true;
-  view->selectionLines = false;
+  view->lineSelectMode = false;
 }
 
 void selectLines()
 {
   view_t *view = stViewFocus();
   selectChars();
-  view->selectionLines = true;
+  view->lineSelectMode = true;
 }
 
 void selectionEnd()
 {
   view_t *view = stViewFocus();
   view->selectionInProgress = false;
-  view->selectionActive = !(cursorEq(&view->cursor, &view->selection));
-  view->selectionLines = false;
+  view->lineSelectMode = false;
 }
 void selectionCancel()
 {
   view_t *view = stViewFocus();
   view->selectionInProgress = false;
-  view->selectionActive = false;
-  view->selectionLines = false;
+  view->lineSelectMode = false;
 }
 
 void selectionSetRowCol()
 {
   view_t *view = stViewFocus();
-  cursorSetRowCol(&view->selection, yToRow(st.event.button.y - st.downY), xToColumn(st.event.button.x - st.downX), docFocus());
+  int column = xToColumn(st.event.button.x - st.downCxtX);
+  cursorSetRowCol(&view->selection, yToRow(st.event.button.y - st.downCxtY), column, docFocus());
 }
 
 void mouseButtonUpEvent()
@@ -1036,8 +1058,7 @@ void mouseButtonUpEvent()
   /*   selectionEnd(); */
   st.mouseMoveInProgress = false;
   selectionSetRowCol();
-  // view->selectionActive = !(cursorEq(&view->cursor, &view->selection));
-  // printf("up event %d dx=%d dy=%d\n", context.wid, st.event.button.x - st.downX, st.event.button.y - st.downY);
+  // printf("up event %d dx=%d dy=%d\n", context.wid, st.event.button.x - st.downCxtX, st.event.button.y - st.downCxtY);
 }
 
 // BAL: there is a bug when beginning a selection past the length of a given line
@@ -1046,14 +1067,20 @@ void mouseButtonDownEvent()
   contextReinit();
   widget_t *p = widgetAt(gui, st.event.button.x, st.event.button.y);
   if (context.wid < 0 || context.wid > NUM_FRAMES) return;
+
   stSetFrameFocus(context.wid);
-
-  st.mouseMoveInProgress = true;
-  st.downX = context.x;
-  st.downY = context.y;
-
   view_t *view = viewFocus();
-  cursorSetRowCol(&view->cursor, yToRow(st.event.button.y - st.downY), xToColumn(st.event.button.x - st.downX), docFocus());
+
+  view->lineSelectMode = st.event.button.button == SDL_BUTTON_RIGHT;
+  st.mouseMoveInProgress = true;
+  st.downCxtX = context.x;
+  st.downCxtY = context.y;
+
+
+  int column = xToColumn(st.event.button.x - st.downCxtX);
+  int row = yToRow(st.event.button.y - st.downCxtY);
+
+  cursorSetRowCol(&view->cursor, row, column, docFocus());
   memcpy(&view->selection, &view->cursor, sizeof(cursor_t));
 
   // printf("down event %d x=%d y=%d\n", context.wid, context.x, context.y);
@@ -1136,7 +1163,7 @@ void keyDownEvent()
 cursor_t *activeCursor()
 {
   view_t *view = stViewFocus();
-  if (view->selectionInProgress || view->selectionActive)
+  if (view->selectionInProgress)
     {
       return &view->selection;
     }
@@ -1271,7 +1298,7 @@ void getOffsetAndLength(int *offset, int *length)
         swap(cursor_t *, cur, sel);
     }
 
-    if (view->selectionLines)
+    if (view->lineSelectMode)
       {
         cursorSetRowCol(cur, cur->row, 0, stDocFocus());
         cursorSetRowCol(sel, sel->row, INT_MAX, stDocFocus());
