@@ -74,7 +74,7 @@ void keysymInit(void)
     keyHandler[NAVIGATE_MODE][KEY_PAGEDOWN] = (keyHandler_t)forwardPage;
     keyHandler[NAVIGATE_MODE][KEY_HOME] = (keyHandler_t)backwardSOF;
     keyHandler[NAVIGATE_MODE][KEY_END] = (keyHandler_t)forwardEOF;
-    
+
     // keyHandler[NAVIGATE_MODE]['h'] = (keyHandler_t)backwardChar;
     // BAL: 'h' or '?' goto help buffer?
     // keyHandler[NAVIGATE_MODE]['l'] = (keyHandler_t)forwardChar;
@@ -89,9 +89,8 @@ void keysymInit(void)
     keyHandler[NAVIGATE_MODE]['g'] = (keyHandler_t)gotoView;
     //    keyHandler[NAVIGATE_MODE][KEY_SHIFT_DOWN] = forwardParagraph;
 //    keyHandler[NAVIGATE_MODE][KEY_SHIFT_UP] = backwardParagraph;
-//    
+//
     keyHandler[NAVIGATE_MODE]['i'] = (keyHandler_t)setInsertMode;
-
 
 //    keyHandler[NAVIGATE_MODE]['-'] = decreaseFont;
 //    keyHandler[NAVIGATE_MODE]['+'] = increaseFont;
@@ -102,12 +101,12 @@ void keysymInit(void)
     keyHandler[NAVIGATE_MODE]['/'] = (keyHandler_t)setSearchMode;
     keyHandler[NAVIGATE_MODE][','] = (keyHandler_t)playMacro;
     keyHandler[NAVIGATE_MODE]['m'] = (keyHandler_t)startStopRecording;
-    
+
     for(char c = '!'; c <= '~'; ++c)
     {
         keyHandler[INSERT_MODE][c] = insertChar;
     }
-    
+
     keyHandler[INSERT_MODE]['\n'] = insertChar;
     keyHandler[INSERT_MODE][' '] = insertChar;
 }
@@ -115,13 +114,13 @@ void keysymInit(void)
 uchar getKeyChar(SDL_Keycode c)
 {
     int isShift = SDL_GetModState() & KMOD_SHIFT;
-    
+
     if (c >= '!' && c <= '~')
     {
         if (isShift) { c = shiftChars[c - '\'']; }
         return c;
     }
-    
+
     if (c >= SDLK_F1 && c <= SDLK_UP)
     {
         c = 128 + (c - SDLK_F1);

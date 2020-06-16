@@ -11,6 +11,7 @@
 SDL_Renderer *renderer;
 
 char *builtinBufferTitle[NUM_BUILTIN_BUFFERS] = { "*help", "*messages", "*buffers", "*macros", "*copy buffer", "*searches", "*config" };
+char *editorModeDescr[NUM_MODES] = { "NAV", "INS", "FND" };
 
 color_t viewColors[] = { VIEW_COLOR, FOCUS_VIEW_COLOR };
 

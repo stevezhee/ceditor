@@ -125,9 +125,18 @@ doc_t *docOf(view_t *view)
 {
   return arrayElemAt(&st.docs, view->refDoc);
 }
+
 doc_t *docFocus()
 {
   return docOf(viewFocus());
+}
+
+void frameUpdate(frame_t *frame)
+{
+  view_t *view = viewOf(frame);
+  doc_t *doc = docOf(view);
+  frame->text = docCString(doc);
+  sprintf(frame->status, "<%s> %3d:%2d %s", editorModeDescr[view->mode], view->cursor.row + 1, view->cursor.column, doc->filepath);
 }
 
 void stSetFrameView(int i, int j)
@@ -139,9 +148,7 @@ void stSetFrameView(int i, int j)
   frame->scrollY = &view->scrollY;
   frame->view = view;
 
-  doc_t *doc = docOf(view);
-  frame->text = docCString(doc);
-  frame->filepath = &doc->filepath;
+  frameUpdate(frame);
 }
 
 void stSetViewFocus(uint i)
@@ -152,10 +159,11 @@ void stSetViewFocus(uint i)
     printf("file:%s\n", stDocFocus()->filepath);
 }
 
-void frameInit(frame_t *v)
+void frameInit(frame_t *frame)
 {
-    memset(v, 0, sizeof(frame_t));
-    v->color = unfocusedFrameColor;
+    memset(frame, 0, sizeof(frame_t));
+    frame->color = unfocusedFrameColor;
+    frame->status = malloc(1024); // BAL:
 }
 
 void viewInit(view_t *view, uint i)
@@ -905,7 +913,7 @@ void buffersBufInit()
 widget_t *frame(frame_t *frame, int i)
 {
   widget_t *textarea = wid(i, scrollY(frame->scrollY, over(text(&frame->text), view(&frame->view))));
-  widget_t *status = over(text(frame->filepath), vspc(&st.font.lineSkip));
+  widget_t *status = over(text(&frame->status), vspc(&st.font.lineSkip));
   widget_t *background = color(&frame->color, over(box(), hspc(&frame->width)));
   return over(vcatr(textarea, status), background);
 }
@@ -1147,6 +1155,7 @@ cursor_t *cursorFocus()
 {
   return &stViewFocus()->cursor;
 }
+
 void stMoveCursorOffset(int offset)
 {
     cursorSetOffset(cursorFocus(), offset, stDocFocus());
@@ -1542,6 +1551,7 @@ int main(int argc, char **argv)
                 st.dirty = NOT_DIRTY;
                 break;
         }
+        frameUpdate(frameFocus());
         stDraw();
         /* if (st.dirty & DOC_DIRTY) // BAL: noActiveSearch? */
         /* { */

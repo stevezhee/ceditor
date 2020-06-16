@@ -39,6 +39,8 @@ void rendererClear(void);
 void setViewport(SDL_Rect *r);
 
 typedef enum { NAVIGATE_MODE, INSERT_MODE, SEARCH_MODE, NUM_MODES } editorMode_t;
+extern char *editorModeDescr[NUM_MODES];
+
 typedef unsigned char uchar;
 typedef enum { NOT_DIRTY = 0b0, DOC_DIRTY = 0b1, FOCUS_DIRTY = 0b10, WINDOW_DIRTY = 0b100 } windowDirty_t;
 extern color_t viewColors[];
@@ -155,7 +157,7 @@ struct frame_s
   int height;
   int width;
   char *text;
-  char **filepath;
+  char *status;
   int *scrollY;
 };
 
