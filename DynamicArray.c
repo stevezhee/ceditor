@@ -13,12 +13,14 @@ void arrayGrow(dynamicArray_t *arr, int maxElems)
   assert(arr);
   assert(maxElems >= 1);
   if (maxElems <= arr->maxElems) return;
+  printf("growing array...\n");
   arr->maxElems = maxElems;
   arr->start = dieIfNull(realloc(arr->start, arr->elemSize * maxElems));
 }
 
 void arrayReinit(dynamicArray_t *arr)
 {
+  assert(arr);
   arr->offset = 0;
   arr->numElems = 0;
 }
@@ -39,14 +41,9 @@ void *arrayElemAt(dynamicArray_t *arr, int i)
   return arr->start + i * arr->elemSize;
 }
 
-int arrayFocusOffset(dynamicArray_t *arr)
-{
-  return arr->offset;
-}
-
 void *arrayFocus(dynamicArray_t *arr)
 {
-  return arrayElemAt(arr, arrayFocusOffset(arr));
+  return arrayElemAt(arr, arr->offset);
 }
 
 void *arrayTop(dynamicArray_t *arr)

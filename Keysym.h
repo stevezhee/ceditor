@@ -41,11 +41,14 @@ void forwardPage();
 void backwardPage();
 void selectChars();
 void selectLines();
-
+void forwardFrame();
+void backwardFrame();
+void forwardView();
+void backwardView();
 // void appendLine();
 // void prependLine();
 // void setInsertModeAndInsertChar(uchar c);
 void insertChar(uchar c);
-void delete();
+void cut();
 // void backspace();
 #endif /* Keysym_h */

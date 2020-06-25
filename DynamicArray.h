@@ -19,11 +19,11 @@ void arrayPush(dynamicArray_t *arr, void *elem);
 void *arrayPop(dynamicArray_t *arr);
 void *arrayElemAt(dynamicArray_t *arr, int i);
 void *arrayPeek(dynamicArray_t *arr);
-int arrayFocusOffset(dynamicArray_t *arr);
 void *arrayFocus(dynamicArray_t *arr);
 void arraySetFocus(dynamicArray_t *arr, int i);
 void *arrayBoundary(dynamicArray_t *arr);
 void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len);
 void arrayDelete(dynamicArray_t *arr, int offset, int len);
+void *arrayTop(dynamicArray_t *arr);
 
 #endif /* DynamicArray_h */

@@ -37,6 +37,8 @@ void setBlendMode(SDL_BlendMode m);
 void setDrawColor(color_t c);
 void rendererClear(void);
 void setViewport(SDL_Rect *r);
+void rendererInit(SDL_Window *win);
+void rendererPresent(void);
 
 typedef enum { NAVIGATE_MODE, INSERT_MODE, SEARCH_MODE, NUM_MODES } editorMode_t;
 extern char *editorModeDescr[NUM_MODES];
@@ -156,8 +158,9 @@ struct frame_s
   color_t color;
   int height;
   int width;
-  char *text;
-  char *status;
+  string_t *text;
+  string_t statusBuf;
+  string_t *status;
   int *scrollY;
 };
 

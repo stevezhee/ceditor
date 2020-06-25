@@ -57,6 +57,22 @@ void rendererClear(void)
   if (SDL_RenderClear(renderer) != 0) die(SDL_GetError());
 }
 
+void rendererInit(SDL_Window *win)
+{
+  // For some reason these cause memory corruption(?)...
+  // renderer = dieIfNull(SDL_CreateRenderer(win, -1, SDL_RENDERER_SOFTWARE));
+  renderer = dieIfNull(SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED));
+  // renderer = dieIfNull(SDL_CreateRenderer(win, -1, SDL_RENDERER_PRESENTVSYNC));
+  // but this works(?)
+  // SDL_Surface *srfc = dieIfNull(SDL_GetWindowSurface(win));
+  // renderer = dieIfNull(SDL_CreateSoftwareRenderer(srfc));
+}
+
+void rendererPresent(void)
+{
+   SDL_RenderPresent(renderer);
+}
+
 void setViewport(SDL_Rect *r)
 {
   if (SDL_RenderSetViewport(renderer, r) != 0) die(SDL_GetError());

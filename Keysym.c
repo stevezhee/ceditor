@@ -15,7 +15,7 @@ keyHandler_t keyHandler[NUM_MODES][NUM_KEYS];
 
 char *macro[255];
 
-#define NUM_BUILTIN_MACROS 16
+#define NUM_BUILTIN_MACROS 17
 
 char builtinMacros[NUM_BUILTIN_MACROS][8] = {
     { KEY_BACKSPACE, KEY_LEFT, KEY_DELETE, '\0' },
@@ -34,6 +34,7 @@ char builtinMacros[NUM_BUILTIN_MACROS][8] = {
     { '\t', '0', 'i', ' ', ' ', KEY_LEFT, KEY_LEFT, '\0' },
     { KEY_SHIFT_TAB, '0', 'x', 'x', '\0' },
     { ';', '0', 'i', '/', '/', KEY_LEFT, KEY_LEFT, '\0' },
+    { 'x', KEY_DELETE, '\0' },
 };
 
 void initMacros(void)
@@ -53,9 +54,7 @@ void keysymInit(void)
         keyHandler[INSERT_MODE][i] = setNavigateModeAndDoKeyPress;
     }
 
-    keyHandler[NAVIGATE_MODE][KEY_DELETE] = (keyHandler_t)delete;
-
-    keyHandler[NAVIGATE_MODE]['x'] = (keyHandler_t)delete;
+    keyHandler[NAVIGATE_MODE][KEY_DELETE] = (keyHandler_t)cut;
 
     //    keyHandler[NAVIGATE_MODE][KEY_SHIFT_RETURN] = (keyHandler_t)prependLine;
 
@@ -75,11 +74,11 @@ void keysymInit(void)
     keyHandler[NAVIGATE_MODE][KEY_HOME] = (keyHandler_t)backwardSOF;
     keyHandler[NAVIGATE_MODE][KEY_END] = (keyHandler_t)forwardEOF;
 
-    // keyHandler[NAVIGATE_MODE]['h'] = (keyHandler_t)backwardChar;
+    keyHandler[NAVIGATE_MODE]['h'] = (keyHandler_t)backwardFrame;
+    keyHandler[NAVIGATE_MODE]['j'] = (keyHandler_t)forwardFrame;
+    keyHandler[NAVIGATE_MODE]['k'] = (keyHandler_t)backwardView;
+    keyHandler[NAVIGATE_MODE]['l'] = (keyHandler_t)forwardView;
     // BAL: 'h' or '?' goto help buffer?
-    // keyHandler[NAVIGATE_MODE]['l'] = (keyHandler_t)forwardChar;
-    // keyHandler[NAVIGATE_MODE]['k'] = (keyHandler_t)forwardLine;
-    // keyHandler[NAVIGATE_MODE]['j'] = (keyHandler_t)backwardLine;
 //    keyHandler[NAVIGATE_MODE]['w'] = forwardWord;
 //    keyHandler[NAVIGATE_MODE][KEY_SHIFT_RIGHT] = forwardWord;
 //    keyHandler[NAVIGATE_MODE]['b'] = backwardWord;

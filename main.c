@@ -45,7 +45,7 @@ struct widget_s
     int *dy;
     font_t **font;
     view_t **view;
-    char **text;
+    string_t **text;
     widget_t *child;
     void *data;
   } a;
@@ -65,19 +65,19 @@ int yToRow(int x)
   return x / st.font.lineSkip;
 }
 
-frame_t *stFrameFocus()
+int numViews()
 {
-    return arrayFocus(&st.frames);
+  return st.views.numElems;
 }
 
-view_t *stViewFocus()
+int numFrames()
 {
-    return arrayElemAt(&st.views, stFrameFocus()->refView);
+  return st.frames.numElems;
 }
 
-doc_t *stDocFocus()
+int numDocs()
 {
-    return arrayElemAt(&st.docs, stViewFocus()->refDoc);
+  return st.docs.numElems;
 }
 
 int frameHeight(frame_t *frame)
@@ -90,35 +90,48 @@ uint frameRows(frame_t *frame)
     return frameHeight(frame) / st.font.lineSkip;
 }
 
-void stSetFrameFocus(int i)
+int getFocusFrame()
 {
-    int j = arrayFocusOffset(&st.frames);
-    if (i != j)
-    {
-      frame_t *frame = stFrameFocus();
-      frame->color = unfocusedFrameColor;
-      arraySetFocus(&st.frames, i);
-      frame = stFrameFocus();
-      frame->color = focusedFrameColor;
-        //        st.dirty = WINDOW_DIRTY;
-        // printf("file:%s\n", stDocFocus()->filepath);
-    }
+  return st.frames.offset;
 }
+
+frame_t *focusFrame()
+{
+  return arrayFocus(&st.frames);
+}
+
+void setFocusFrame(int i)
+{
+  int j = getFocusFrame();
+  if (i != j)
+  {
+    frame_t *frame = focusFrame();
+    frame->color = unfocusedFrameColor;
+    arraySetFocus(&st.frames, i);
+    frame = focusFrame();
+    frame->color = focusedFrameColor;
+      // printf("file:%s\n", focusDoc()->filepath);
+  }
+}
+
 frame_t *frameOf(int i)
 {
   return arrayElemAt(&st.frames, i);
 }
-frame_t *frameFocus()
+
+int getViewFocus()
 {
-  return arrayFocus(&st.frames);
+  return focusFrame()->refView;
 }
+
 view_t *viewOf(frame_t *frame)
 {
   return arrayElemAt(&st.views, frame->refView);
 }
-view_t *viewFocus()
+
+view_t *focusView()
 {
-  return viewOf(frameFocus());
+  return viewOf(focusFrame());
 }
 
 doc_t *docOf(view_t *view)
@@ -126,21 +139,57 @@ doc_t *docOf(view_t *view)
   return arrayElemAt(&st.docs, view->refDoc);
 }
 
-doc_t *docFocus()
+doc_t *focusDoc()
 {
-  return docOf(viewFocus());
+  return docOf(focusView());
 }
 
+void debugStatus()
+{
+  for(int i = 0; i < NUM_FRAMES; ++i)
+      {
+        frame_t *frame = frameOf(i);
+        printf("debug status: %d\n", (int)frame->status->start);
+        assert(frame->status->start);
+      }
+}
 void frameUpdate(frame_t *frame)
 {
   view_t *view = viewOf(frame);
   doc_t *doc = docOf(view);
-  frame->text = docCString(doc);
-  sprintf(frame->status, "<%s> %3d:%2d %s", editorModeDescr[view->mode], view->cursor.row + 1, view->cursor.column, doc->filepath);
+
+  frame->text = &doc->contents;
+  // printf("frameUpdate %p %p %p %p %p\n", frame, view, &frame->text, &frame->statusBuf, frame->status);
+  //  printf("frame update status: %p %p %d %d\n", frame->status, frame->status->start, frame->status->numElems, frame->status->maxElems);
+
+  // BAL: make sure we don't overflow the buffer
+  arrayReinit(frame->status);
+  printf("frame update: %d\n", (int)frame->status->start);
+  sprintf(frame->status->start, "<%s> %3d:%2d %s", editorModeDescr[view->mode], view->cursor.row + 1, view->cursor.column, doc->filepath);
+  frame->status->numElems = strlen(frame->status->start);
+  // printf("frame->status->start %s\n", frame->status->start);
+  // printf("%s\n", s);
+  // arrayInsert(frame->status, 0, s, strlen(s));
+  //  printf("status len=%d %s\n", frame->status->numElems, frame->status->start);
+
+  /*  for(int i; i < NUM_FRAMES; ++i)
+    {
+      frame = arrayElemAt(&st.frames, i);
+      //      printf("frame dbg: %p %p %d %d\n", frame->status, frame->status->start, frame->status->numElems, frame->status->maxElems);
+    }
+// printf("%p %p %p %p\n", frame, &frame->text, &frame->statusBuf, frame->status);
+ for(int i; i < NUM_FRAMES; ++i)
+   {
+     frame = arrayElemAt(&st.frames, i);
+     // printf("frame dbg: %p %p %d %d\n", frame->status, frame->status->start, frame->status->numElems, frame->status->maxElems);
+     } */
+
 }
 
-void stSetFrameView(int i, int j)
+void setFrameView(int i, int j)
 {
+  // printf("setFrameView %d %d\n", i, j);
+
   frame_t *frame = frameOf(i);
   frame->refView = j;
 
@@ -148,22 +197,35 @@ void stSetFrameView(int i, int j)
   frame->scrollY = &view->scrollY;
   frame->view = view;
 
+  // printf("setFrameView %p %p\n", frame, view);
   frameUpdate(frame);
 }
 
-void stSetViewFocus(uint i)
+void setFocusView(int i)
 {
-    i = clamp(0, i, st.views.numElems - 1);
-    frame_t *frame = stFrameFocus();
-    frame->refView = i;
-    printf("file:%s\n", stDocFocus()->filepath);
+  setFrameView(getFocusFrame(), i);
 }
+
+/* void stSetViewFocus(uint i) */
+/* { */
+/*     i = clamp(0, i, st.views.numElems - 1); */
+/*     frame_t *frame = focusFrame(); */
+/*     frame->refView = i; */
+/*     printf("file:%s\n", focusDoc()->filepath); */
+/* } */
 
 void frameInit(frame_t *frame)
 {
     memset(frame, 0, sizeof(frame_t));
     frame->color = unfocusedFrameColor;
-    frame->status = malloc(1024); // BAL:
+    frame->status = &frame->statusBuf;
+
+    arrayInit(frame->status, sizeof(char));
+    arrayGrow(frame->status, 1024);
+    printf("frame init: %d\n", (int)frame->status->start);
+    // printf("frame init status: %p %p %d %d\n", frame->status, frame->status->start, frame->status->numElems, frame->status->maxElems);
+    //    printf("status size buf=%p start=%p\n", frame->status, frame->status->start);
+
 }
 
 void viewInit(view_t *view, uint i)
@@ -256,7 +318,7 @@ void frameRender(frame_t *frame)
     bkgd.w = frame->rect.w;
     bkgd.h = frame->rect.h;
 
-    color_t color = viewColors[frame == stFrameFocus()];
+    color_t color = viewColors[frame == focusFrame()];
     setDrawColor(color);
     // fillRect(st.renderer, &bkgd); // background
 
@@ -266,11 +328,11 @@ void frameRender(frame_t *frame)
     docRender(arrayElemAt(&st.docs, view->refDoc), frame);
 }
 
-void stRender() // BAL: rename stFocusRender
-{
-    frameRender(stFrameFocus());
-    SDL_RenderPresent(renderer);
-}
+/* void stRender() // BAL: rename stFocusRender */
+/* { */
+/*     frameRender(focusFrame()); */
+/*     SDL_RenderPresent(renderer); */
+/* } */
 
 widget_t *newWidget()
 {
@@ -372,11 +434,11 @@ int numLinesCString(char *s)
       if (c == '\n') n++;
       s++;
     }
-  printf("number of lines%d\n", n);
+  // printf("number of lines%d\n", n);
   return n;
 }
 
-void drawCStringSelection(int x, int y, char *s, int len)
+void drawStringSelection(int x, int y, char *s, int len)
 {
   // BAL: would it look good to bold the characters in addition/instead?
   assert(s);
@@ -398,31 +460,44 @@ void drawCStringSelection(int x, int y, char *s, int len)
     }
 }
 
-void drawCString(char *s)
+void drawString(string_t *s)
 {
+  if(!s) return;
   assert(s);
+  printf("drawString\n");
+  debugStatus();
+  assert(s->start);
   uchar c;
+  SDL_Texture *txtr;
   SDL_Rect rect;
   rect.x = 0; // context.dx;
   rect.y = context.dy;
   rect.w = context.font->charSkip;
   rect.h = context.font->lineSkip;
-  while((c = *s) != '\0')
+
+  char *p = s->start;
+  char *q = arrayTop(s);
+  //  printf("drawing %p\n", s);
+  // printf("details: %p %d %d\n", s->start, s->numElems, s->elemSize);
+  // printf("%p %p %p len = %ld\n", s, p, q, q - p);
+  while(p < q)
     {
+      c = *p;
+      p++;
       switch(c) {
-        case '\n':
-          rect.x = 0; // context.dx;
-          rect.y += rect.h;
-          break;
-        case ' ':
-          rect.x += rect.w;
-          break;
-        default:
-          setTextureColorMod(context.font->charTexture[c], context.color);// BAL: could just do this once if using a texture map
-          SDL_RenderCopy(renderer, context.font->charTexture[c], NULL, &rect);
-          rect.x += rect.w;
-        }
-      s++;
+      case '\n':
+        rect.x = 0; // context.dx;
+        rect.y += rect.h;
+        break;
+      case ' ':
+        rect.x += rect.w;
+        break;
+      default:
+        txtr = context.font->charTexture[c];
+        setTextureColorMod(txtr, context.color); // BAL: could just do this once if using a texture map
+        SDL_RenderCopy(renderer, txtr, NULL, &rect);
+        rect.x += rect.w;
+      }
     }
 }
 
@@ -534,9 +609,8 @@ int distanceToEOL(char *s)
   return p - s;
 }
 
-void drawSelection(view_t *view)
+void getSelectionCoords(view_t *view, int *column, int *row, int *offset, int *len)
 {
-
   cursor_t *a = &view->cursor;
   cursor_t *b = &view->selection;
 
@@ -545,19 +619,38 @@ void drawSelection(view_t *view)
       swap(cursor_t*, a, b);
     }
 
-  setDrawColor(SELECTION_COLOR);
-  int offset = a->offset;
-  int len = b->offset - offset;
-  int column = a->column;
-  char *s = docCString(docFocus());
+  *offset = a->offset;
+  *len = b->offset - *offset;
+  *row = a->row;
+  *column = a->column;
+
+  char *s = docCString(docOf(view));
+
   if(view->selectMode == LINE_SELECT)
     {
-      len += distanceToEOL(s + offset + len);
-      offset -= column;
-      len += column;
-      column = 0;
+      *len += distanceToEOL(s + *offset + *len);
+      *offset -= *column;
+      *len += *column;
+      *column = 0;
     }
-  drawCStringSelection(columnToX(column), rowToY(a->row), s + offset, len + 1);
+  *len += 1;
+}
+
+void drawSelection(view_t *view)
+{
+
+  int offset;
+  int len;
+  int column;
+  int row;
+  char *s = docCString(docOf(view));
+
+  setDrawColor(SELECTION_COLOR);
+
+  getSelectionCoords(view, &column, &row, &offset, &len);
+
+  drawStringSelection(columnToX(column), rowToY(row), s + offset, len);
+
   setDrawColor(context.color);
 }
 
@@ -581,69 +674,83 @@ void drawCursorOrSelection(view_t *view)
   drawCursor(view);
 }
 
-widget_t *widgetAt(widget_t *widget, int x, int y)
+void widgetAt(widget_t *widget, int x, int y)
 {
   assert(context.w >= 0);
   assert(context.h >= 0);
-  assert(context.x >= 0);
-  assert(context.y >= 0);
-  assert(x < context.w);
-  assert(y < context.h);
+
+  if (x >= context.w || y >= context.h)
+    {
+      context.wid = -1;
+      return;
+    }
 
   switch (widget->tag) {
   case HCAT: {
     int w = widgetWidth(widget->a.child);
     if (x < w) {
       context.w = w;
-      return widgetAt(widget->a.child, x, y);
+      widgetAt(widget->a.child, x, y);
+      return;
     }
     context.w = context.w - w;
     context.x += w;
-    return widgetAt(widget->b.child, x - w, y);
+    widgetAt(widget->b.child, x - w, y);
+    return;
   }
   case HCATR: {
     int w = context.w - widgetWidth(widget->b.child);
     if (context.x < w) {
       context.w = w;
-      return widgetAt(widget->a.child, x, y);
+      widgetAt(widget->a.child, x, y);
+      return;
     }
     context.w = context.w - w;
     context.x += w;
-    return widgetAt(widget->b.child, x - w, y);
+    widgetAt(widget->b.child, x - w, y);
+    return;
   }
   case VCAT: {
     int h = widgetHeight(widget->a.child);
     if (context.y < h) {
       context.h = h;
-      return widgetAt(widget->a.child, x, y);
+      widgetAt(widget->a.child, x, y);
+      return;
     }
     context.h = context.h - h;
     context.y += h;
-    return widgetAt(widget->b.child, x, y - h);
+    widgetAt(widget->b.child, x, y - h);
+    return;
   }
   case VCATR: {
     int h = context.h - widgetHeight(widget->b.child);
     if (context.y < h) {
       context.h = h;
-      return widgetAt(widget->a.child, x, y);
+      widgetAt(widget->a.child, x, y);
+      return;
     }
     context.h = context.h - h;
     context.y += h;
-    return widgetAt(widget->b.child, x, y - h);
+    widgetAt(widget->b.child, x, y - h);
+    return;
   }
   case OVER:
-    return widgetAt(widget->a.child, x, y);
+    widgetAt(widget->a.child, x, y);
+    return;
   case WID:
     context.wid = widget->a.wid;
-    return widgetAt(widget->b.child, x, y);
+    widgetAt(widget->b.child, x, y);
+    return;
   case COLOR: // fall through
   case FONT: // fall through
-    return widgetAt(widget->b.child, x, y);
+    widgetAt(widget->b.child, x, y);
+    return;
   case SCROLL_Y:
     context.y += *widget->a.dy;
-    return widgetAt(widget->b.child, x, y - *widget->a.dy);
+    widgetAt(widget->b.child, x, y + *widget->a.dy);
+    return;
   default: // BOX, HSPC, VSPC, TEXT, VIEW
-    return widget;
+    return;
   }
 }
 void widgetDraw(widget_t *widget)
@@ -754,7 +861,7 @@ void widgetDraw(widget_t *widget)
     return;
   }
   case TEXT:
-    drawCString(*widget->a.text);
+    drawString(*widget->a.text);
     return;
   case BOX:
     fillRect(context.w, context.h);
@@ -791,7 +898,7 @@ void stDraw(void)
   rendererClear();
   contextReinit();
   widgetDraw(gui);
-  SDL_RenderPresent(renderer);
+  rendererPresent();
 }
 
 char systemBuf[1024];  // BAL: use string_t
@@ -825,24 +932,25 @@ void windowInit(window_t *win, int width, int height)
     win->height = height;
 }
 
-void stRenderFull()
-{
-    setDrawColor(BACKGROUND_COLOR);
-    rendererClear();
+/* void stRenderFull() */
+/* { */
+/*     setDrawColor(BACKGROUND_COLOR); */
+/*     rendererClear(); */
 
-    for(int i = 0; i < st.frames.numElems; ++i)
-    {
-        frameRender(arrayElemAt(&st.frames, i));
-    }
+/*     for(int i = 0; i < st.frames.numElems; ++i) */
+/*     { */
+/*         frameRender(arrayElemAt(&st.frames, i)); */
+/*     } */
 
-    SDL_RenderPresent(renderer);
-}
+/*     SDL_RenderPresent(renderer); */
+/* } */
 
 void frameResize(frame_t *frame)
 {
   frame->width = st.window.width / 3;
   frame->height = st.window.height - st.font.lineSkip;
 }
+
 void stResize(void)
 {
     int w;
@@ -851,68 +959,55 @@ void stResize(void)
     SDL_GetWindowSize(st.window.window, &w, &h);
     st.window.width = w;
     st.window.height = h;
-    for(int i = 0; i < NUM_FRAMES; ++i)
+    for(int i = 0; i < numFrames(); ++i)
       {
         frameResize(frameOf(i));
       }
-    /* w = (w - BORDER_WIDTH) / 3; */
-    /* h = h - 2*BORDER_WIDTH; */
-
-    /* frame_t *v0 = arrayElemAt(&st.frames, SECONDARY_FRAME); */
-    /* v0->rect.x = BORDER_WIDTH; */
-    /* v0->rect.y = BORDER_WIDTH; */
-    /* v0->rect.w = w - BORDER_WIDTH; */
-    /* v0->rect.h = h; */
-
-    /* frame_t *v1 = arrayElemAt(&st.frames, MAIN_FRAME); */
-    /* v1->rect.x = BORDER_WIDTH + v0->rect.x + v0->rect.w; */
-    /* v1->rect.y = BORDER_WIDTH; */
-    /* v1->rect.w = w + w / 2 - BORDER_WIDTH; */
-    /* v1->rect.h = h; */
-
-    /* frame_t *v2 = arrayElemAt(&st.frames, BUILTINS_FRAME); */
-    /* v2->rect.x = BORDER_WIDTH + v1->rect.x + v1->rect.w; */
-    /* v2->rect.y = BORDER_WIDTH; */
-    /* v2->rect.w = st.window.width - v2->rect.x - BORDER_WIDTH; */
-    /* v2->rect.h = h; */
-
-    st.dirty = WINDOW_DIRTY;
 }
 
-void builtinsPushFocus(int i)
+void pushFocus(int i)
 {
-  st.pushedFocus = arrayFocusOffset(&st.frames);
-  stSetFrameFocus(BUILTINS_FRAME);
-  stSetViewFocus(i);
+  st.pushedFocus = getViewFocus(); // BAL: rename to pushedView
+  setFocusView(i);
 }
 
-void builtinsPopFocus()
+void popFocus()
 {
-    stSetFrameFocus(st.pushedFocus);
+  setFocusView(st.pushedFocus);
 }
 
 void message(char *s)
 {
-    builtinsPushFocus(MESSAGE_BUF);
+    pushFocus(MESSAGE_BUF);
     insertCString(s);
-    builtinsPopFocus();
+    popFocus();
+}
+
+void helpBufInit()
+{
+  pushFocus(HELP_BUF);
+  insertCString("here is some help text.");
 }
 
 void buffersBufInit()
 {
-    for(int i = 0; i < st.docs.numElems; ++i)
-    {
-      doc_t *doc = arrayElemAt(&st.docs, i);
-      builtinsPushFocus(BUFFERS_BUF);
-      forwardEOF();
-      insertString("\0\n", 2);
-      insertCString(doc->filepath);
-    }
+  pushFocus(BUFFERS_BUF);
+
+  for(int i = 0; i < numViews(); ++i)
+  {
+    backwardSOF(); // BAL: forwardEOF
+    view_t *view = arrayElemAt(&st.views, i);
+    insertString("\0\n", 2);
+    insertCString(docOf(view)->filepath);
+  }
+  // BAL: popFocus();
 }
 
-widget_t *frame(frame_t *frame, int i)
+widget_t *frame(int i)
 {
+  frame_t *frame = arrayElemAt(&st.frames, i);
   widget_t *textarea = wid(i, scrollY(frame->scrollY, over(text(&frame->text), view(&frame->view))));
+  // widget_t *textarea = wid(i, scrollY(frame->scrollY, view(&frame->view)));
   widget_t *status = over(text(&frame->status), vspc(&st.font.lineSkip));
   widget_t *background = color(&frame->color, over(box(), hspc(&frame->width)));
   return over(vcatr(textarea, status), background);
@@ -927,7 +1022,8 @@ void stInit(int argc, char **argv)
   if (SDL_Init(SDL_INIT_VIDEO) != 0) die(SDL_GetError());
 
   windowInit(&st.window, INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT);
-  renderer = dieIfNull(SDL_CreateRenderer(st.window.window, -1, SDL_RENDERER_SOFTWARE));
+
+  rendererInit(st.window.window);
 
   initFont(&st.font, INIT_FONT_FILE, INIT_FONT_SIZE);
 
@@ -959,26 +1055,31 @@ void stInit(int argc, char **argv)
     {
         frame_t *v = arrayPushUninit(&st.frames);
         frameInit(v);
-        stSetFrameView(i, NUM_BUILTIN_BUFFERS + argc - i - 1);
     }
 
-    stSetFrameFocus(MAIN_FRAME);
+    printf("views: %d %d\n", NUM_BUILTIN_BUFFERS, argc);
 
-    gui = hcat(frame(arrayElemAt(&st.frames, 0), 0),
-               hcat(frame(arrayElemAt(&st.frames, 1), 1),
-                    frame(arrayElemAt(&st.frames, 2), 2)));
+    for(int i = 0; i < NUM_FRAMES; ++i)
+      {
+        setFrameView(i, NUM_BUILTIN_BUFFERS + argc - i - 1);
+      }
+
+    setFocusFrame(MAIN_FRAME);
+
+    gui = hcat(frame(0), hcat(frame(1), frame(2)));
 
     stResize();
 
-    /* buffersBufInit(); */
+    // BAL: helpBufInit();
+    // BAL: buffersBufInit();
 
     /* message("hello from the beyond\n"); */
 
-    /* stSetFrameFocus(SECONDARY_FRAME); */
+    /* setFocusFrame(SECONDARY_FRAME); */
     /* stSetViewFocus(MESSAGE_BUF); */
-    /* stSetFrameFocus(BUILTINS_FRAME); */
+    /* setFocusFrame(BUILTINS_FRAME); */
     /* stSetViewFocus(BUFFERS_BUF); */
-    /* stSetFrameFocus(MAIN_FRAME); */
+    /* setFocusFrame(MAIN_FRAME); */
     /* stSetViewFocus(NUM_BUILTIN_BUFFERS); */
 
 }
@@ -1003,15 +1104,14 @@ void windowEvent()
             stResize();
             break;
         default:
-            st.dirty = NOT_DIRTY;
             break;
     }
 }
 
 void setCursorFromXYMotion(cursor_t *cursor, int x, int y)
 {
-    /* frame_t *frame = stFrameFocus(); */
-    /* view_t *view = stViewFocus(); */
+    /* frame_t *frame = focusFrame(); */
+    /* view_t *view = focusView(); */
     /* cursor->column = */
     /*   clamp(0, (x - frame->rect.x) / st.font.charSkip, frameColumns(frame)); */
     /* cursor->row = (y - frame->scrollY - frame->rect.y) / st.font.lineSkip; */
@@ -1022,60 +1122,64 @@ void setCursorFromXYMotion(cursor_t *cursor, int x, int y)
 void setCursorFromXY(cursor_t *cursor, int x, int y)
 {
   setCursorFromXYMotion(cursor, x, y);
-  cursorSetRowCol(cursor, cursor->row, cursor->column, stDocFocus());
+  cursorSetRowCol(cursor, cursor->row, cursor->column, focusDoc());
 }
 
 void selectChars()
 {
-  view_t *view = stViewFocus();
+  view_t *view = focusView();
   cursorCopy(&view->selection, &view->cursor);
   view->selectMode = CHAR_SELECT;
 }
 
 void selectLines()
 {
-  view_t *view = stViewFocus();
+  view_t *view = focusView();
   cursorCopy(&view->selection, &view->cursor);
   view->selectMode = LINE_SELECT;
 }
 
-void selectionEnd()
-{
-  view_t *view = stViewFocus();
-  view->selectMode = NO_SELECT;
-}
-
 void selectionCancel()
 {
-  view_t *view = stViewFocus();
+  view_t *view = focusView();
   view->selectMode = NO_SELECT;
 }
 
 void selectionSetRowCol()
 {
-  view_t *view = stViewFocus();
+  view_t *view = focusView();
   int column = xToColumn(st.event.button.x - st.downCxtX);
-  cursorSetRowCol(&view->selection, yToRow(st.event.button.y - st.downCxtY), column, docFocus());
+  cursorSetRowCol(&view->selection, yToRow(st.event.button.y - st.downCxtY), column, focusDoc());
+}
+
+void selectionEnd()
+{
+  view_t *view = focusView();
+  view->selectMode = NO_SELECT;
 }
 
 void mouseButtonUpEvent()
 {
   st.mouseSelectionInProgress = false;
   selectionSetRowCol();
-  view_t *view = stViewFocus();
-  if (cursorEq(&view->cursor, &view->selection)) view->selectMode = NO_SELECT;
+  view_t *view = focusView();
+  if (cursorEq(&view->cursor, &view->selection)) selectionEnd();
 }
 
 void mouseButtonDownEvent()
 {
   contextReinit();
-  widget_t *p = widgetAt(gui, st.event.button.x, st.event.button.y);
-  if (context.wid < 0 || context.wid > NUM_FRAMES) return;
+  widgetAt(gui, st.event.button.x, st.event.button.y);
+  if (context.wid < 0 || context.wid > numFrames())
+    {
+      printf("%d\n", context.wid);
+      return;
+    }
 
   st.mouseSelectionInProgress = true;
-  stSetFrameFocus(context.wid);
+  setFocusFrame(context.wid);
 
-  view_t *view = viewFocus();
+  view_t *view = focusView();
   view->selectMode = CHAR_SELECT;
   if (st.event.button.button == SDL_BUTTON_RIGHT) view->selectMode = LINE_SELECT;
 
@@ -1093,7 +1197,6 @@ void mouseMotionEvent()
       selectionSetRowCol();
       return;
     }
-    // st.dirty = NOT_DIRTY;
 }
 
 int docHeight(doc_t *doc)
@@ -1103,8 +1206,8 @@ int docHeight(doc_t *doc)
 
 void focusScrollY(int dR)
 {
-  frame_t *frame = frameFocus();
-  doc_t *doc = docFocus();
+  frame_t *frame = focusFrame();
+  doc_t *doc = focusDoc();
 
   *frame->scrollY += dR * st.font.lineSkip;
 
@@ -1118,14 +1221,14 @@ void mouseWheelEvent()
 
 void doKeyPress(uchar c)
 {
-    keyHandler[stViewFocus()->mode][c](c);
+    keyHandler[focusView()->mode][c](c);
 }
 
 void recordKeyPress(uchar c)
 {
-    builtinsPushFocus(MACRO_BUF);
+    pushFocus(MACRO_BUF);
     insertChar(c);
-    builtinsPopFocus();
+    popFocus();
 }
 
 void keyDownEvent()
@@ -1143,7 +1246,7 @@ void keyDownEvent()
 
 /* cursor_t *cursorFocus() */
 /* { */
-/*   view_t *view = stViewFocus(); */
+/*   view_t *view = focusView(); */
 /*   if (view->selectionInProgress) */
 /*     { */
 /*       return &view->selection; */
@@ -1153,19 +1256,19 @@ void keyDownEvent()
 
 cursor_t *cursorFocus()
 {
-  return &stViewFocus()->cursor;
+  return &focusView()->cursor;
 }
 
 void stMoveCursorOffset(int offset)
 {
-    cursorSetOffset(cursorFocus(), offset, stDocFocus());
-    frameTrackSelection(stFrameFocus());
+    cursorSetOffset(cursorFocus(), offset, focusDoc());
+    frameTrackSelection(focusFrame());
 }
 
 void stMoveCursorRowCol(int row, int col)
 {
-    cursorSetRowCol(cursorFocus(), row, col, stDocFocus());
-    frameTrackSelection(stFrameFocus());
+    cursorSetRowCol(cursorFocus(), row, col, focusDoc());
+    frameTrackSelection(focusFrame());
 }
 
 void backwardChar()
@@ -1180,12 +1283,12 @@ void forwardChar()
 
 void setNavigateMode()
 {
-    stViewFocus()->mode = NAVIGATE_MODE;
+    focusView()->mode = NAVIGATE_MODE;
 }
 
 void setInsertMode()
 {
-    stViewFocus()->mode = INSERT_MODE;
+    focusView()->mode = INSERT_MODE;
 }
 
 void setNavigateModeAndDoKeyPress(uchar c)
@@ -1215,12 +1318,12 @@ void forwardLine()
 
 void backwardPage()
 {
-    moveLines(-max(1, frameRows(stFrameFocus()) - AUTO_SCROLL_HEIGHT));
+    moveLines(-max(1, frameRows(focusFrame()) - AUTO_SCROLL_HEIGHT));
 }
 
 void forwardPage()
 {
-    moveLines(max(1, frameRows(stFrameFocus()) - AUTO_SCROLL_HEIGHT));
+    moveLines(max(1, frameRows(focusFrame()) - AUTO_SCROLL_HEIGHT));
 }
 
 void backwardSOF()
@@ -1230,7 +1333,7 @@ void backwardSOF()
 
 void forwardEOF()
 {
-    stMoveCursorOffset(INT_MAX);
+    stMoveCursorOffset(INT_MAX - 1);
 }
 
 void backwardSOL()
@@ -1245,14 +1348,14 @@ void forwardEOL()
 
 void insertString(char *s, uint len)
 {
-    if (!s || len == 0) return;
-    st.dirty = DOC_DIRTY;
-    docInsert(stDocFocus(), cursorFocus()->offset, s, len);
+  assert(s);
+  assert(len > 0);
+  docInsert(focusDoc(), cursorFocus()->offset, s, len);
 }
 
 void insertCString(char *s)
 {
-    if (!s) return;
+    assert(s);
     insertString(s, (uint)strlen(s));
 }
 
@@ -1264,67 +1367,49 @@ void insertChar(uchar c)
 
 void pasteBefore()
 {
-    builtinsPushFocus(COPY_BUF);
+    pushFocus(COPY_BUF);
     backwardSOL();
-    doc_t *doc = stDocFocus();
-    view_t *view = stViewFocus();
+    doc_t *doc = focusDoc();
+    view_t *view = focusView();
     char *s = doc->contents.start + view->cursor.offset;
-    builtinsPopFocus();
+    popFocus();
     insertCString(s);
-}
-
-void getOffsetAndLength(int *offset, int *length)
-{
-    view_t *view = stViewFocus();
-    cursor_t *cur = &view->cursor;
-    cursor_t *sel = &view->selection;
-
-    if (cur->offset > sel->offset)
-    {
-        swap(cursor_t *, cur, sel);
-    }
-
-    if (view->selectMode == LINE_SELECT)
-      {
-        cursorSetRowCol(cur, cur->row, 0, stDocFocus());
-        cursorSetRowCol(sel, sel->row, INT_MAX, stDocFocus());
-      }
-
-    int off = cur->offset;
-    int len = sel->offset - off + 1;
-
-    uint n = stDocFocus()->contents.numElems;
-    *offset = min(off, n);
-    *length = min(len, n - off);
 }
 
 void copy(char *s, uint len)
 {
-    builtinsPushFocus(COPY_BUF);
+    pushFocus(COPY_BUF);
     backwardSOF();
     insertString("\0\n", 2);
     backwardSOF();
     insertString(s, len);
-    builtinsPopFocus();
+    popFocus();
 }
 
-void delete()
+void cut()
 {
     // BAL: add to undo
 
-    int offset;
-    int length;
+  int column;
+  int row;
+  int offset;
+  int length;
 
-    getOffsetAndLength(&offset, &length);
-    selectionCancel();
-    if (length <= 0) return;
-    st.dirty = DOC_DIRTY;
-    doc_t *doc = stDocFocus();
+  view_t *view = focusView();
 
-    if (doc->filepath[0] != '*')
-      copy(doc->contents.start + offset, length); // BAL: this was causing problems with search...
+  getSelectionCoords(view, &column, &row, &offset, &length);
 
-    docDelete(doc, offset, length);
+  selectionCancel();
+
+  if (length <= 0) return;
+
+  doc_t *doc = focusDoc();
+
+  copy(doc->contents.start + offset, length);
+
+  docDelete(doc, offset, length);
+
+  cursorSetRowCol(&view->cursor, row, column, focusDoc());
 }
 
 void playMacroString(char *s, uint len)
@@ -1350,33 +1435,33 @@ void doNothing(uchar c)
         playMacroCString(macro[c]);
         return;
     }
-    st.dirty = NOT_DIRTY;
+    selectionEnd();
 }
 
 void playMacro()
 {
     if (st.isRecording) return;
-    builtinsPushFocus(MACRO_BUF);
+    pushFocus(MACRO_BUF);
     backwardSOL();
-    doc_t *doc = stDocFocus();
-    view_t *view = stViewFocus();
+    doc_t *doc = focusDoc();
+    view_t *view = focusView();
     if (!doc->contents.start)
       {
-          builtinsPopFocus();
+          popFocus();
           return;
       }
     char *s = doc->contents.start + view->cursor.offset;
-    builtinsPopFocus();
+    popFocus();
 
     playMacroCString(s);
 }
 
 void setCursorToSearch()
 {
-    frame_t *frame = stFrameFocus();
+    frame_t *frame = focusFrame();
     if (noActiveSearch(frame)) return;
-    view_t *view = stViewFocus();
-    doc_t *doc = stDocFocus();
+    view_t *view = focusView();
+    doc_t *doc = focusDoc();
     uint *off = arrayFocus(&st.results);
     cursorSetOffset(&view->cursor, *off, doc);
     cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
@@ -1403,10 +1488,10 @@ void computeSearchResults()
     view_t *view = arrayElemAt(&st.views, st.searchRefView);
     doc_t *doc = arrayElemAt(&st.docs, view->refDoc);
 
-    builtinsPushFocus(SEARCH_BUF);
+    pushFocus(SEARCH_BUF);
 
-    view_t *viewFind = stViewFocus();
-    doc_t *find = stDocFocus();
+    view_t *viewFind = focusView();
+    doc_t *find = focusDoc();
 
     cursor_t cursorFind;
     cursorCopy(&cursorFind, &viewFind->cursor);
@@ -1434,31 +1519,31 @@ void computeSearchResults()
 done:
     free(needle);
 nofree:
-    builtinsPopFocus();
+    popFocus();
 }
 
 void setSearchMode()
 {
-    if ((stFrameFocus()->refView) == SEARCH_BUF)
+    if ((focusFrame()->refView) == SEARCH_BUF)
     {
-      // builtinsPopFocus();
+      // popFocus();
       //  computeSearchResults();
 
-      stSetFrameFocus(MAIN_FRAME);
+      setFocusFrame(MAIN_FRAME);
 
       //  stSetViewFocus(st.searchRefView);
       //  setCursorToSearch();
         return;
     }
 
-    st.searchRefView = stFrameFocus()->refView;
+    st.searchRefView = focusFrame()->refView;
 
     // insert null at the end of the doc
-    doc_t *doc = stDocFocus();
+    doc_t *doc = focusDoc();
     docInsert(doc, doc->contents.numElems, "", 1);
     doc->contents.numElems--;
 
-    builtinsPushFocus(SEARCH_BUF);
+    pushFocus(SEARCH_BUF);
     setInsertMode();
     backwardSOF();
     insertString("\0\n", 2);
@@ -1467,30 +1552,30 @@ void setSearchMode()
 
 void gotoView()
 {
-    int frame = st.frames.offset;
+    /* int frame = st.frames.offset; */
 
-    if (frame == BUILTINS_FRAME) frame = MAIN_FRAME;
+    /* if (frame == BUILTINS_FRAME) frame = MAIN_FRAME; */
 
-    stSetFrameFocus(BUILTINS_FRAME);
-    stSetViewFocus(BUFFERS_BUF);
+    /* setFocusFrame(BUILTINS_FRAME); */
+    /* stSetViewFocus(BUFFERS_BUF); */
 
-    view_t *view = stViewFocus();
+    /* view_t *view = focusView(); */
 
-    stSetFrameFocus(frame);
-    stSetViewFocus(view->cursor.row);
+    /* setFocusFrame(frame); */
+    /* stSetViewFocus(view->cursor.row); */
 }
 
 void startStopRecording()
 {
     st.isRecording ^= true;
-    builtinsPushFocus(MACRO_BUF);
+    pushFocus(MACRO_BUF);
     if (st.isRecording)
     {
         backwardSOF();
         insertString("\0\n", 2);
     }
     backwardSOF();
-    builtinsPopFocus();
+    popFocus();
 
     // stopped recording
     // if 1st line is empty delete it
@@ -1512,6 +1597,26 @@ void frameTrackSelection(frame_t *frame)
     /* } */
 }
 
+void forwardFrame()
+{
+  setFocusFrame((getFocusFrame() + 1) % numFrames());
+}
+
+void backwardFrame()
+{
+  setFocusFrame((getFocusFrame() + numFrames() - 1) % numFrames());
+}
+
+void forwardView()
+{
+  setFocusView((getViewFocus() + 1) % numViews());
+}
+
+void backwardView()
+{
+  setFocusView((getViewFocus() + numViews() - 1) % numViews());
+}
+
 int main(int argc, char **argv)
 {
     assert(sizeof(char) == 1);
@@ -1520,11 +1625,10 @@ int main(int argc, char **argv)
     assert(sizeof(void*) == 8);
 
     stInit(argc, argv);
+    // printf("here.\n");
     stDraw();
-
     while (SDL_WaitEvent(&st.event))
     {
-        st.dirty = FOCUS_DIRTY;
         switch (st.event.type) {
             case SDL_WINDOWEVENT:
                 windowEvent();
@@ -1548,20 +1652,16 @@ int main(int argc, char **argv)
                 quitEvent();
                 break;
             default:
-                st.dirty = NOT_DIRTY;
                 break;
         }
-        frameUpdate(frameFocus());
+        //        frameUpdate(focusFrame());
         stDraw();
-        /* if (st.dirty & DOC_DIRTY) // BAL: noActiveSearch? */
         /* { */
         /*     computeSearchResults(&st); */
         /* } */
-        /* if (st.dirty & WINDOW_DIRTY || st.dirty & DOC_DIRTY) */
         /* { */
         /*   stDraw(); */
         /*   stRenderFull(&st); */
-        /* } else if (st.dirty & FOCUS_DIRTY || st.dirty & DOC_DIRTY) */
         /* { */
         /*     stRender(&st); */
         /* } */
@@ -1645,4 +1745,3 @@ Display text
 Display window
 exit on quit
 */
-
