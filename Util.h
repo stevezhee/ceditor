@@ -154,13 +154,10 @@ struct frame_s
   int scrollX;
 
   int refView;
-  view_t *view;
   color_t color;
   int height;
   int width;
-  string_t *text;
-  string_t statusBuf;
-  string_t *status;
+  string_t status;
   int *scrollY;
 };
 

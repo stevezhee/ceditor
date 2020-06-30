@@ -11,13 +11,13 @@ void insertString(char *s, uint len);
 
 void frameTrackSelection(frame_t *frame);
 void frameScrollY(frame_t *frame, int dR);
-void frameRender(frame_t *frame); // BAL: frameFocusRender
+// void frameRender(frame_t *frame); // BAL: frameFocusRender
 void stRender();
 
 color_t unfocusedFrameColor = 0x303030ff;
 color_t focusedFrameColor = 0x101010ff;
 
-typedef enum { BOX, VIEW, HSPC, VSPC, TEXT, COLOR, FONT, SCROLL_Y, WID, OVER, HCAT, VCAT, HCATR, VCATR, NUM_WIDGET_TAGS } widgetTag_t;
+typedef enum { HSPC, VSPC, DRAW, COLOR, FONT, SCROLL_Y, WID, OVER, HCAT, VCAT, HCATR, VCATR, NUM_WIDGET_TAGS } widgetTag_t;
 
 struct widget_s;
 
@@ -51,6 +51,8 @@ struct widget_s
   } a;
   union {
     widget_t *child;
+    void (*drawFun)(void *);
+    void *data;
   } b;
 };
 
@@ -144,44 +146,34 @@ doc_t *focusDoc()
   return docOf(focusView());
 }
 
-void debugStatus()
-{
-  for(int i = 0; i < NUM_FRAMES; ++i)
-      {
-        frame_t *frame = frameOf(i);
-        printf("debug status: %d\n", (int)frame->status->start);
-        assert(frame->status->start);
-      }
-}
 void frameUpdate(frame_t *frame)
 {
   view_t *view = viewOf(frame);
   doc_t *doc = docOf(view);
 
-  frame->text = &doc->contents;
+  // frame->text = &doc->contents;
   // printf("frameUpdate %p %p %p %p %p\n", frame, view, &frame->text, &frame->statusBuf, frame->status);
   //  printf("frame update status: %p %p %d %d\n", frame->status, frame->status->start, frame->status->numElems, frame->status->maxElems);
 
   // BAL: make sure we don't overflow the buffer
-  arrayReinit(frame->status);
-  printf("frame update: %d\n", (int)frame->status->start);
-  sprintf(frame->status->start, "<%s> %3d:%2d %s", editorModeDescr[view->mode], view->cursor.row + 1, view->cursor.column, doc->filepath);
-  frame->status->numElems = strlen(frame->status->start);
-  // printf("frame->status->start %s\n", frame->status->start);
+  arrayReinit(&frame->status);
+  sprintf(frame->status.start, "<%s> %3d:%2d %s", editorModeDescr[view->mode], view->cursor.row + 1, view->cursor.column, doc->filepath);
+  frame->status.numElems = strlen(frame->status.start);
+  // printf("frame->status.start %s\n", frame->status.start);
   // printf("%s\n", s);
   // arrayInsert(frame->status, 0, s, strlen(s));
-  //  printf("status len=%d %s\n", frame->status->numElems, frame->status->start);
+  //  printf("status len=%d %s\n", frame->status->numElems, frame->status.start);
 
   /*  for(int i; i < NUM_FRAMES; ++i)
     {
       frame = arrayElemAt(&st.frames, i);
-      //      printf("frame dbg: %p %p %d %d\n", frame->status, frame->status->start, frame->status->numElems, frame->status->maxElems);
+      //      printf("frame dbg: %p %p %d %d\n", frame->status, frame->status.start, frame->status->numElems, frame->status->maxElems);
     }
 // printf("%p %p %p %p\n", frame, &frame->text, &frame->statusBuf, frame->status);
  for(int i; i < NUM_FRAMES; ++i)
    {
      frame = arrayElemAt(&st.frames, i);
-     // printf("frame dbg: %p %p %d %d\n", frame->status, frame->status->start, frame->status->numElems, frame->status->maxElems);
+     // printf("frame dbg: %p %p %d %d\n", frame->status, frame->status.start, frame->status->numElems, frame->status->maxElems);
      } */
 
 }
@@ -195,7 +187,7 @@ void setFrameView(int i, int j)
 
   view_t *view = viewOf(frame);
   frame->scrollY = &view->scrollY;
-  frame->view = view;
+  // frame->view = view;
 
   // printf("setFrameView %p %p\n", frame, view);
   frameUpdate(frame);
@@ -218,13 +210,12 @@ void frameInit(frame_t *frame)
 {
     memset(frame, 0, sizeof(frame_t));
     frame->color = unfocusedFrameColor;
-    frame->status = &frame->statusBuf;
 
-    arrayInit(frame->status, sizeof(char));
-    arrayGrow(frame->status, 1024);
-    printf("frame init: %d\n", (int)frame->status->start);
-    // printf("frame init status: %p %p %d %d\n", frame->status, frame->status->start, frame->status->numElems, frame->status->maxElems);
-    //    printf("status size buf=%p start=%p\n", frame->status, frame->status->start);
+    arrayInit(&frame->status, sizeof(char));
+    arrayGrow(&frame->status, 1024);
+    // printf("frame init: %d\n", (int)frame->status.start);
+    // printf("frame init status: %p %p %d %d\n", frame->status, frame->status.start, frame->status->numElems, frame->status->maxElems);
+    //    printf("status size buf=%p start=%p\n", frame->status, frame->status.start);
 
 }
 
@@ -308,25 +299,25 @@ void viewRender(view_t *view, frame_t *frame)
     /* selectionRender(aRow, aCol, bRow, bCol, frame); */
 }
 
-void frameRender(frame_t *frame)
-{
-    setViewport(&frame->rect);
+/* void frameRender(frame_t *frame) */
+/* { */
+/*     setViewport(&frame->rect); */
 
-    SDL_Rect bkgd;
-    bkgd.x = 0;
-    bkgd.y = 0;
-    bkgd.w = frame->rect.w;
-    bkgd.h = frame->rect.h;
+/*     SDL_Rect bkgd; */
+/*     bkgd.x = 0; */
+/*     bkgd.y = 0; */
+/*     bkgd.w = frame->rect.w; */
+/*     bkgd.h = frame->rect.h; */
 
-    color_t color = viewColors[frame == focusFrame()];
-    setDrawColor(color);
-    // fillRect(st.renderer, &bkgd); // background
+/*     color_t color = viewColors[frame == focusFrame()]; */
+/*     setDrawColor(color); */
+/*     // fillRect(st.renderer, &bkgd); // background */
 
-    view_t *view = arrayElemAt(&st.views, frame->refView);
-    searchRender(frame);
-    viewRender(view, frame);
-    docRender(arrayElemAt(&st.docs, view->refDoc), frame);
-}
+/*     view_t *view = viewOf(frame); */
+/*     searchRender(frame); */
+/*     viewRender(view, frame); */
+/*     docRender(docOf(view), frame); */
+/* } */
 
 /* void stRender() // BAL: rename stFocusRender */
 /* { */
@@ -349,9 +340,6 @@ widget_t *leaf(widgetTag_t tag, void *a)
 
 #define hspc(len) leaf(HSPC, len)
 #define vspc(len) leaf(VSPC, len)
-#define box() leaf(BOX, NULL)
-#define view(v) leaf(VIEW, v)
-#define text(s) leaf(TEXT, s)
 
 widget_t *singleton(widgetTag_t tag, void *a, widget_t *b)
 {
@@ -375,20 +363,14 @@ widget_t *wid(int i, widget_t *a)
   return p;
 }
 
-widget_t *node(widgetTag_t tag, widget_t *a, widget_t *b)
+widget_t *node(widgetTag_t tag, void *a, void *b)
 {
   widget_t *p = newWidget();
   p->tag = tag;
-  p->a.child = a;
-  p->b.child = b;
+  p->a.data = a;
+  p->b.data = b;
   return p;
 }
-
-#define over(a, b) node(OVER, a, b)
-#define hcat(a, b) node(HCAT, a, b)
-#define hcatr(a, b) node(HCATR, a, b)
-#define vcat(a, b) node(VCAT, a, b)
-#define vcatr(a, b) node(VCATR, a, b)
 
 typedef struct
 {
@@ -403,6 +385,19 @@ typedef struct
 } context_t;
 
 context_t context;
+
+void drawBox(void *_unused)
+{
+  fillRect(context.w, context.h);
+}
+
+#define over(a, b) node(OVER, a, b)
+#define hcat(a, b) node(HCAT, a, b)
+#define hcatr(a, b) node(HCATR, a, b)
+#define vcat(a, b) node(VCAT, a, b)
+#define vcatr(a, b) node(VCATR, a, b)
+#define draw(a, b) node(DRAW, b, a)
+#define box() node(DRAW, NULL, drawBox)
 
 int maxLineLength(char *s)
 {
@@ -464,8 +459,6 @@ void drawString(string_t *s)
 {
   if(!s) return;
   assert(s);
-  printf("drawString\n");
-  debugStatus();
   assert(s->start);
   uchar c;
   SDL_Texture *txtr;
@@ -524,7 +517,8 @@ int widgetWidth(widget_t *widget)
   case HSPC:
     w = *widget->a.length;
     break;
-  default: // TEXT, VSPC, BOX, VIEW
+  default:
+    assert(widget->tag == VSPC || widget->tag == DRAW);
     break;
   }
 
@@ -554,7 +548,8 @@ int widgetHeight(widget_t *widget)
     case VSPC:
       h = *widget->a.length;
       break;
-    default: // TEXT, HSPC, BOX, VIEW
+    default:
+      assert(widget->tag == HSPC || widget->tag == DRAW);
       break;
     }
   return min(h, context.h);
@@ -749,7 +744,8 @@ void widgetAt(widget_t *widget, int x, int y)
     context.y += *widget->a.dy;
     widgetAt(widget->b.child, x, y + *widget->a.dy);
     return;
-  default: // BOX, HSPC, VSPC, TEXT, VIEW
+  default:
+    assert(widget->tag == VSPC || widget->tag == HSPC || widget->tag == DRAW);
     return;
   }
 }
@@ -860,16 +856,11 @@ void widgetDraw(widget_t *widget)
     setDrawColor(context.color);
     return;
   }
-  case TEXT:
-    drawString(*widget->a.text);
+  case DRAW:
+    widget->b.drawFun(widget->a.data);
     return;
-  case BOX:
-    fillRect(context.w, context.h);
-    return;
-  case VIEW:
-    drawCursorOrSelection(*widget->a.view);
-    return;
-  default: // HSPC/VSPC
+  default:
+    assert(widget->tag == VSPC || widget->tag == HSPC);
     return;
   }
 }
@@ -1003,12 +994,21 @@ void buffersBufInit()
   // BAL: popFocus();
 }
 
+void drawFrameCursor(frame_t *frame)
+{
+  drawCursorOrSelection(viewOf(frame));
+}
+
+void drawFrameDoc(frame_t *frame)
+{
+  drawString(&docOf(viewOf(frame))->contents);
+}
+
 widget_t *frame(int i)
 {
   frame_t *frame = arrayElemAt(&st.frames, i);
-  widget_t *textarea = wid(i, scrollY(frame->scrollY, over(text(&frame->text), view(&frame->view))));
-  // widget_t *textarea = wid(i, scrollY(frame->scrollY, view(&frame->view)));
-  widget_t *status = over(text(&frame->status), vspc(&st.font.lineSkip));
+  widget_t *textarea = wid(i, scrollY(frame->scrollY, over(draw(drawFrameDoc, frame), draw(drawFrameCursor, frame))));
+  widget_t *status = over(draw(drawString, &frame->status), vspc(&st.font.lineSkip));
   widget_t *background = color(&frame->color, over(box(), hspc(&frame->width)));
   return over(vcatr(textarea, status), background);
 }
@@ -1486,7 +1486,7 @@ void setCursorToSearch();
 void computeSearchResults()
 {
     view_t *view = arrayElemAt(&st.views, st.searchRefView);
-    doc_t *doc = arrayElemAt(&st.docs, view->refDoc);
+    doc_t *doc = docOf(view);
 
     pushFocus(SEARCH_BUF);
 
@@ -1625,7 +1625,6 @@ int main(int argc, char **argv)
     assert(sizeof(void*) == 8);
 
     stInit(argc, argv);
-    // printf("here.\n");
     stDraw();
     while (SDL_WaitEvent(&st.event))
     {
