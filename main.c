@@ -44,14 +44,12 @@ struct widget_s
     int *color;
     int *dy;
     font_t **font;
-    view_t **view;
-    string_t **text;
     widget_t *child;
+    void (*drawFun)(void *);
     void *data;
   } a;
   union {
     widget_t *child;
-    void (*drawFun)(void *);
     void *data;
   } b;
 };
@@ -396,8 +394,8 @@ void drawBox(void *_unused)
 #define hcatr(a, b) node(HCATR, a, b)
 #define vcat(a, b) node(VCAT, a, b)
 #define vcatr(a, b) node(VCATR, a, b)
-#define draw(a, b) node(DRAW, b, a)
-#define box() node(DRAW, NULL, drawBox)
+#define draw(a, b) node(DRAW, a, b)
+#define box() node(DRAW, drawBox, NULL)
 
 int maxLineLength(char *s)
 {
@@ -857,7 +855,7 @@ void widgetDraw(widget_t *widget)
     return;
   }
   case DRAW:
-    widget->b.drawFun(widget->a.data);
+    widget->a.drawFun(widget->b.data);
     return;
   default:
     assert(widget->tag == VSPC || widget->tag == HSPC);
