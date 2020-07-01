@@ -148,46 +148,20 @@ void frameUpdate(frame_t *frame)
 {
   view_t *view = viewOf(frame);
   doc_t *doc = docOf(view);
-
-  // frame->text = &doc->contents;
-  // printf("frameUpdate %p %p %p %p %p\n", frame, view, &frame->text, &frame->statusBuf, frame->status);
-  //  printf("frame update status: %p %p %d %d\n", frame->status, frame->status->start, frame->status->numElems, frame->status->maxElems);
-
   // BAL: make sure we don't overflow the buffer
   arrayReinit(&frame->status);
   sprintf(frame->status.start, "<%s> %3d:%2d %s", editorModeDescr[view->mode], view->cursor.row + 1, view->cursor.column, doc->filepath);
   frame->status.numElems = strlen(frame->status.start);
-  // printf("frame->status.start %s\n", frame->status.start);
-  // printf("%s\n", s);
-  // arrayInsert(frame->status, 0, s, strlen(s));
-  //  printf("status len=%d %s\n", frame->status->numElems, frame->status.start);
-
-  /*  for(int i; i < NUM_FRAMES; ++i)
-    {
-      frame = arrayElemAt(&st.frames, i);
-      //      printf("frame dbg: %p %p %d %d\n", frame->status, frame->status.start, frame->status->numElems, frame->status->maxElems);
-    }
-// printf("%p %p %p %p\n", frame, &frame->text, &frame->statusBuf, frame->status);
- for(int i; i < NUM_FRAMES; ++i)
-   {
-     frame = arrayElemAt(&st.frames, i);
-     // printf("frame dbg: %p %p %d %d\n", frame->status, frame->status.start, frame->status->numElems, frame->status->maxElems);
-     } */
-
 }
 
 void setFrameView(int i, int j)
 {
-  // printf("setFrameView %d %d\n", i, j);
-
   frame_t *frame = frameOf(i);
   frame->refView = j;
 
   view_t *view = viewOf(frame);
   frame->scrollY = &view->scrollY;
-  // frame->view = view;
 
-  // printf("setFrameView %p %p\n", frame, view);
   frameUpdate(frame);
 }
 
@@ -457,7 +431,7 @@ void drawString(string_t *s)
 {
   if(!s) return;
   assert(s);
-  assert(s->start);
+  if (!s->start) return;
   uchar c;
   SDL_Texture *txtr;
   SDL_Rect rect;
@@ -468,9 +442,7 @@ void drawString(string_t *s)
 
   char *p = s->start;
   char *q = arrayTop(s);
-  //  printf("drawing %p\n", s);
-  // printf("details: %p %d %d\n", s->start, s->numElems, s->elemSize);
-  // printf("%p %p %p len = %ld\n", s, p, q, q - p);
+
   while(p < q)
     {
       c = *p;
@@ -600,6 +572,18 @@ int distanceToEOL(char *s)
       c = *p;
     }
   return p - s;
+}
+
+int offsetOfStartOfElem(char *s, int offset)
+{
+  char *p = s + offset;
+  char *p0 = p;
+  while(p > s)
+    {
+      if (*p == '\0') return p - s + 2;
+      p--;
+    }
+  return 0;
 }
 
 void getSelectionCoords(view_t *view, int *column, int *row, int *offset, int *len)
@@ -954,9 +938,9 @@ void stResize(void)
       }
 }
 
-void pushFocus(int i)
+void pushView(int i)
 {
-  st.pushedFocus = getViewFocus(); // BAL: rename to pushedView
+  st.pushedFocus = getViewFocus();
   setFocusView(i);
 }
 
@@ -967,20 +951,20 @@ void popFocus()
 
 void message(char *s)
 {
-    pushFocus(MESSAGE_BUF);
+    pushView(MESSAGE_BUF);
     insertCString(s);
     popFocus();
 }
 
 void helpBufInit()
 {
-  pushFocus(HELP_BUF);
+  pushView(HELP_BUF);
   insertCString("here is some help text.");
 }
 
 void buffersBufInit()
 {
-  pushFocus(BUFFERS_BUF);
+  pushView(BUFFERS_BUF);
 
   for(int i = 0; i < numViews(); ++i)
   {
@@ -1224,7 +1208,7 @@ void doKeyPress(uchar c)
 
 void recordKeyPress(uchar c)
 {
-    pushFocus(MACRO_BUF);
+    pushView(MACRO_BUF);
     insertChar(c);
     popFocus();
 }
@@ -1347,7 +1331,7 @@ void forwardEOL()
 void insertString(char *s, uint len)
 {
   assert(s);
-  assert(len > 0);
+  if(len <= 0) return;
   docInsert(focusDoc(), cursorFocus()->offset, s, len);
 }
 
@@ -1363,20 +1347,25 @@ void insertChar(uchar c)
     forwardChar();
 }
 
+void backwardStartOfElem()
+{
+  int n = offsetOfStartOfElem(focusDoc()->contents.start, focusView()->cursor.offset);
+  stMoveCursorOffset(n);
+}
+
 void pasteBefore()
 {
-    pushFocus(COPY_BUF);
-    backwardSOL();
-    doc_t *doc = focusDoc();
-    view_t *view = focusView();
-    char *s = doc->contents.start + view->cursor.offset;
+    pushView(COPY_BUF);
+    backwardStartOfElem();
+    // BAL: put in system copy/paste buffer
+    char *s = focusDoc()->contents.start + focusView()->cursor.offset;
     popFocus();
     insertCString(s);
 }
 
 void copy(char *s, uint len)
 {
-    pushFocus(COPY_BUF);
+    pushView(COPY_BUF);
     backwardSOF();
     insertString("\0\n", 2);
     backwardSOF();
@@ -1439,7 +1428,7 @@ void doNothing(uchar c)
 void playMacro()
 {
     if (st.isRecording) return;
-    pushFocus(MACRO_BUF);
+    pushView(MACRO_BUF);
     backwardSOL();
     doc_t *doc = focusDoc();
     view_t *view = focusView();
@@ -1486,7 +1475,7 @@ void computeSearchResults()
     view_t *view = arrayElemAt(&st.views, st.searchRefView);
     doc_t *doc = docOf(view);
 
-    pushFocus(SEARCH_BUF);
+    pushView(SEARCH_BUF);
 
     view_t *viewFind = focusView();
     doc_t *find = focusDoc();
@@ -1541,7 +1530,7 @@ void setSearchMode()
     docInsert(doc, doc->contents.numElems, "", 1);
     doc->contents.numElems--;
 
-    pushFocus(SEARCH_BUF);
+    pushView(SEARCH_BUF);
     setInsertMode();
     backwardSOF();
     insertString("\0\n", 2);
@@ -1566,7 +1555,7 @@ void gotoView()
 void startStopRecording()
 {
     st.isRecording ^= true;
-    pushFocus(MACRO_BUF);
+    pushView(MACRO_BUF);
     if (st.isRecording)
     {
         backwardSOF();
