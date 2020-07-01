@@ -617,7 +617,7 @@ void getSelectionCoords(view_t *view, int *column, int *row, int *offset, int *l
   *row = a->row;
   *column = a->column;
 
-  char *s = docCString(docOf(view));
+  char *s = docOf(view)->contents.start;
 
   if(view->selectMode == LINE_SELECT)
     {
@@ -636,7 +636,7 @@ void drawSelection(view_t *view)
   int len;
   int column;
   int row;
-  char *s = docCString(docOf(view));
+  char *s = docOf(view)->contents.start;
 
   setDrawColor(SELECTION_COLOR);
 
