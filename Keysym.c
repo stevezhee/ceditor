@@ -85,7 +85,7 @@ void keysymInit(void)
 //    keyHandler[NAVIGATE_MODE][KEY_SHIFT_LEFT] = backwardWord;
     keyHandler[NAVIGATE_MODE]['0'] = (keyHandler_t)backwardSOL;
     keyHandler[NAVIGATE_MODE]['$'] = (keyHandler_t)forwardEOL;
-    keyHandler[NAVIGATE_MODE]['g'] = (keyHandler_t)gotoView;
+    // BAL: needed?    keyHandler[NAVIGATE_MODE]['g'] = (keyHandler_t)gotoView;
     //    keyHandler[NAVIGATE_MODE][KEY_SHIFT_DOWN] = forwardParagraph;
 //    keyHandler[NAVIGATE_MODE][KEY_SHIFT_UP] = backwardParagraph;
 //

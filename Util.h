@@ -39,6 +39,8 @@ void rendererClear(void);
 void setViewport(SDL_Rect *r);
 void rendererInit(SDL_Window *win);
 void rendererPresent(void);
+char *getClipboardText(void);
+void setClipboardText(const char *text);
 
 typedef enum { NAVIGATE_MODE, INSERT_MODE, SEARCH_MODE, NUM_MODES } editorMode_t;
 extern char *editorModeDescr[NUM_MODES];
@@ -187,13 +189,13 @@ struct state_s
   font_t font;
   SDL_Event event;
   bool isRecording;
-  int pushedFocus;
   windowDirty_t dirty;
   uint searchLen;
   uint searchRefView;
   bool searchDirty;
   int downCxtX;
   int downCxtY;
+  int lastFocusFrame;
   bool mouseSelectionInProgress;
 };
 

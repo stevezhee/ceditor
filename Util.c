@@ -89,7 +89,7 @@ void fillRect(int w, int h)
 char *getClipboardText(void)
 {
   if (!SDL_HasClipboardText()) return NULL;
-  return dieIfNull(SDL_GetClipboardText());
+  return SDL_GetClipboardText();
 }
 
 void setClipboardText(const char *text)
