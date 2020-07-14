@@ -1224,6 +1224,7 @@ void backwardStartOfElem()
   int n = offsetOfStartOfElem(focusDoc()->contents.start, focusView()->cursor.offset);
   stMoveCursorOffset(n);
 }
+
 int lastFocusView()
 {
   return frameOf(st.lastFocusFrame)->refView;
@@ -1311,23 +1312,49 @@ void doNothing(uchar c)
     selectionEnd();
 }
 
+void startStopRecording()
+{
+  int refView = getViewFocus();
+  if (refView == MACRO_BUF) return;
+
+  st.isRecording ^= true;
+
+  setFocusView(MACRO_BUF);
+  backwardSOF();
+
+  if (st.isRecording)
+    {
+      insertString("\0\n", 2);
+      backwardSOF();
+    } else
+    {
+      // BAL: if 1st line in macro buf is empty delete it
+    }
+  setFocusView(refView);
+}
+
 void playMacro()
 {
-/*     if (st.isRecording) return; */
-/*     int refView = getViewFocus(); */
-/*     setFocusView(MACRO_BUF); */
-/*     backwardSOL(); */
-/*     doc_t *doc = focusDoc(); */
-/*     view_t *view = focusView(); */
-/*     if (!doc->contents.start) */
-/*       { */
-/*           setFocusView(refView); */
-/*           return; */
-/*       } */
-/*     char *s = doc->contents.start + view->cursor.offset; */
-/*     setFocusView(refView); */
+  if (st.isRecording) startStopRecording();
 
-/*     playMacroCString(s); */
+    int refView = getViewFocus();
+    if (refView == MACRO_BUF) return;
+
+    setFocusView(MACRO_BUF);
+    backwardStartOfElem();
+    doc_t *doc = focusDoc();
+    if (!doc->contents.start)
+      {
+        printf("no macros to play :(\n");
+        setFocusView(refView);
+        return;
+      }
+
+    char *s = doc->contents.start + focusView()->cursor.offset;
+
+    setFocusView(refView);
+
+    playMacroCString(s);
 }
 
 /* void setCursorToSearch() */
@@ -1442,22 +1469,22 @@ void setSearchMode()
     /* stSetViewFocus(view->cursor.row); */
 /* } */
 
-void startStopRecording()
-{
-/*     st.isRecording ^= true; */
-/*     int refView = getViewFocus(); */
-/*     setFocusView(MACRO_BUF); */
-/*     if (st.isRecording) */
-/*     { */
-/*         backwardSOF(); */
-/*         insertString("\0\n", 2); */
-/*     } */
-/*     backwardSOF(); */
-/*     setFocusView(refView); */
+/*
 
-/*     // stopped recording */
-/*     // if 1st line is empty delete it */
-}
+  0 0 => 0
+  0 1 => 0
+  1 0 => 0
+  1 1 => 1
+  AND
+
+  XOR
+
+  0 0 => 0
+  0 1 => 1
+  1 0 => 1
+  1 1 => 0
+
+ */
 
 void frameTrackSelection(frame_t *frame)
 {

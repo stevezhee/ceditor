@@ -48,7 +48,7 @@ extern char *editorModeDescr[NUM_MODES];
 typedef unsigned char uchar;
 typedef enum { NOT_DIRTY = 0b0, DOC_DIRTY = 0b1, FOCUS_DIRTY = 0b10, WINDOW_DIRTY = 0b100 } windowDirty_t;
 extern color_t viewColors[];
-extern char *macro[255];
+extern char *macro[256];
 void setTextureColorMod(SDL_Texture *t, color_t c);
 #define FOCUS_VIEW_COLOR 0x000000ff
 #define VIEW_COLOR 0x303030ff

@@ -13,7 +13,7 @@ const char shiftChars[] = "\"....<_>?)!@#$%^&*(.:.+.............................
 
 keyHandler_t keyHandler[NUM_MODES][NUM_KEYS];
 
-char *macro[255];
+char *macro[256];
 
 #define NUM_BUILTIN_MACROS 17
 
