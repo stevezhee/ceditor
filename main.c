@@ -103,15 +103,11 @@ void setFocusFrame(int i)
   int j = getFocusFrame();
   if (i != j)
   {
-    st.lastFocusFrame = j;
     frame_t *frame = focusFrame();
     frame->color = unfocusedFrameColor;
     arraySetFocus(&st.frames, i);
     frame = focusFrame();
     frame->color = focusedFrameColor;
-    // BAL: !!!!!!!!!!!!!!!! YOU ARE HERE ...
-    // BAL: sort out all this push/pop view nonsense...
-      // printf("file:%s\n", focusDoc()->filepath);
   }
 }
 
@@ -120,7 +116,7 @@ frame_t *frameOf(int i)
   return arrayElemAt(&st.frames, i);
 }
 
-int getViewFocus()
+int getFocusView()
 {
   return focusFrame()->refView;
 }
@@ -158,9 +154,10 @@ void frameUpdate(frame_t *frame)
 void setFrameView(int refFrame, int refView)
 {
   frame_t *frame = frameOf(refFrame);
-  frame->refView = refView;
 
   view_t *view = viewOf(frame);
+
+  frame->refView = refView;
   frame->scrollY = &view->scrollY;
 
   frameUpdate(frame);
@@ -446,6 +443,7 @@ int widgetHeight(widget_t *widget)
     }
   return min(h, context.h);
 }
+
 void contextSetViewport()
 {
   SDL_Rect rect;
@@ -496,20 +494,87 @@ int distanceToEOL(char *s)
   return p - s;
 }
 
-int offsetOfStartOfElem(char *s, int offset)
+int distanceToNextSpace(char *s0, char *t)
 {
-  char *p = s + offset;
-  char *p0 = p;
+  char *s = s0;
+  char c = *s;
+
+  while(s < t)
+    {
+      s++;
+      c = *s;
+      if (c == ' ' || c == '\n')
+        {
+          while(s < t)
+            {
+              s++;
+              c = *s;
+              if (c != ' ' && c != '\n') return s - s0;
+            }
+          return s - s0;
+        }
+    }
+
+  return s - s0;
+}
+
+int distanceToPrevSpace(char *t, char *s0)
+{
+  char *s = s0;
+  char c = *s;
+
+  while(s > t)
+    {
+      s--;
+      c = *s;
+      if (c == ' ' || c == '\n')
+        {
+          while(s > t)
+            {
+              s--;
+              c = *s;
+              if (c != ' ' && c != '\n') return s - s0;
+            }
+          return s - s0;
+        }
+    }
+
+  return s - s0;
+}
+
+int distanceToStartOfElem(char *s, int offset)
+{
+  char *p0 = s + offset;
+  char *p = p0;
+  if (p > s && *p == '\n') p--;
+  if (p > s && *p == '\0') p--;
   while(p > s)
     {
-      if (*p == '\0') return p - s + 2;
+      if (*p == '\0')
+        {
+          return p - p0 + 2;
+        }
       p--;
     }
-  return 0;
+  return p - p0;
+}
+
+bool selectionActive(view_t *view)
+{
+  return (view->selectMode != NO_SELECT);
 }
 
 void getSelectionCoords(view_t *view, int *column, int *row, int *offset, int *len)
 {
+  if(!selectionActive(view))
+    {
+      *column = view->cursor.column;
+      *row = view->cursor.row;
+      *offset = view->cursor.offset;
+      *len = 1;
+      return;
+    }
+
   cursor_t *a = &view->cursor;
   cursor_t *b = &view->selection;
 
@@ -556,11 +621,6 @@ void drawSelection(view_t *view)
 bool cursorEq(cursor_t *a, cursor_t *b)
 {
   return (a->row == b->row && a->column == b->column);
-}
-
-bool selectionActive(view_t *view)
-{
-  return (view->selectMode != NO_SELECT);
 }
 
 void drawCursorOrSelection(view_t *view)
@@ -847,18 +907,16 @@ void stResize(void)
       }
 }
 
-void message(char *s)
-{
-  int refView = getViewFocus();
-  setFocusView(MESSAGE_BUF);
-  insertCString(s);
-  setFocusView(refView);
-}
-
 void helpBufInit()
 {
   setFocusView(HELP_BUF);
   insertCString("here is some help text.");
+}
+
+void insertNewElem()
+{
+  backwardSOF();
+  insertString("\0\n", 2);
 }
 
 void buffersBufInit()
@@ -867,9 +925,8 @@ void buffersBufInit()
 
   for(int i = 0; i < numViews(); ++i)
   {
-    backwardSOF(); // BAL: forwardEOF
     view_t *view = arrayElemAt(&st.views, i);
-    insertString("\0\n", 2);
+    insertNewElem();
     insertCString(docOf(view)->filepath);
   }
 }
@@ -891,6 +948,16 @@ widget_t *frame(int i)
   widget_t *status = over(draw(drawString, &frame->status), vspc(&st.font.lineSkip));
   widget_t *background = color(&frame->color, over(box(), hspc(&frame->width)));
   return over(vcatr(textarea, status), background);
+}
+
+void message(char *s)
+{
+  int refFrame = getFocusFrame();
+  setFocusFrame(BUILTINS_FRAME);
+  setFocusView(MESSAGE_BUF);
+  insertNewElem();
+  insertCString(s);
+  setFocusFrame(refFrame);
 }
 
 void stInit(int argc, char **argv)
@@ -948,12 +1015,13 @@ void stInit(int argc, char **argv)
 
     gui = hcat(frame(0), hcat(frame(1), frame(2)));
 
+    message("hello from the beyond");
+
     stResize();
 
     // BAL: helpBufInit();
     // BAL: buffersBufInit();
 
-    /* message("hello from the beyond\n"); */
 
     /* setFocusFrame(SECONDARY_FRAME); */
     /* stSetViewFocus(MESSAGE_BUF); */
@@ -1089,7 +1157,7 @@ void doKeyPress(uchar c)
 
 void recordKeyPress(uchar c)
 {
-  int refView = getViewFocus();
+  int refView = getFocusView();
   setFocusView(MACRO_BUF);
   insertChar(c);
   setFocusView(refView);
@@ -1154,10 +1222,10 @@ void setNavigateModeAndDoKeyPress(uchar c)
 void moveLines(int dRow)
 {
   cursor_t *cursor = cursorFocus();
-    int col = cursor->preferredColumn;
+  int col = cursor->preferredColumn;
 
-    stMoveCursorRowCol(cursor->row + dRow, col);
-    cursor->preferredColumn = col;
+  stMoveCursorRowCol(cursor->row + dRow, col);
+  cursor->preferredColumn = col;
 }
 
 void backwardLine()
@@ -1168,6 +1236,30 @@ void backwardLine()
 void forwardLine()
 {
     moveLines(1);
+}
+
+void forwardBlankLine()
+{
+  
+}
+
+void backwardBlankLine()
+{
+  
+}
+
+void forwardSpace()
+{
+  int i = cursorFocus()->offset;
+  doc_t *doc = focusDoc();
+  stMoveCursorOffset(i + distanceToNextSpace(doc->contents.start + i, arrayTop(&doc->contents)));
+}
+
+void backwardSpace()
+{
+  int i = cursorFocus()->offset;
+  doc_t *doc = focusDoc();
+  stMoveCursorOffset(i + distanceToPrevSpace(doc->contents.start, doc->contents.start + i));
 }
 
 void backwardPage()
@@ -1221,23 +1313,25 @@ void insertChar(uchar c)
 
 void backwardStartOfElem()
 {
-  int n = offsetOfStartOfElem(focusDoc()->contents.start, focusView()->cursor.offset);
-  stMoveCursorOffset(n);
+  int offset = focusView()->cursor.offset;
+  int i = distanceToStartOfElem(focusDoc()->contents.start, offset);
+  printf("moving back %d\n", i);
+  stMoveCursorOffset(offset + i);
 }
 
-int lastFocusView()
+void copyElemToClipboard()
 {
-  return frameOf(st.lastFocusFrame)->refView;
+  backwardStartOfElem();
+  char *s = focusDoc()->contents.start + focusView()->cursor.offset;
+  setClipboardText(s);
 }
+
 void pasteBefore()
 {
-  if (focusFrame()->refView == COPY_BUF)
+  if (getFocusView() == COPY_BUF)
     {
-      if (lastFocusView() == COPY_BUF) return;
-      backwardStartOfElem();
-      char *s = focusDoc()->contents.start + focusView()->cursor.offset;
-      setClipboardText(s);
-      setFocusFrame(st.lastFocusFrame);
+      copyElemToClipboard();
+      return;
     }
 
   char *s = getClipboardText();
@@ -1246,28 +1340,32 @@ void pasteBefore()
 
 void copy(char *s, uint len)
 {
-  int refView = getViewFocus();
-  if (refView == COPY_BUF) return;
+  if (getFocusView() == COPY_BUF)
+    {
+      copyElemToClipboard();
+      return;
+    }
+
+  int refFrame = getFocusFrame();
+  setFocusFrame(BUILTINS_FRAME);
   setFocusView(COPY_BUF);
-  backwardSOF();
-  insertString("\0\n", 2);
-  backwardSOF();
+  insertNewElem();
   insertString(s, len);
   setClipboardText(focusDoc()->contents.start);
-  setFocusView(refView);
+  setFocusFrame(refFrame);
 }
 
 void cut()
 {
     // BAL: add to undo
 
+  int refFrame = getFocusFrame();
+  if (refFrame == BUILTINS_FRAME || getFocusView() == COPY_BUF) return;
+
   int column;
   int row;
   int offset;
   int length;
-
-  int refView = getViewFocus();
-  if (refView == COPY_BUF) return;
 
   view_t *view = focusView();
 
@@ -1299,7 +1397,7 @@ void playMacroString(char *s, uint len)
 
 void playMacroCString(char *s)
 {
-    playMacroString(s, (uint)strlen(s));
+  playMacroString(s, (uint)strlen(s));
 }
 
 void doNothing(uchar c)
@@ -1312,49 +1410,59 @@ void doNothing(uchar c)
     selectionEnd();
 }
 
-void startStopRecording()
+void stopRecording()
 {
-  int refView = getViewFocus();
-  if (refView == MACRO_BUF) return;
-
-  st.isRecording ^= true;
-
+  int refFrame = getFocusFrame();
+  st.isRecording = false;
+  setFocusFrame(BUILTINS_FRAME);
   setFocusView(MACRO_BUF);
-  backwardSOF();
-
-  if (st.isRecording)
-    {
-      insertString("\0\n", 2);
-      backwardSOF();
-    } else
-    {
-      // BAL: if 1st line in macro buf is empty delete it
-    }
-  setFocusView(refView);
+  backwardStartOfElem();
+  setFocusFrame(refFrame);
 }
 
-void playMacro()
+void startOrStopRecording()
 {
-  if (st.isRecording) startStopRecording();
+  int refFrame = getFocusFrame();
 
-    int refView = getViewFocus();
-    if (refView == MACRO_BUF) return;
+  if (st.isRecording || refFrame == BUILTINS_FRAME || getFocusView() == MACRO_BUF) {
+    stopRecording();
+    return;
+  }
 
-    setFocusView(MACRO_BUF);
-    backwardStartOfElem();
-    doc_t *doc = focusDoc();
-    if (!doc->contents.start)
-      {
-        printf("no macros to play :(\n");
-        setFocusView(refView);
-        return;
-      }
+  // start recording
+  st.isRecording = true;
+  setFocusFrame(BUILTINS_FRAME);
+  setFocusView(MACRO_BUF);
+  insertNewElem();
+  // BAL: if 1st line in macro buf is empty delete it (or reuse it)
+  setFocusFrame(refFrame);
+}
 
-    char *s = doc->contents.start + focusView()->cursor.offset;
+void stopRecordingOrPlayMacro()
+{
+  int refFrame = getFocusFrame();
 
-    setFocusView(refView);
+  if (st.isRecording || refFrame == BUILTINS_FRAME || getFocusView() == MACRO_BUF) {
+    stopRecording();
+    return;
+  }
 
-    playMacroCString(s);
+  // play macro
+  setFocusFrame(BUILTINS_FRAME);
+  setFocusView(MACRO_BUF);
+  backwardStartOfElem();
+  doc_t *doc = focusDoc();
+  view_t *view = focusView();
+
+  if (!doc->contents.start)
+    {
+      message("no macros to play");
+      setFocusFrame(refFrame);
+      return;
+    }
+
+  setFocusFrame(refFrame);
+  playMacroCString(doc->contents.start + view->cursor.offset);
 }
 
 /* void setCursorToSearch() */
@@ -1389,7 +1497,7 @@ void backwardSearch()
 /*     view_t *view = arrayElemAt(&st.views, st.searchRefView); */
 /*     doc_t *doc = docOf(view); */
 
-/*     int refView = getViewFocus(); */
+/*     int refView = getFocusView(); */
 /*     setFocusView(SEARCH_BUF); */
 
 /*     view_t *viewFind = focusView(); */
@@ -1445,12 +1553,10 @@ void setSearchMode()
 /*     docInsert(doc, doc->contents.numElems, "", 1); */
 /*     doc->contents.numElems--; */
 
-/*     int refView = getViewFocus(); */
+/*     int refView = getFocusView(); */
 /*     setFocusView(SEARCH_BUF); */
 /*     setInsertMode(); */
-/*     backwardSOF(); */
-/*     insertString("\0\n", 2); */
-/*     backwardSOF(); */
+  /* insertNewElem(); */
 /*     setFocusView(refView); */
 }
 
@@ -1514,12 +1620,42 @@ void backwardFrame()
 
 void forwardView()
 {
-  setFocusView((getViewFocus() + 1) % numViews());
+  setFocusView((getFocusView() + 1) % numViews());
 }
 
 void backwardView()
 {
-  setFocusView((getViewFocus() + numViews() - 1) % numViews());
+  setFocusView((getFocusView() + numViews() - 1) % numViews());
+}
+
+#define INDENT_CSTRING "  "
+
+void indent()
+{
+  int i = cursorFocus()->offset;
+  backwardSOL();
+  insertCString(INDENT_CSTRING);
+  stMoveCursorOffset(i + strlen(INDENT_CSTRING));
+}
+
+void outdent()
+{
+  int i = cursorFocus()->offset;
+  backwardSOL();
+
+  int j = cursorFocus()->offset;
+
+  char *s = INDENT_CSTRING;
+  char *s0 = s;
+  doc_t *doc = focusDoc();
+
+  while(*s != '\0' && *((char*)doc->contents.start + j) == *s)
+    {
+      cut();
+      s++;
+    }
+
+  stMoveCursorOffset(i - (s - s0));
 }
 
 int main(int argc, char **argv)
@@ -1577,70 +1713,77 @@ int main(int argc, char **argv)
 /*
 TODO:
 CORE:
+    'm' to start recording macro.  ',' for end/play macro
+    Search
+    Undo command
+    Redo command
+    Move to next/prev blank line
+    Track cursor when it goes offscreen
+    Display operation buffer during operation
     command line args/config to set config items (e.g. demo mode)
-    status bar that has filename, row/col, modified, etc.
-    cursor per frame
-    select/cut/copy/paste with mouse
+    status bar that has modified, etc.
+    cut/copy/paste with mouse
     multiple files
     create new file
     input screen (for search, paste, load, tab completion, etc.)
     Hook Cut/Copy/Paste into system Cut/Copy/Paste
     replace
-    select region with mouse
     support editor API
     Name macro
     continual compile (on exiting insert or delete).  highlight errors/warnings
     jump to next error
     tab completion
     help screen
-    status bar per frame
-    reload file when changed outside of editor
     sort lines
     check spelling
     jump to prev/next placeholders
     jump to prev/next change
     collapse/expand selection (code folding)
     reload file when changed outside of editor
-
+    (tons of) optimizations
+    indent/outdent region
+    make builtin buffers readonly(except config and search?)
+    
 VIS:
-    Display line/column/offset info
     Display line number of every line
     Minimap
     syntax highlighting
     highlight nested parens
     resize nested parens
-    buffer list screen
     display multiple characters as one (e.g. lambda)
+    buffer list screen
 
 MACRO:
-    switch between frames
     comment/uncomment region
-    indent/outdent region
     more move, delete, insert commands
     select all
 
 DONE:
+switch between views
+switch between frames
+status bar that has filename, row/col, mode.
+cursor per frame
+select region with mouse
+status bar per frame
 indent/outdent line
 split screen
 Record/play macro
 Scroll
-Search
 Move cursor on mouse click
 File automatically loads on startup
 File automatically saves (on return)
 File automatically checkpoints into git (on return)
 Select region
 Cut/Copy/Paste
-Undo command
-Redo command
 Move cursor to the start/end of a line
 Move cursor up/down
+Move cursor to next/prev whitespace
 Insert characters
 Delete characters
 Enforce cursor boundaries
 wait for events, don't poll
 switch between insert and navigation mode
-Display filename and mode in title bar
+Display filename and mode in status bar
 Redraw on window size change
 Display cursor
 Move cursor left/right

@@ -195,7 +195,6 @@ struct state_s
   bool searchDirty;
   int downCxtX;
   int downCxtY;
-  int lastFocusFrame;
   bool mouseSelectionInProgress;
 };
 
