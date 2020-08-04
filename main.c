@@ -1703,21 +1703,10 @@ void indent()
 
   int coff = focusCursor()->offset;
   int soff = focusSelection()->offset;
-  int m;
-
-  m = indentLine();
-
-  if (n == 1) // no selection or selection within a line
-    {
-      cursorSetOffset(focusCursor(), coff + m, focusDoc());
-      cursorSetOffset(focusSelection(), soff + m, focusDoc());
-      return;
-    }
-
-  // multi-line selection
+  int m = indentLine();
   int m0 = m;
 
-  if (soff > coff) { // normal highlight order
+  if (soff >= coff) { // left to right highlight order
     for (int i = 1; i < n; ++i)
       {
         forwardLine();
@@ -1728,7 +1717,7 @@ void indent()
     return;
   }
 
-  // coff > soff // reverse highlight order
+  // coff > soff // right to left highlight order
   for (int i = 1; i < n; ++i)
     {
       backwardLine();
@@ -1753,21 +1742,10 @@ void outdent()
 
   int coff = focusCursor()->offset;
   int soff = focusSelection()->offset;
-  int m;
-
-  m = outdentLine();
-
-  if (n == 1) // no selection or selection within a line
-    {
-      cursorSetOffset(focusCursor(), coff - m, focusDoc());
-      cursorSetOffset(focusSelection(), soff - m, focusDoc());
-      return;
-    }
-
-  // multi-line selection
+  int m = outdentLine();
   int m0 = m;
 
-  if (soff > coff) { // normal highlight order
+  if (soff >= coff) { // left to right highlight order
     for (int i = 1; i < n; ++i)
       {
         forwardLine();
@@ -1778,7 +1756,7 @@ void outdent()
     return;
   }
 
-  // coff > soff // reverse highlight order
+  // coff > soff // right to left highlight order
   for (int i = 1; i < n; ++i)
     {
       backwardLine();
