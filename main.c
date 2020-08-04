@@ -1668,6 +1668,19 @@ int indentLine()
   insertChars(' ', n);
   return n;
 }
+
+int outdentLine()
+{
+  doc_t *doc = focusDoc();
+  string_t *s = &doc->contents;
+  backwardSOL();
+  int offset = focusCursor()->offset;
+  int x = distanceToIndent(s->start + offset, arrayTop(s));
+  int n = x == 0 ? 0 : (x - (((x - 1) / INDENT_LENGTH) * INDENT_LENGTH));
+  docDelete(doc, offset, n);
+  return n;
+}
+
 void indentSelection()
 {
   // save a offset and b offset
@@ -1727,7 +1740,6 @@ void indent()
   cursorSetOffset(focusSelection(), soff + m0, focusDoc());
 
 }
-
 void outdent()
 {
   int col;
@@ -1739,20 +1751,44 @@ void outdent()
 
   int n = numLinesSelected(focusDoc()->contents.start + off, len);
 
-  // stMoveCursorOffset(off);
+  int coff = focusCursor()->offset;
+  int soff = focusSelection()->offset;
+  int m;
 
-  for(int i = 0; i < n; ++i)
+  m = outdentLine();
+
+  if (n == 1) // no selection or selection within a line
     {
-      backwardSOL();
-      doc_t *doc = focusDoc();
-      string_t *s = &doc->contents;
-      int offset = focusCursor()->offset;
-      int x = distanceToIndent(s->start + offset, arrayTop(s));
-      int r = x % INDENT_LENGTH;
-      int len = x == 0 ? 0 : r == 0 ? INDENT_LENGTH : r;
-      docDelete(doc, offset, len);
-      forwardLine();
+      cursorSetOffset(focusCursor(), coff - m, focusDoc());
+      cursorSetOffset(focusSelection(), soff - m, focusDoc());
+      return;
     }
+
+  // multi-line selection
+  int m0 = m;
+
+  if (soff > coff) { // normal highlight order
+    for (int i = 1; i < n; ++i)
+      {
+        forwardLine();
+        m += outdentLine();
+      }
+    cursorSetOffset(focusCursor(), coff - m0, focusDoc());
+    cursorSetOffset(focusSelection(), soff - m, focusDoc());
+    return;
+  }
+
+  // coff > soff // reverse highlight order
+  for (int i = 1; i < n; ++i)
+    {
+      backwardLine();
+      m0 = outdentLine();
+      m += m0;
+    }
+
+  cursorSetOffset(focusCursor(), coff - m, focusDoc());
+  cursorSetOffset(focusSelection(), soff - m0, focusDoc());
+
 }
 
 int main(int argc, char **argv)
