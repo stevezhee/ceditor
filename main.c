@@ -141,6 +141,11 @@ doc_t *focusDoc()
   return docOf(focusView());
 }
 
+bool selectionActive(view_t *view)
+{
+  return (view->selectMode != NO_SELECT);
+}
+
 void frameUpdate(frame_t *frame)
 {
   view_t *view = viewOf(frame);
@@ -517,7 +522,15 @@ int distanceToNextSpace(char *s0, char *t)
 
   return s - s0;
 }
-
+int distanceToIndent(char *p0, char *q)
+{
+  char *p = p0;
+  while(p < q && *p == ' ')
+    {
+      p++;
+    }
+  return p - p0;
+}
 int distanceToPrevSpace(char *t, char *s0)
 {
   char *s = s0;
@@ -557,11 +570,6 @@ int distanceToStartOfElem(char *s, int offset)
       p--;
     }
   return p - p0;
-}
-
-bool selectionActive(view_t *view)
-{
-  return (view->selectMode != NO_SELECT);
 }
 
 void getSelectionCoords(view_t *view, int *column, int *row, int *offset, int *len)
@@ -1176,31 +1184,36 @@ void keyDownEvent()
     }
 }
 
-cursor_t *cursorFocus()
+cursor_t *focusCursor()
 {
   return &focusView()->cursor;
 }
 
+cursor_t *focusSelection()
+{
+  return &focusView()->selection;
+}
+
 void stMoveCursorOffset(int offset)
 {
-    cursorSetOffset(cursorFocus(), offset, focusDoc());
+    cursorSetOffset(focusCursor(), offset, focusDoc());
     frameTrackSelection(focusFrame());
 }
 
 void stMoveCursorRowCol(int row, int col)
 {
-    cursorSetRowCol(cursorFocus(), row, col, focusDoc());
+    cursorSetRowCol(focusCursor(), row, col, focusDoc());
     frameTrackSelection(focusFrame());
 }
 
 void backwardChar()
 {
-  stMoveCursorOffset(cursorFocus()->offset - 1);
+  stMoveCursorOffset(focusCursor()->offset - 1);
 }
 
 void forwardChar()
 {
-  stMoveCursorOffset(cursorFocus()->offset + 1);
+  stMoveCursorOffset(focusCursor()->offset + 1);
 }
 
 void setNavigateMode()
@@ -1221,7 +1234,7 @@ void setNavigateModeAndDoKeyPress(uchar c)
 
 void moveLines(int dRow)
 {
-  cursor_t *cursor = cursorFocus();
+  cursor_t *cursor = focusCursor();
   int col = cursor->preferredColumn;
 
   stMoveCursorRowCol(cursor->row + dRow, col);
@@ -1250,14 +1263,14 @@ void backwardBlankLine()
 
 void forwardSpace()
 {
-  int i = cursorFocus()->offset;
+  int i = focusCursor()->offset;
   doc_t *doc = focusDoc();
   stMoveCursorOffset(i + distanceToNextSpace(doc->contents.start + i, arrayTop(&doc->contents)));
 }
 
 void backwardSpace()
 {
-  int i = cursorFocus()->offset;
+  int i = focusCursor()->offset;
   doc_t *doc = focusDoc();
   stMoveCursorOffset(i + distanceToPrevSpace(doc->contents.start, doc->contents.start + i));
 }
@@ -1284,19 +1297,19 @@ void forwardEOF()
 
 void backwardSOL()
 {
-    stMoveCursorRowCol(cursorFocus()->row, 0);
+    stMoveCursorRowCol(focusCursor()->row, 0);
 }
 
 void forwardEOL()
 {
-    stMoveCursorRowCol(cursorFocus()->row, INT_MAX);
+    stMoveCursorRowCol(focusCursor()->row, INT_MAX);
 }
 
 void insertString(char *s, uint len)
 {
   assert(s);
   if(len <= 0) return;
-  docInsert(focusDoc(), cursorFocus()->offset, s, len);
+  docInsert(focusDoc(), focusCursor()->offset, s, len);
 }
 
 void insertCString(char *s)
@@ -1377,7 +1390,7 @@ void cut()
 
   doc_t *doc = focusDoc();
 
-  copy(doc->contents.start + offset, length);
+  if (length > 1) copy(doc->contents.start + offset, length);
 
   docDelete(doc, offset, length);
 
@@ -1628,34 +1641,118 @@ void backwardView()
   setFocusView((getFocusView() + numViews() - 1) % numViews());
 }
 
-#define INDENT_CSTRING "  "
+#define INDENT_LENGTH 3
 
+int numLinesSelected(char *s, int len)
+{
+  if (len <= 0) return 0;
+  int n = numLinesString(s, len);
+  if (*(s + len - 1) != '\n') n++;
+  return n;
+}
+
+void insertChars(char c, int n)
+{
+  for(int i = 0; i < n; ++i)
+    {
+      insertString(&c, 1);
+    }
+}
+int indentLine()
+{
+  string_t *s = &focusDoc()->contents;
+  backwardSOL();
+  int offset = focusCursor()->offset;
+  int x = distanceToIndent(s->start + offset, arrayTop(s));
+  int n = INDENT_LENGTH - x % INDENT_LENGTH;
+  insertChars(' ', n);
+  return n;
+}
+void indentSelection()
+{
+  // save a offset and b offset
+  // if:
+  //   l1 == l2 => indentLine, update a offset and b offset
+  //   l1 < l2 => indentLine, update a offset, indent intermediate lines, indentLine, update b offset
+
+  //   l1 > l2 => indentLine, update a offset, indent intermediate lines,
+}
 void indent()
 {
-  int i = cursorFocus()->offset;
-  backwardSOL();
-  insertCString(INDENT_CSTRING);
-  stMoveCursorOffset(i + strlen(INDENT_CSTRING));
+  int col;
+  int row;
+  int off;
+  int len;
+
+  getSelectionCoords(focusView(), &col, &row, &off, &len);
+
+  int n = numLinesSelected(focusDoc()->contents.start + off, len);
+
+  int coff = focusCursor()->offset;
+  int soff = focusSelection()->offset;
+  int m;
+
+  m = indentLine();
+
+  if (n == 1) // no selection or selection within a line
+    {
+      cursorSetOffset(focusCursor(), coff + m, focusDoc());
+      cursorSetOffset(focusSelection(), soff + m, focusDoc());
+      return;
+    }
+
+  // multi-line selection
+  int m0 = m;
+
+  if (soff > coff) { // normal highlight order
+    for (int i = 1; i < n; ++i)
+      {
+        forwardLine();
+        m += indentLine();
+      }
+    cursorSetOffset(focusCursor(), coff + m0, focusDoc());
+    cursorSetOffset(focusSelection(), soff + m, focusDoc());
+    return;
+  }
+
+  // coff > soff // reverse highlight order
+  for (int i = 1; i < n; ++i)
+    {
+      backwardLine();
+      m0 = indentLine();
+      m += m0;
+    }
+
+  cursorSetOffset(focusCursor(), coff + m, focusDoc());
+  cursorSetOffset(focusSelection(), soff + m0, focusDoc());
+
 }
 
 void outdent()
 {
-  int i = cursorFocus()->offset;
-  backwardSOL();
+  int col;
+  int row;
+  int off;
+  int len;
 
-  int j = cursorFocus()->offset;
+  getSelectionCoords(focusView(), &col, &row, &off, &len);
 
-  char *s = INDENT_CSTRING;
-  char *s0 = s;
-  doc_t *doc = focusDoc();
+  int n = numLinesSelected(focusDoc()->contents.start + off, len);
 
-  while(*s != '\0' && *((char*)doc->contents.start + j) == *s)
+  // stMoveCursorOffset(off);
+
+  for(int i = 0; i < n; ++i)
     {
-      cut();
-      s++;
+      backwardSOL();
+      doc_t *doc = focusDoc();
+      string_t *s = &doc->contents;
+      int offset = focusCursor()->offset;
+      int x = distanceToIndent(s->start + offset, arrayTop(s));
+      int r = x % INDENT_LENGTH;
+      int len = x == 0 ? 0 : r == 0 ? INDENT_LENGTH : r;
+      docDelete(doc, offset, len);
+      forwardLine();
     }
-
-  stMoveCursorOffset(i - (s - s0));
 }
 
 int main(int argc, char **argv)
@@ -1713,7 +1810,6 @@ int main(int argc, char **argv)
 /*
 TODO:
 CORE:
-    'm' to start recording macro.  ',' for end/play macro
     Search
     Undo command
     Redo command
@@ -1743,7 +1839,7 @@ CORE:
     (tons of) optimizations
     indent/outdent region
     make builtin buffers readonly(except config and search?)
-    
+
 VIS:
     Display line number of every line
     Minimap

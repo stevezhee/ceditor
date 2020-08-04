@@ -9,11 +9,9 @@
 #include "Doc.h"
 #include "DynamicArray.h"
 
-static int countLines(char *s, int len);
-
 void docDelete(doc_t *doc, int offset, int len)
 {
-  int n = countLines(arrayElemAt(&doc->contents, offset), len);
+  int n = numLinesString(arrayElemAt(&doc->contents, offset), len);
   doc->numLines -= n;
   arrayDelete(&doc->contents, offset, len);
   if (doc->filepath[0] != '*' && n > 0) docWrite(doc);  // BAL: hacky to use the '*' and this shouldn't be here, just mark it as dirty or something
@@ -21,7 +19,7 @@ void docDelete(doc_t *doc, int offset, int len)
 
 void docInsert(doc_t *doc, int offset, char *s, int len)
 {
-  int n = countLines(s, len);
+  int n = numLinesString(s, len);
   doc->numLines += n;
 
   arrayInsert(&doc->contents, offset, s, len);
@@ -71,18 +69,5 @@ void docRead(doc_t *doc)
 
   if (fclose(fp) != 0) die("unable to close file");
 
-  doc->numLines = countLines(doc->contents.start, doc->contents.numElems);
-}
-
-static int countLines(char *s, int len)
-{
-  int n = 0;
-  char *end = s + len;
-
-  while(s < end)
-    {
-      if (*s == '\n') n++;
-      s++;
-    }
-  return n;
+  doc->numLines = numLinesString(doc->contents.start, doc->contents.numElems);
 }

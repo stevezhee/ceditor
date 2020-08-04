@@ -86,6 +86,19 @@ void fillRect(int w, int h)
   fillRectAt(0, 0, w, h);
 }
 
+int numLinesString(char *s, int len)
+{
+  int n = 0;
+  char *end = s + len;
+
+  while(s < end)
+    {
+      if (*s == '\n') n++;
+      s++;
+    }
+  return n;
+}
+
 char *getClipboardText(void)
 {
   if (!SDL_HasClipboardText()) return NULL;

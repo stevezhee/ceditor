@@ -41,6 +41,8 @@ void rendererInit(SDL_Window *win);
 void rendererPresent(void);
 char *getClipboardText(void);
 void setClipboardText(const char *text);
+int numLinesString(char *s, int len);
+
 
 typedef enum { NAVIGATE_MODE, INSERT_MODE, SEARCH_MODE, NUM_MODES } editorMode_t;
 extern char *editorModeDescr[NUM_MODES];
