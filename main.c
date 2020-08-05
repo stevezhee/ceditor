@@ -1251,14 +1251,51 @@ void forwardLine()
     moveLines(1);
 }
 
+char nextCharAfterSpaces()
+{
+  doc_t *doc = focusDoc();
+  char *p = doc->contents.start + focusCursor()->offset;
+  char *end = arrayTop(&doc->contents);
+
+  while(p < end && *p == ' ') p++;
+  return p == end ? '\0' : *p;
+}
+
 void forwardBlankLine()
 {
-  
+  backwardSOL();
+  char r = nextCharAfterSpaces();
+  while (r != '\0' && r != '\n')
+    {
+      forwardLine();
+      r = nextCharAfterSpaces();
+    }
+  while (r != '\0' && r == '\n')
+    {
+      forwardLine();
+      r = nextCharAfterSpaces();
+    }
+}
+
+bool isSOF()
+{
+  return focusCursor()->offset == 0;
 }
 
 void backwardBlankLine()
 {
-  
+  backwardSOL();
+  char r = nextCharAfterSpaces();
+  while (!isSOF() && r != '\n')
+    {
+      backwardLine();
+      r = nextCharAfterSpaces();
+    }
+  while (!isSOF() && r == '\n')
+    {
+      backwardLine();
+      r = nextCharAfterSpaces();
+    }
 }
 
 void forwardSpace()
@@ -1827,8 +1864,7 @@ CORE:
     Search
     Undo command
     Redo command
-    Move to next/prev blank line
-    Track cursor when it goes offscreen
+    Track cursor when it goes off screen
     Display operation buffer during operation
     command line args/config to set config items (e.g. demo mode)
     status bar that has modified, etc.
@@ -1851,8 +1887,7 @@ CORE:
     collapse/expand selection (code folding)
     reload file when changed outside of editor
     (tons of) optimizations
-    indent/outdent region
-    make builtin buffers readonly(except config and search?)
+    make builtin buffers readonly (except config and search?)
 
 VIS:
     Display line number of every line
@@ -1869,13 +1904,15 @@ MACRO:
     select all
 
 DONE:
+Move to next/prev blank line
+indent/outdent region
+indent/outdent line
 switch between views
 switch between frames
 status bar that has filename, row/col, mode.
 cursor per frame
 select region with mouse
 status bar per frame
-indent/outdent line
 split screen
 Record/play macro
 Scroll

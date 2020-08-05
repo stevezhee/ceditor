@@ -33,6 +33,8 @@ char builtinMacros[NUM_BUILTIN_MACROS][8] = {
     { KEY_INSERT, 'i', '\0' },
     { ';', '0', 'i', '/', '/', KEY_LEFT, KEY_LEFT, '\0' },
     { 'x', KEY_DELETE, '\0' },
+    { 'w', KEY_SHIFT_RIGHT, '\0' },
+    { 'b', KEY_SHIFT_LEFT, '\0' },
 };
 
 void initMacros(void)
@@ -81,15 +83,11 @@ void keysymInit(void)
     keyHandler[NAVIGATE_MODE]['f'] = (keyHandler_t)forwardView;
     keyHandler[NAVIGATE_MODE][KEY_SHIFT_RIGHT] = (keyHandler_t)forwardSpace;
     keyHandler[NAVIGATE_MODE][KEY_SHIFT_LEFT] = (keyHandler_t)backwardSpace;
+    keyHandler[NAVIGATE_MODE][KEY_SHIFT_DOWN] = (keyHandler_t)forwardBlankLine;
+    keyHandler[NAVIGATE_MODE][KEY_SHIFT_UP] = (keyHandler_t)backwardBlankLine;
     // BAL: 'h' or '?' goto help buffer?
-//    keyHandler[NAVIGATE_MODE]['w'] = forwardWord;
-//    keyHandler[NAVIGATE_MODE][KEY_SHIFT_RIGHT] = forwardWord;
-//    keyHandler[NAVIGATE_MODE]['b'] = backwardWord;
-//    keyHandler[NAVIGATE_MODE][KEY_SHIFT_LEFT] = backwardWord;
     keyHandler[NAVIGATE_MODE]['0'] = (keyHandler_t)backwardSOL;
     keyHandler[NAVIGATE_MODE]['$'] = (keyHandler_t)forwardEOL;
-    //    keyHandler[NAVIGATE_MODE][KEY_SHIFT_DOWN] = forwardParagraph;
-//    keyHandler[NAVIGATE_MODE][KEY_SHIFT_UP] = backwardParagraph;
 //
     keyHandler[NAVIGATE_MODE]['i'] = (keyHandler_t)setInsertMode;
 

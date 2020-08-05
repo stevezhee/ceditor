@@ -47,6 +47,8 @@ void forwardView();
 void backwardView();
 void forwardSpace();
 void backwardSpace();
+void forwardBlankLine();
+void backwardBlankLine();
 void indent();
 void outdent();
 // void appendLine();
