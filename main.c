@@ -169,10 +169,9 @@ void frameUpdate(frame_t *frame)
 void setFrameView(int refFrame, int refView)
 {
   frame_t *frame = frameOf(refFrame);
+  frame->refView = refView;
 
   view_t *view = viewOf(frame);
-
-  frame->refView = refView;
   frame->scrollY = &view->scrollY;
 
   frameUpdate(frame);
@@ -208,20 +207,6 @@ void viewInit(view_t *view, uint i)
 {
     memset(view, 0, sizeof(view_t));
     view->refDoc = i;
-}
-
-void docRender(doc_t *doc, frame_t *frame)
-{
-    /* resetCharRect(&st.font, frame->scrollX, frame->scrollY); */
-
-    /* if(!doc->contents.start) return; */
-
-    /* for(char *p = doc->contents.start; p < (char*)(doc->contents.start) + doc->contents.numElems; p++) */
-    /* { */
-    /*     renderAndAdvChar(&st.font, *p); */
-    /* } */
-
-    /* renderEOF(&st.font); */
 }
 
 bool noActiveSearch(frame_t *frame)
@@ -1024,8 +1009,6 @@ void stInit(int argc, char **argv)
         frameInit(v);
     }
 
-    printf("views: %d %d\n", NUM_BUILTIN_BUFFERS, argc);
-
     for(int i = 0; i < NUM_FRAMES; ++i)
       {
         setFrameView(i, NUM_BUILTIN_BUFFERS + argc - i - 1);
@@ -1123,7 +1106,6 @@ void mouseButtonDownEvent()
   widgetAt(gui, st.event.button.x, st.event.button.y);
   if (context.wid < 0 || context.wid > numFrames())
     {
-      printf("%d\n", context.wid);
       return;
     }
 
@@ -1367,7 +1349,6 @@ void backwardStartOfElem()
 {
   int offset = focusView()->cursor.offset;
   int i = distanceToStartOfElem(focusDoc()->contents.start, offset);
-  printf("moving back %d\n", i);
   stMoveCursorOffset(offset + i);
 }
 
@@ -1844,7 +1825,7 @@ int main(int argc, char **argv)
             default:
                 break;
         }
-        //        frameUpdate(focusFrame());
+        frameUpdate(focusFrame());
         stDraw();
         /* { */
         /*     computeSearchResults(&st); */
