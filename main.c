@@ -141,6 +141,16 @@ doc_t *focusDoc()
   return docOf(focusView());
 }
 
+cursor_t *focusCursor()
+{
+  return &focusView()->cursor;
+}
+
+cursor_t *focusSelection()
+{
+  return &focusView()->selection;
+}
+
 bool selectionActive(view_t *view)
 {
   return (view->selectMode != NO_SELECT);
@@ -857,6 +867,8 @@ void contextReinit()
 }
 void stDraw(void)
 {
+  // BAL:!!!!!
+  // printf("row=%d scroll=%d\n", focusCursor()->row, focusView()->scrollY);
   setDrawColor(0x00ff00ff);
   rendererClear();
   contextReinit();
@@ -1182,16 +1194,6 @@ void keyDownEvent()
     {
         recordKeyPress(c);
     }
-}
-
-cursor_t *focusCursor()
-{
-  return &focusView()->cursor;
-}
-
-cursor_t *focusSelection()
-{
-  return &focusView()->selection;
 }
 
 void stMoveCursorOffset(int offset)
@@ -1861,6 +1863,7 @@ int main(int argc, char **argv)
 /*
 TODO:
 CORE:
+    Show line/column information in status bar
     Search
     Undo command
     Redo command
