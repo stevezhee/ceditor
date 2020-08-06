@@ -152,12 +152,16 @@ struct view_s // BAL: this needs to be renamed
 
 typedef struct view_s view_t;
 
+typedef dynamicArray_t searchBuffer_t; // contains result offsets
+typedef dynamicArray_t docsBuffer_t;
+typedef dynamicArray_t viewsBuffer_t;
+
 struct frame_s
 {
   SDL_Rect rect;
   int scrollX;
 
-  int refView;
+  viewsBuffer_t views;
   color_t color;
   int height;
   int width;
@@ -177,14 +181,10 @@ struct window_s
 typedef struct window_s window_t;
 
 typedef dynamicArray_t frameBuffer_t;
-typedef dynamicArray_t searchBuffer_t; // contains result offsets
-typedef dynamicArray_t docsBuffer_t;
-typedef dynamicArray_t viewsBuffer_t;
 
 struct state_s
 {
   docsBuffer_t docs;
-  viewsBuffer_t views;
   frameBuffer_t frames;
   searchBuffer_t results;
   window_t window;

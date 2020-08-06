@@ -63,11 +63,6 @@ int yToRow(int x)
   return x / st.font.lineSkip;
 }
 
-int numViews()
-{
-  return st.views.numElems;
-}
-
 int numFrames()
 {
   return st.frames.numElems;
@@ -88,7 +83,7 @@ uint frameRows(frame_t *frame)
     return frameHeight(frame) / st.font.lineSkip;
 }
 
-int getFocusFrame()
+int focusFrameRef()
 {
   return st.frames.offset;
 }
@@ -100,7 +95,7 @@ frame_t *focusFrame()
 
 void setFocusFrame(int i)
 {
-  int j = getFocusFrame();
+  int j = focusFrameRef();
   if (i != j)
   {
     frame_t *frame = focusFrame();
@@ -116,19 +111,24 @@ frame_t *frameOf(int i)
   return arrayElemAt(&st.frames, i);
 }
 
-int getFocusView()
+int focusViewRef()
 {
-  return focusFrame()->refView;
+  return focusFrame()->views.offset;
 }
 
 view_t *viewOf(frame_t *frame)
 {
-  return arrayElemAt(&st.views, frame->refView);
+  return arrayFocus(&frame->views);
 }
 
 view_t *focusView()
 {
   return viewOf(focusFrame());
+}
+
+int numViews()
+{
+  return focusFrame()->views.numElems;
 }
 
 doc_t *docOf(view_t *view)
@@ -169,17 +169,17 @@ void frameUpdate(frame_t *frame)
 void setFrameView(int refFrame, int refView)
 {
   frame_t *frame = frameOf(refFrame);
-  frame->refView = refView;
+  arraySetFocus(&frame->views, refView);
 
   view_t *view = viewOf(frame);
-  frame->scrollY = &view->scrollY;
+  frame->scrollY = &view->scrollY; // BAL: shouldn't have to do this?  Doing it for the gui? Make a function?
 
   frameUpdate(frame);
 }
 
 void setFocusView(int refView)
 {
-  setFrameView(getFocusFrame(), refView);
+  setFrameView(focusFrameRef(), refView);
 }
 
 /* void stSetViewFocus(uint i) */
@@ -195,6 +195,7 @@ void frameInit(frame_t *frame)
     memset(frame, 0, sizeof(frame_t));
     frame->color = unfocusedFrameColor;
 
+    arrayInit(&frame->views, sizeof(view_t));
     arrayInit(&frame->status, sizeof(char));
     arrayGrow(&frame->status, 1024);
     // printf("frame init: %d\n", (int)frame->status.start);
@@ -209,13 +210,13 @@ void viewInit(view_t *view, uint i)
     view->refDoc = i;
 }
 
-bool noActiveSearch(frame_t *frame)
-{
-    return
-      frame->refView != st.searchRefView ||
-      st.searchLen == 0 ||
-      st.results.numElems == 0;
-}
+/* bool noActiveSearch(frame_t *frame) */
+/* { */
+/*     return */
+/*       frame->refView != st.searchRefView || // BAL: there are now multiple views per frame */
+/*       st.searchLen == 0 || */
+/*       st.results.numElems == 0; */
+/* } */
 
 widget_t *newWidget()
 {
@@ -924,17 +925,18 @@ void insertNewElem()
   insertString("\0\n", 2);
 }
 
-void buffersBufInit()
-{
-  setFocusView(BUFFERS_BUF);
+// BAL: delete
+/* void buffersBufInit() */
+/* { */
+/*   setFocusView(BUFFERS_BUF); */
 
-  for(int i = 0; i < numViews(); ++i)
-  {
-    view_t *view = arrayElemAt(&st.views, i);
-    insertNewElem();
-    insertCString(docOf(view)->filepath);
-  }
-}
+/*   for(int i = 0; i < numViews(); ++i) */
+/*   { */
+/*     view_t *view = arrayElemAt(&st.views, i); */
+/*     insertNewElem(); */
+/*     insertCString(docOf(view)->filepath); */
+/*   } */
+/* } */
 
 void drawFrameCursor(frame_t *frame)
 {
@@ -957,7 +959,7 @@ widget_t *frame(int i)
 
 void message(char *s)
 {
-  int refFrame = getFocusFrame();
+  int refFrame = focusFrameRef();
   setFocusFrame(BUILTINS_FRAME);
   setFocusView(MESSAGE_BUF);
   insertNewElem();
@@ -983,7 +985,6 @@ void stInit(int argc, char **argv)
 
 
     arrayInit(&st.docs, sizeof(doc_t));
-    arrayInit(&st.views, sizeof(view_t));
     arrayInit(&st.frames, sizeof(frame_t));
     arrayInit(&st.results, sizeof(int));
 
@@ -993,26 +994,34 @@ void stInit(int argc, char **argv)
       {
         doc_t *doc = arrayPushUninit(&st.docs);
         docInit(doc, builtinBufferTitle[i]);
-        viewInit(arrayPushUninit(&st.views), i);
       }
 
     for(int i = 0; i < argc; ++i) {
       doc_t *doc = arrayPushUninit(&st.docs);
       docInit(doc, argv[i]);
       docRead(doc);
-      viewInit(arrayPushUninit(&st.views), NUM_BUILTIN_BUFFERS + i);
     }
 
     for(int i = 0; i < NUM_FRAMES; ++i)
     {
         frame_t *v = arrayPushUninit(&st.frames);
         frameInit(v);
+        if (i == BUILTINS_FRAME)
+          {
+            for(int j = 0; j < NUM_BUILTIN_BUFFERS; ++j)
+              {
+                viewInit(arrayPushUninit(&v->views), j);
+              }
+          }
+        else
+          {
+            for(int j = 0; j < argc; ++j)
+              {
+                viewInit(arrayPushUninit(&v->views), NUM_BUILTIN_BUFFERS + j);
+              }
+          }
+        setFrameView(i, 0);
     }
-
-    for(int i = 0; i < NUM_FRAMES; ++i)
-      {
-        setFrameView(i, NUM_BUILTIN_BUFFERS + argc - i - 1);
-      }
 
     setFocusFrame(MAIN_FRAME);
 
@@ -1159,7 +1168,7 @@ void doKeyPress(uchar c)
 
 void recordKeyPress(uchar c)
 {
-  int refView = getFocusView();
+  int refView = focusViewRef();
   setFocusView(MACRO_BUF);
   insertChar(c);
   setFocusView(refView);
@@ -1361,7 +1370,7 @@ void copyElemToClipboard()
 
 void pasteBefore()
 {
-  if (getFocusView() == COPY_BUF)
+  if (focusViewRef() == COPY_BUF)
     {
       copyElemToClipboard();
       return;
@@ -1373,13 +1382,13 @@ void pasteBefore()
 
 void copy(char *s, uint len)
 {
-  if (getFocusView() == COPY_BUF)
+  if (focusViewRef() == COPY_BUF)
     {
       copyElemToClipboard();
       return;
     }
 
-  int refFrame = getFocusFrame();
+  int refFrame = focusFrameRef();
   setFocusFrame(BUILTINS_FRAME);
   setFocusView(COPY_BUF);
   insertNewElem();
@@ -1392,8 +1401,8 @@ void cut()
 {
     // BAL: add to undo
 
-  int refFrame = getFocusFrame();
-  if (refFrame == BUILTINS_FRAME || getFocusView() == COPY_BUF) return;
+  int refFrame = focusFrameRef();
+  if (refFrame == BUILTINS_FRAME || focusViewRef() == COPY_BUF) return;
 
   int column;
   int row;
@@ -1445,7 +1454,7 @@ void doNothing(uchar c)
 
 void stopRecording()
 {
-  int refFrame = getFocusFrame();
+  int refFrame = focusFrameRef();
   st.isRecording = false;
   setFocusFrame(BUILTINS_FRAME);
   setFocusView(MACRO_BUF);
@@ -1455,9 +1464,9 @@ void stopRecording()
 
 void startOrStopRecording()
 {
-  int refFrame = getFocusFrame();
+  int refFrame = focusFrameRef();
 
-  if (st.isRecording || refFrame == BUILTINS_FRAME || getFocusView() == MACRO_BUF) {
+  if (st.isRecording || refFrame == BUILTINS_FRAME || focusViewRef() == MACRO_BUF) {
     stopRecording();
     return;
   }
@@ -1473,9 +1482,9 @@ void startOrStopRecording()
 
 void stopRecordingOrPlayMacro()
 {
-  int refFrame = getFocusFrame();
+  int refFrame = focusFrameRef();
 
-  if (st.isRecording || refFrame == BUILTINS_FRAME || getFocusView() == MACRO_BUF) {
+  if (st.isRecording || refFrame == BUILTINS_FRAME || focusViewRef() == MACRO_BUF) {
     stopRecording();
     return;
   }
@@ -1530,7 +1539,7 @@ void backwardSearch()
 /*     view_t *view = arrayElemAt(&st.views, st.searchRefView); */
 /*     doc_t *doc = docOf(view); */
 
-/*     int refView = getFocusView(); */
+/*     int refView = focusViewRef(); */
 /*     setFocusView(SEARCH_BUF); */
 
 /*     view_t *viewFind = focusView(); */
@@ -1586,7 +1595,7 @@ void setSearchMode()
 /*     docInsert(doc, doc->contents.numElems, "", 1); */
 /*     doc->contents.numElems--; */
 
-/*     int refView = getFocusView(); */
+/*     int refView = focusViewRef(); */
 /*     setFocusView(SEARCH_BUF); */
 /*     setInsertMode(); */
   /* insertNewElem(); */
@@ -1643,22 +1652,22 @@ void frameTrackSelection(frame_t *frame)
 
 void forwardFrame()
 {
-  setFocusFrame((getFocusFrame() + 1) % numFrames());
+  setFocusFrame((focusFrameRef() + 1) % numFrames());
 }
 
 void backwardFrame()
 {
-  setFocusFrame((getFocusFrame() + numFrames() - 1) % numFrames());
+  setFocusFrame((focusFrameRef() + numFrames() - 1) % numFrames());
 }
 
 void forwardView()
 {
-  setFocusView((getFocusView() + 1) % numViews());
+  setFocusView((focusViewRef() + 1) % numViews());
 }
 
 void backwardView()
 {
-  setFocusView((getFocusView() + numViews() - 1) % numViews());
+  setFocusView((focusViewRef() + numViews() - 1) % numViews());
 }
 
 #define INDENT_LENGTH 3
@@ -1844,7 +1853,6 @@ int main(int argc, char **argv)
 /*
 TODO:
 CORE:
-    Show line/column information in status bar
     Search
     Undo command
     Redo command
@@ -1874,6 +1882,7 @@ CORE:
     make builtin buffers readonly (except config and search?)
 
 VIS:
+    make each frame have a list of independent views
     Display line number of every line
     Minimap
     syntax highlighting
