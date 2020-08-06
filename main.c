@@ -9,9 +9,6 @@
 void insertCString(char *s);
 void insertString(char *s, uint len);
 
-void frameTrackSelection(frame_t *frame);
-void frameScrollY(frame_t *frame, int dR);
-
 color_t unfocusedFrameColor = 0x303030ff;
 color_t focusedFrameColor = 0x101010ff;
 
@@ -21,18 +18,6 @@ struct widget_s;
 
 typedef struct widget_s widget_t;
 
-typedef struct singletonData_s
-{
-  void *a;
-  widget_t *child;
-} singletonData_t;
-
-typedef struct pairData_s
-{
-  widget_t *a;
-  widget_t *b;
-} pairData_t;
-
 struct widget_s
 {
   widgetTag_t tag;
@@ -40,16 +25,19 @@ struct widget_s
     int wid;
     int *length;
     int *color;
-    int *dy;
     font_t **font;
     widget_t *child;
     void (*drawFun)(void *);
+    int (*scrollYFun)(void *);
     void *data;
   } a;
   union {
     widget_t *child;
     void *data;
   } b;
+  union {
+    void *data;
+  } c;
 };
 
 state_t st;
@@ -73,14 +61,9 @@ int numDocs()
   return st.docs.numElems;
 }
 
-int frameHeight(frame_t *frame)
-{
-    return frame->rect.h;
-}
-
 uint frameRows(frame_t *frame)
 {
-    return frameHeight(frame) / st.font.lineSkip;
+    return frame->height / st.font.lineSkip;
 }
 
 int focusFrameRef()
@@ -171,9 +154,6 @@ void setFrameView(int refFrame, int refView)
   frame_t *frame = frameOf(refFrame);
   arraySetFocus(&frame->views, refView);
 
-  view_t *view = viewOf(frame);
-  frame->scrollY = &view->scrollY; // BAL: shouldn't have to do this?  Doing it for the gui? Make a function?
-
   frameUpdate(frame);
 }
 
@@ -238,14 +218,24 @@ widget_t *singleton(widgetTag_t tag, void *a, widget_t *b)
 {
   widget_t *p = newWidget();
   p->tag = tag;
-  p->a.child = a;
+  p->a.data = a;
   p->b.child = b;
+  return p;
+}
+
+widget_t *singleton2(widgetTag_t tag, void *a, widget_t *b, void *c)
+{
+  widget_t *p = newWidget();
+  p->tag = tag;
+  p->a.data = a;
+  p->b.child = b;
+  p->c.data = c;
   return p;
 }
 
 #define color(a, b) singleton(COLOR, a, b)
 #define font(a, b) singleton(FONT, a, b)
-#define scrollY(a, b) singleton(SCROLL_Y, a, b)
+#define scrollY(a, c, b) singleton2(SCROLL_Y, a, b, c)
 
 widget_t *wid(int i, widget_t *a)
 {
@@ -708,10 +698,12 @@ void widgetAt(widget_t *widget, int x, int y)
   case FONT: // fall through
     widgetAt(widget->b.child, x, y);
     return;
-  case SCROLL_Y:
-    context.y += *widget->a.dy;
-    widgetAt(widget->b.child, x, y + *widget->a.dy);
+  case SCROLL_Y: {
+    int dy = widget->a.scrollYFun(widget->c.data);
+    context.y += dy;
+    widgetAt(widget->b.child, x, y + dy);
     return;
+  }
   default:
     assert(widget->tag == VSPC || widget->tag == HSPC || widget->tag == DRAW);
     return;
@@ -800,7 +792,7 @@ void widgetDraw(widget_t *widget)
   }
   case SCROLL_Y: {
     int dy = context.dy;
-    context.dy += *widget->a.dy;
+    context.dy += widget->a.scrollYFun(widget->c.data);
     widgetDraw(widget->b.child);
     context.dy = dy;
     return;
@@ -853,8 +845,6 @@ void contextReinit()
 }
 void stDraw(void)
 {
-  // BAL:!!!!!
-  // printf("row=%d scroll=%d\n", focusCursor()->row, focusView()->scrollY);
   setDrawColor(0x00ff00ff);
   rendererClear();
   contextReinit();
@@ -948,10 +938,16 @@ void drawFrameDoc(frame_t *frame)
   drawString(&docOf(viewOf(frame))->contents);
 }
 
+int frameScrollY(frame_t *frame)
+{
+  view_t *view = viewOf(frame);
+  return view->scrollY;
+}
+
 widget_t *frame(int i)
 {
   frame_t *frame = arrayElemAt(&st.frames, i);
-  widget_t *textarea = wid(i, scrollY(frame->scrollY, over(draw(drawFrameDoc, frame), draw(drawFrameCursor, frame))));
+  widget_t *textarea = wid(i, scrollY(frameScrollY, frame, over(draw(drawFrameDoc, frame), draw(drawFrameCursor, frame))));
   widget_t *status = over(draw(drawString, &frame->status), vspc(&st.font.lineSkip));
   widget_t *background = color(&frame->color, over(box(), hspc(&frame->width)));
   return over(vcatr(textarea, status), background);
@@ -973,7 +969,7 @@ void stInit(int argc, char **argv)
   argv++;
   memset(&st, 0, sizeof(state_t));
 
-  if (SDL_Init(SDL_INIT_VIDEO) != 0) die(SDL_GetError());
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) die(SDL_GetError());
 
   windowInit(&st.window, INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT);
 
@@ -1088,6 +1084,41 @@ void selectionCancel()
   view->selectMode = NO_SELECT;
 }
 
+int docHeight(doc_t *doc)
+{
+  return doc->numLines * st.font.lineSkip;
+}
+
+void focusScrollY(int dR)
+{
+  frame_t *frame = focusFrame();
+  doc_t *doc = focusDoc();
+  view_t *view = focusView();
+
+  view->scrollY += dR * st.font.lineSkip;
+
+  view->scrollY = clamp(frame->height - docHeight(doc) - st.font.lineSkip, view->scrollY, 0);
+}
+
+// BAL: do this on mouse clicks...
+void focusTrackCursor(int height)
+{
+  view_t *view = focusView();
+  int scrollR = view->scrollY / st.font.lineSkip;
+
+  int dR = scrollR + (st.mouseSelectionInProgress ? view->selection.row : view->cursor.row);
+
+  if (dR < height)
+    {
+      focusScrollY(height - dR);
+    } else {
+    int lastRow = frameRows(focusFrame()) - height;
+    if (dR > lastRow) {
+      focusScrollY(lastRow - dR);
+    }
+  }
+}
+
 void selectionSetRowCol()
 {
   view_t *view = focusView();
@@ -1137,23 +1168,23 @@ void mouseMotionEvent()
     if (st.mouseSelectionInProgress)
     {
       selectionSetRowCol();
-      return;
+      /* int height = 1; */
+      /* view_t *view = focusView(); */
+      /* int scrollR = view->scrollY / st.font.lineSkip; */
+
+      /* int dR = scrollR + view->selection.row; */
+      /* if (dR < height) */
+      /*   { */
+      /*     focusScrollY(height - dR); */
+      /*     SDL_PushEvent(&st.event); */
+      /*   } else { */
+      /*   int lastRow = frameRows(focusFrame()) - height; */
+      /*   if (dR > lastRow) { */
+      /*     focusScrollY(lastRow - dR); */
+      /*     SDL_PushEvent(&st.event); */
+      /*   } */
+      /* } */
     }
-}
-
-int docHeight(doc_t *doc)
-{
-    return doc->numLines * st.font.lineSkip;
-}
-
-void focusScrollY(int dR)
-{
-  frame_t *frame = focusFrame();
-  doc_t *doc = focusDoc();
-
-  *frame->scrollY += dR * st.font.lineSkip;
-
-  *frame->scrollY = clamp(frame->height - docHeight(doc) - st.font.lineSkip, *frame->scrollY, 0);
 }
 
 void mouseWheelEvent()
@@ -1190,13 +1221,13 @@ void keyDownEvent()
 void stMoveCursorOffset(int offset)
 {
     cursorSetOffset(focusCursor(), offset, focusDoc());
-    frameTrackSelection(focusFrame());
+    focusTrackCursor(AUTO_SCROLL_HEIGHT);
 }
 
 void stMoveCursorRowCol(int row, int col)
 {
     cursorSetRowCol(focusCursor(), row, col, focusDoc());
-    frameTrackSelection(focusFrame());
+    focusTrackCursor(AUTO_SCROLL_HEIGHT);
 }
 
 void backwardChar()
@@ -1634,22 +1665,6 @@ void setSearchMode()
 
  */
 
-void frameTrackSelection(frame_t *frame)
-{
-    /* view_t *view = arrayElemAt(&st.views, frame->refView); */
-    /* int scrollR = frame->scrollY / st.font.lineSkip; */
-    /* int dR = view->selection.row + scrollR; */
-    /* if (dR < AUTO_SCROLL_HEIGHT) */
-    /* { */
-    /*     frameScrollY(frame, AUTO_SCROLL_HEIGHT - dR); */
-    /* } else { */
-    /*     int lastRow = frameRows(frame) - AUTO_SCROLL_HEIGHT; */
-    /*     if (dR > lastRow) { */
-    /*         frameScrollY(frame, lastRow - dR); */
-    /*     } */
-    /* } */
-}
-
 void forwardFrame()
 {
   setFocusFrame((focusFrameRef() + 1) % numFrames());
@@ -1797,6 +1812,30 @@ void outdent()
   cursorSetOffset(focusSelection(), soff - m0, focusDoc());
 
 }
+/* void timerEvent() */
+/* { */
+/*   if (st.mouseSelectionInProgress) */
+/*     { */
+/*       focusTrackCursor(4); */
+/*       printf("boom\n"); */
+/*     } */
+/* } */
+/* Uint32 timerInit(Uint32 interval, void *param) */
+/* { */
+/*   SDL_Event event; */
+/*   SDL_UserEvent userevent; */
+
+/*   userevent.type = SDL_USEREVENT; */
+/*   userevent.code = 0; */
+/*   userevent.data1 = NULL; */
+/*   userevent.data2 = NULL; */
+
+/*   event.type = SDL_USEREVENT; */
+/*   event.user = userevent; */
+
+/*   SDL_PushEvent(&event); */
+/*   return(interval); */
+/* } */
 
 int main(int argc, char **argv)
 {
@@ -1807,6 +1846,7 @@ int main(int argc, char **argv)
 
     stInit(argc, argv);
     stDraw();
+    //    SDL_AddTimer(1000, timerInit, NULL);
     while (SDL_WaitEvent(&st.event))
     {
         switch (st.event.type) {
@@ -1831,6 +1871,9 @@ int main(int argc, char **argv)
             case SDL_QUIT:
                 quitEvent();
                 break;
+            case SDL_USEREVENT:
+              //                timerEvent();
+                break;
             default:
                 break;
         }
@@ -1853,10 +1896,9 @@ int main(int argc, char **argv)
 /*
 TODO:
 CORE:
-    Search
-    Undo command
-    Redo command
-    Track cursor when it goes off screen
+    Scroll when mouse selection goes off screen
+    Search and replace
+    Undo/Redo commands
     Display operation buffer during operation
     command line args/config to set config items (e.g. demo mode)
     status bar that has modified, etc.
@@ -1865,7 +1907,6 @@ CORE:
     create new file
     input screen (for search, paste, load, tab completion, etc.)
     Hook Cut/Copy/Paste into system Cut/Copy/Paste
-    replace
     support editor API
     Name macro
     continual compile (on exiting insert or delete).  highlight errors/warnings
@@ -1882,7 +1923,6 @@ CORE:
     make builtin buffers readonly (except config and search?)
 
 VIS:
-    make each frame have a list of independent views
     Display line number of every line
     Minimap
     syntax highlighting
@@ -1897,6 +1937,8 @@ MACRO:
     select all
 
 DONE:
+Track cursor when it goes off screen
+make each frame have a list of independent views
 Move to next/prev blank line
 indent/outdent region
 indent/outdent line

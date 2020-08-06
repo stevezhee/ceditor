@@ -158,7 +158,6 @@ typedef dynamicArray_t viewsBuffer_t;
 
 struct frame_s
 {
-  SDL_Rect rect;
   int scrollX;
 
   viewsBuffer_t views;
@@ -166,7 +165,6 @@ struct frame_s
   int height;
   int width;
   string_t status;
-  int *scrollY;
 };
 
 typedef struct frame_s frame_t;
