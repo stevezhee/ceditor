@@ -50,8 +50,8 @@ void keysymInit(void)
 {
     for(int i = 0; i < NUM_KEYS; ++i)
     {
-        keyHandler[NAVIGATE_MODE][i] = doNothing;
-        keyHandler[INSERT_MODE][i] = setNavigateModeAndDoKeyPress;
+      keyHandler[NAVIGATE_MODE][i] = doNothing;
+      keyHandler[INSERT_MODE][i] = setNavigateModeAndDoKeyPress;
     }
 
     keyHandler[NAVIGATE_MODE]['\t'] = (keyHandler_t)indent;
@@ -94,9 +94,8 @@ void keysymInit(void)
 //    keyHandler[NAVIGATE_MODE]['-'] = decreaseFont;
 //    keyHandler[NAVIGATE_MODE]['+'] = increaseFont;
 //
-//    keyHandler[NAVIGATE_MODE]['u'] = undo;
-//    keyHandler[NAVIGATE_MODE]['U'] = redo;
-    //    keyHandler[NAVIGATE_MODE]['r'] = redo;
+    keyHandler[NAVIGATE_MODE]['u'] = (keyHandler_t)undo;
+    keyHandler[NAVIGATE_MODE]['r'] = (keyHandler_t)redo;
     keyHandler[NAVIGATE_MODE]['/'] = (keyHandler_t)setSearchMode;
     keyHandler[NAVIGATE_MODE][','] = (keyHandler_t)stopRecordingOrPlayMacro;
     keyHandler[NAVIGATE_MODE]['m'] = (keyHandler_t)startOrStopRecording;
@@ -132,7 +131,7 @@ uchar getKeyChar(SDL_Keycode c)
         }
         return c;
     }
-        
+
     switch (c)
     {
         case SDLK_INSERT:

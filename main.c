@@ -6,11 +6,11 @@
 #include "Util.h"
 #include "Search.h"
 
-void insertCString(char *s);
-void insertString(char *s, uint len);
-
 color_t unfocusedFrameColor = 0x303030ff;
 color_t focusedFrameColor = 0x101010ff;
+
+void insertCString(char *s);
+void insertString(char *s, uint len);
 
 typedef enum { HSPC, VSPC, DRAW, COLOR, FONT, SCROLL_Y, WID, OVER, HCAT, VCAT, HCATR, VCATR, NUM_WIDGET_TAGS } widgetTag_t;
 
@@ -83,6 +83,7 @@ void setFocusFrame(int i)
   {
     frame_t *frame = focusFrame();
     frame->color = unfocusedFrameColor;
+    assert(i < frame->views.numElems);
     arraySetFocus(&st.frames, i);
     frame = focusFrame();
     frame->color = focusedFrameColor;
@@ -152,6 +153,7 @@ void frameUpdate(frame_t *frame)
 void setFrameView(int refFrame, int refView)
 {
   frame_t *frame = frameOf(refFrame);
+  assert(refView < frame->views.numElems);
   arraySetFocus(&frame->views, refView);
 
   frameUpdate(frame);
@@ -989,12 +991,12 @@ void stInit(int argc, char **argv)
     for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
       {
         doc_t *doc = arrayPushUninit(&st.docs);
-        docInit(doc, builtinBufferTitle[i]);
+        docInit(doc, builtinBufferTitle[i], false);
       }
 
     for(int i = 0; i < argc; ++i) {
       doc_t *doc = arrayPushUninit(&st.docs);
-      docInit(doc, argv[i]);
+      docInit(doc, argv[i], true);
       docRead(doc);
     }
 
@@ -1370,7 +1372,7 @@ void insertString(char *s, uint len)
 {
   assert(s);
   if(len <= 0) return;
-  docInsert(focusDoc(), focusCursor()->offset, s, len);
+  docPushInsert(focusDoc(), focusCursor()->offset, s, len);
 }
 
 void insertCString(char *s)
@@ -1428,10 +1430,77 @@ void copy(char *s, uint len)
   setFocusFrame(refFrame);
 }
 
+void docPushCommand(commandTag_t tag, doc_t *doc, int offset, char *s, int len)
+{
+  command_t *cmd;
+  while (doc->undoStack.offset < doc->undoStack.numElems)
+    {
+      cmd = arrayPop(&doc->undoStack);
+      arrayFree(&cmd->string);
+    }
+  cmd = arrayPushUninit(&doc->undoStack);
+  cmd->tag = tag;
+  cmd->offset = offset;
+  arrayInit(&cmd->string, sizeof(char));
+  arrayInsert(&cmd->string, 0, s, len);
+  doc->undoStack.offset++;
+  assert(doc->undoStack.offset == doc->undoStack.numElems);
+}
+
+void docPushDelete(doc_t *doc, int offset, int len)
+{
+  if (doc->isUserDoc)
+    {
+      docPushCommand(DELETE, doc, offset, doc->contents.start + offset, len);
+    }
+  docDelete(doc, offset, len);
+}
+
+void docPushInsert(doc_t *doc, int offset, char *s, int len)
+{
+  if (doc->isUserDoc)
+    {
+      docPushCommand(INSERT, doc, offset, s, len);
+    }
+  docInsert(doc, offset, s, len);
+}
+
+void docDoCommand(doc_t *doc, commandTag_t tag, int offset, string_t *string)
+{
+  selectionCancel();
+  stMoveCursorOffset(offset);
+  switch (tag)
+    {
+    case DELETE:
+      docDelete(doc, offset, string->numElems);
+      return;
+    default:
+      assert(tag == INSERT);
+      docInsert(doc, offset, string->start, string->numElems);
+      return;
+    }
+}
+
+void undo()
+{
+  doc_t *doc = focusDoc();
+  if (doc->undoStack.offset == 0) return;
+  doc->undoStack.offset--;
+  command_t *cmd = arrayFocus(&doc->undoStack);
+  docDoCommand(doc, !cmd->tag, cmd->offset, &cmd->string);
+}
+
+void redo()
+{
+  doc_t *doc = focusDoc();
+  if (doc->undoStack.offset == doc->undoStack.numElems) return;
+  command_t *cmd = arrayFocus(&doc->undoStack);
+  docDoCommand(doc, cmd->tag, cmd->offset, &cmd->string);
+  doc->undoStack.offset++;
+}
+
 void cut()
 {
-    // BAL: add to undo
-
   int refFrame = focusFrameRef();
   if (refFrame == BUILTINS_FRAME || focusViewRef() == COPY_BUF) return;
 
@@ -1452,7 +1521,7 @@ void cut()
 
   if (length > 1) copy(doc->contents.start + offset, length);
 
-  docDelete(doc, offset, length);
+  docPushDelete(doc, offset, length);
 
   cursorSetRowCol(&view->cursor, row, column, focusDoc());
 }
@@ -1721,7 +1790,7 @@ int outdentLine()
   int offset = focusCursor()->offset;
   int x = distanceToIndent(s->start + offset, arrayTop(s));
   int n = x == 0 ? 0 : (x - (((x - 1) / INDENT_LENGTH) * INDENT_LENGTH));
-  docDelete(doc, offset, n);
+  docPushDelete(doc, offset, n);
   return n;
 }
 
@@ -1898,7 +1967,6 @@ TODO:
 CORE:
     Scroll when mouse selection goes off screen
     Search and replace
-    Undo/Redo commands
     Display operation buffer during operation
     command line args/config to set config items (e.g. demo mode)
     status bar that has modified, etc.
@@ -1937,6 +2005,7 @@ MACRO:
     select all
 
 DONE:
+Undo/Redo commands
 Track cursor when it goes off screen
 make each frame have a list of independent views
 Move to next/prev blank line

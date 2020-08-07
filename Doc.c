@@ -14,7 +14,10 @@ void docDelete(doc_t *doc, int offset, int len)
   int n = numLinesString(arrayElemAt(&doc->contents, offset), len);
   doc->numLines -= n;
   arrayDelete(&doc->contents, offset, len);
-  if (doc->filepath[0] != '*' && n > 0) docWrite(doc);  // BAL: hacky to use the '*' and this shouldn't be here, just mark it as dirty or something
+  if (doc->isUserDoc && n > 0)
+    {
+      docWrite(doc); // BAL: this shouldn't be here, just mark it as dirty or something
+    }
 }
 
 void docInsert(doc_t *doc, int offset, char *s, int len)
@@ -24,9 +27,9 @@ void docInsert(doc_t *doc, int offset, char *s, int len)
 
   arrayInsert(&doc->contents, offset, s, len);
 
-  if (doc->filepath[0] != '*' && n > 0) // BAL: hacky to use the '*' and this shouldn't be here, just mark it as dirty or something
+  if (doc->isUserDoc && n > 0)
     {
-      docWrite(doc);
+      docWrite(doc); // BAL: this shouldn't be here, just mark it as dirty or something
     }
 }
 
@@ -44,9 +47,10 @@ void docWrite(doc_t *doc)
 
 }
 
-void docInit(doc_t *doc, char *filepath)
+void docInit(doc_t *doc, char *filepath, bool isUserDoc)
 {
   doc->filepath = filepath;
+  doc->isUserDoc = isUserDoc;
   arrayInit(&doc->contents, sizeof(char));
   arrayInit(&doc->undoStack, sizeof(command_t));
 }

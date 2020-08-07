@@ -109,11 +109,12 @@ typedef struct dynamicArray_s dynamicArray_t;
 
 typedef dynamicArray_t string_t; // contains characters
 
-typedef enum { INSERT, DELETE } commandTag_t;
+typedef enum { DELETE, INSERT } commandTag_t;
 
 struct command_s {
   commandTag_t tag;
-  string_t arg;
+  int offset;
+  string_t string;
 };
 
 typedef struct command_s command_t;
@@ -121,6 +122,7 @@ typedef dynamicArray_t undoStack_t; // contains commands
 
 struct doc_s {
   char *filepath;
+  bool isUserDoc;
   string_t contents;
   undoStack_t undoStack;
   int numLines;
@@ -142,7 +144,6 @@ typedef enum { NO_SELECT, CHAR_SELECT, LINE_SELECT, NUM_SELECT_MODES } selectMod
 struct view_s // BAL: this needs to be renamed
 {
   editorMode_t mode;
-
   int refDoc;
   int scrollY;
   cursor_t cursor;
@@ -158,8 +159,6 @@ typedef dynamicArray_t viewsBuffer_t;
 
 struct frame_s
 {
-  int scrollX;
-
   viewsBuffer_t views;
   color_t color;
   int height;

@@ -14,8 +14,10 @@
 void docDelete(doc_t *doc, int offset, int len); // BAL: update cursors?
 void docInsert(doc_t *doc, int offset, char *s, int len);
 void docWrite(doc_t *doc);
-void docInit(doc_t *doc, char *filepath);
+void docInit(doc_t *doc, char *filepath, bool isUserDoc);
 void docRead(doc_t *doc);
 char *docCString(doc_t *doc);
+void docPushInsert(doc_t *doc, int offset, char *s, int len);
+void docPushDelete(doc_t *doc, int offset, int len);
 
 #endif /* Doc_h */

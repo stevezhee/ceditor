@@ -118,3 +118,8 @@ void arraySetFocus(dynamicArray_t *arr, int i)
   assert(i < arr->numElems);
   arr->offset = i;
 }
+
+void arrayFree(dynamicArray_t *arr)
+{
+  free(arr->start);
+}

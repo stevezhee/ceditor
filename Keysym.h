@@ -51,6 +51,8 @@ void forwardBlankLine();
 void backwardBlankLine();
 void indent();
 void outdent();
+void undo();
+void redo();
 // void appendLine();
 // void prependLine();
 // void setInsertModeAndInsertChar(uchar c);
