@@ -940,6 +940,7 @@ void stResize(void)
 
 void helpBufInit()
 {
+  setFocusFrame(BUILTINS_FRAME);
   setFocusView(HELP_BUF);
   insertCString("here is some help text.");
 }
@@ -1060,9 +1061,10 @@ void stInit(int argc, char **argv)
 
     message("hello from the beyond");
 
+    helpBufInit();
+
     stResize();
 
-    // BAL: helpBufInit();
     // BAL: buffersBufInit();
 
 

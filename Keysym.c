@@ -14,6 +14,7 @@ const char shiftChars[] = "\"....<_>?)!@#$%^&*(.:.+.............................
 keyHandler_t keyHandler[NUM_MODES][NUM_KEYS];
 
 char *macro[256];
+char *macroHelp[256];
 
 #define NUM_BUILTIN_MACROS 17
 
@@ -35,6 +36,26 @@ char builtinMacros[NUM_BUILTIN_MACROS][8] = {
     { 'x', KEY_DELETE, '\0' },
     { 'w', KEY_SHIFT_RIGHT, '\0' },
     { 'b', KEY_SHIFT_LEFT, '\0' },
+};
+
+char *builtinMacrosHelp[NUM_BUILTIN_MACROS] = {
+  "backspace",
+  "paste to the right",
+  "copy",
+  "append",
+  "move to end of line",
+  "insert at start of line",
+  "insert space",
+  "insert newline",
+  "append at end of line",
+  "insert new line after current line",
+  "insert new line before current line",
+  "join lines",
+  "insert",
+  "comment region",
+  "cut/delete",
+  "forward word",
+  "backward word",
 };
 
 void initMacros(void)
