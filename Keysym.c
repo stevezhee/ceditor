@@ -70,8 +70,6 @@ void keysymInit(void)
     keyHandler[NAVIGATE_MODE][KEY_RIGHT] = (keyHandler_t)forwardChar;
     keyHandler[NAVIGATE_MODE][KEY_UP] = (keyHandler_t)backwardLine;
     keyHandler[NAVIGATE_MODE][KEY_DOWN] = (keyHandler_t)forwardLine;
-    keyHandler[NAVIGATE_MODE]['n'] = (keyHandler_t)forwardSearch;
-    keyHandler[NAVIGATE_MODE]['N'] = (keyHandler_t)backwardSearch;
     keyHandler[NAVIGATE_MODE][KEY_PAGEUP] = (keyHandler_t)backwardPage;
     keyHandler[NAVIGATE_MODE][KEY_PAGEDOWN] = (keyHandler_t)forwardPage;
     keyHandler[NAVIGATE_MODE][KEY_HOME] = (keyHandler_t)backwardSOF;
@@ -96,7 +94,11 @@ void keysymInit(void)
 //
     keyHandler[NAVIGATE_MODE]['u'] = (keyHandler_t)undo;
     keyHandler[NAVIGATE_MODE]['r'] = (keyHandler_t)redo;
-    keyHandler[NAVIGATE_MODE]['/'] = (keyHandler_t)setSearchMode;
+
+    keyHandler[NAVIGATE_MODE]['/'] = (keyHandler_t)newSearch;
+    keyHandler[NAVIGATE_MODE]['n'] = (keyHandler_t)forwardSearch;
+    keyHandler[NAVIGATE_MODE]['N'] = (keyHandler_t)backwardSearch;
+
     keyHandler[NAVIGATE_MODE][','] = (keyHandler_t)stopRecordingOrPlayMacro;
     keyHandler[NAVIGATE_MODE]['m'] = (keyHandler_t)startOrStopRecording;
 

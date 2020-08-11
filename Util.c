@@ -10,7 +10,9 @@
 
 SDL_Renderer *renderer;
 
-char *builtinBufferTitle[NUM_BUILTIN_BUFFERS] = { "*help", "*messages", "*buffers", "*macros", "*copy buffer", "*searches", "*config" };
+char *builtinBufferTitle[NUM_BUILTIN_BUFFERS] = { "*help", "*messages", "*buffers", "*macros", "*copies", "*searches", "*config" };
+bool builtinBufferReadOnly[NUM_BUILTIN_BUFFERS] = { true, true, true, true, true, false, false };
+
 char *editorModeDescr[NUM_MODES] = { "NAV", "INS", "FND" };
 
 color_t viewColors[] = { VIEW_COLOR, FOCUS_VIEW_COLOR };

@@ -121,5 +121,6 @@ void arraySetFocus(dynamicArray_t *arr, int i)
 
 void arrayFree(dynamicArray_t *arr)
 {
+  printf("freeing array...\n");
   free(arr->start);
 }

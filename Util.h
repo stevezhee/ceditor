@@ -44,7 +44,7 @@ void setClipboardText(const char *text);
 int numLinesString(char *s, int len);
 
 
-typedef enum { NAVIGATE_MODE, INSERT_MODE, SEARCH_MODE, NUM_MODES } editorMode_t;
+typedef enum { NAVIGATE_MODE, INSERT_MODE, SEARCH_MODE, NUM_MODES } editorMode_t; // BAL: remove search_mode?
 extern char *editorModeDescr[NUM_MODES];
 
 typedef unsigned char uchar;
@@ -78,6 +78,7 @@ extern color_t viewColors[];
 enum { HELP_BUF, MESSAGE_BUF, BUFFERS_BUF, MACRO_BUF, COPY_BUF, SEARCH_BUF, CONFIG_BUF, NUM_BUILTIN_BUFFERS };  // BAL: DIRECTORY_BUF for loading files?  or just put in config?
 
 extern char *builtinBufferTitle[NUM_BUILTIN_BUFFERS];
+extern bool builtinBufferReadOnly[NUM_BUILTIN_BUFFERS];
 
 enum { SECONDARY_FRAME, MAIN_FRAME, BUILTINS_FRAME, NUM_FRAMES };
 
@@ -119,13 +120,16 @@ struct command_s {
 
 typedef struct command_s command_t;
 typedef dynamicArray_t undoStack_t; // contains commands
+typedef dynamicArray_t searchBuffer_t; // contains result offsets
 
 struct doc_s {
   char *filepath;
   bool isUserDoc;
+  bool isReadOnly;
   string_t contents;
   undoStack_t undoStack;
   int numLines;
+  searchBuffer_t searchResults;
 };
 
 typedef struct doc_s doc_t;
@@ -153,7 +157,6 @@ struct view_s // BAL: this needs to be renamed
 
 typedef struct view_s view_t;
 
-typedef dynamicArray_t searchBuffer_t; // contains result offsets
 typedef dynamicArray_t docsBuffer_t;
 typedef dynamicArray_t viewsBuffer_t;
 
@@ -183,15 +186,13 @@ struct state_s
 {
   docsBuffer_t docs;
   frameBuffer_t frames;
-  searchBuffer_t results;
   window_t window;
   font_t font;
   SDL_Event event;
   bool isRecording;
-  windowDirty_t dirty;
-  uint searchLen;
-  uint searchRefView;
-  bool searchDirty;
+  int searchLen;
+  bool isReplace;
+  string_t replace;
   int downCxtX;
   int downCxtY;
   bool mouseSelectionInProgress;

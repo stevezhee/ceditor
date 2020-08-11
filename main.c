@@ -83,7 +83,6 @@ void setFocusFrame(int i)
   {
     frame_t *frame = focusFrame();
     frame->color = unfocusedFrameColor;
-    assert(i < frame->views.numElems);
     arraySetFocus(&st.frames, i);
     frame = focusFrame();
     frame->color = focusedFrameColor;
@@ -197,7 +196,7 @@ void viewInit(view_t *view, uint i)
 /*     return */
 /*       frame->refView != st.searchRefView || // BAL: there are now multiple views per frame */
 /*       st.searchLen == 0 || */
-/*       st.results.numElems == 0; */
+/*       st.searchResults.numElems == 0; */
 /* } */
 
 widget_t *newWidget()
@@ -596,6 +595,26 @@ void getSelectionCoords(view_t *view, int *column, int *row, int *offset, int *l
   *len += 1;
 }
 
+void drawSearch(view_t *view)
+{
+  doc_t *doc = docOf(view);
+  char *s = doc->contents.start;
+
+  setDrawColor(SEARCH_COLOR);
+
+  searchBuffer_t *results = &doc->searchResults;
+
+  for(int i = 0; i < results->numElems; ++i)
+    {
+      cursor_t c;
+      int *offset = arrayElemAt(results, i);
+      cursorSetOffset(&c, *offset, doc); // BAL: this is inefficient (it starts over every time)
+      drawStringSelection(columnToX(c.column), rowToY(c.row), s + *offset, st.searchLen);
+    }
+
+  setDrawColor(context.color);
+}
+
 void drawSelection(view_t *view)
 {
 
@@ -619,8 +638,22 @@ bool cursorEq(cursor_t *a, cursor_t *b)
   return (a->row == b->row && a->column == b->column);
 }
 
-void drawCursorOrSelection(view_t *view)
+bool searchActive(frame_t *frame)
 {
+  // if the doc in the builtins frame is searches
+  // and this isn't the searches view
+  return frameOf(BUILTINS_FRAME)->views.offset == SEARCH_BUF &&
+         frame->views.offset != SEARCH_BUF;
+}
+
+void drawCursorOrSelection(frame_t *frame)
+{
+  view_t *view = viewOf(frame);
+  if (searchActive(frame))
+    {
+      drawSearch(view);
+      return;
+    }
   if (selectionActive(view))
     {
       drawSelection(view);
@@ -932,7 +965,7 @@ void insertNewElem()
 
 void drawFrameCursor(frame_t *frame)
 {
-  drawCursorOrSelection(viewOf(frame));
+  drawCursorOrSelection(frame);
 }
 
 void drawFrameDoc(frame_t *frame)
@@ -984,19 +1017,19 @@ void stInit(int argc, char **argv)
 
     arrayInit(&st.docs, sizeof(doc_t));
     arrayInit(&st.frames, sizeof(frame_t));
-    arrayInit(&st.results, sizeof(int));
+    arrayInit(&st.replace, sizeof(char));
 
     keysymInit();
 
     for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
       {
         doc_t *doc = arrayPushUninit(&st.docs);
-        docInit(doc, builtinBufferTitle[i], false);
+        docInit(doc, builtinBufferTitle[i], false, builtinBufferReadOnly[i]);
       }
 
     for(int i = 0; i < argc; ++i) {
       doc_t *doc = arrayPushUninit(&st.docs);
-      docInit(doc, argv[i], true);
+      docInit(doc, argv[i], true, false);
       docRead(doc);
     }
 
@@ -1220,16 +1253,82 @@ void keyDownEvent()
     }
 }
 
+void stringAppendNull(string_t *s)
+{
+  char *c = arrayPushUninit(s);
+  *c = '\0';
+  arrayPop(s);
+}
+
+void doSearch(doc_t *doc, char *search)
+{
+  assert(search);
+  stringAppendNull(&doc->contents);
+  char *haystack = doc->contents.start;
+  char *replace = dieIfNull(strdup(search));
+  char *temp = replace;
+  char *needle = strsep(&replace, "/");
+  // needle is length 0 if no needle
+  // replace is NULL if no replace
+  st.searchLen = strlen(needle);
+  st.isReplace = replace != NULL;
+  arrayReinit(&st.replace);
+  searchBuffer_t *results = &doc->searchResults;
+  arrayReinit(results);
+  if (st.isReplace) {
+    arrayInsert(&st.replace, 0, replace, strlen(replace));
+  }
+  if (st.searchLen == 0) goto done;
+
+  char *p = haystack;
+  while ((p = strcasestr(p, needle)))
+    {
+      int *off = arrayPushUninit(results);
+      *off = p - haystack;
+      p++;
+    }
+
+ done:
+  free(temp);
+}
+
+char *focusElem()
+{
+  if (focusFrameRef() != BUILTINS_FRAME) return NULL;
+  int offset = focusView()->cursor.offset;
+  int i = distanceToStartOfElem(focusDoc()->contents.start, offset);
+  char *p = focusDoc()->contents.start + offset + i;
+  return p;
+}
+
+void doSearchIfNeeded()
+{
+  if (focusViewRef() != SEARCH_BUF) return;
+  char *search = focusElem();
+  if (!search) return;
+  // search main frame doc
+  frame_t *frame = frameOf(MAIN_FRAME);
+  doc_t *doc = docOf(viewOf(frame));
+  doSearch(doc, search);
+  // search secondary frame doc (if different)
+  frame = frameOf(SECONDARY_FRAME);
+  doc_t *doc1 = docOf(viewOf(frame));
+  if (doc1 == doc) return;
+  doSearch(doc1, search);
+}
+
 void stMoveCursorOffset(int offset)
 {
     cursorSetOffset(focusCursor(), offset, focusDoc());
     focusTrackCursor(AUTO_SCROLL_HEIGHT);
+    doSearchIfNeeded();
 }
 
 void stMoveCursorRowCol(int row, int col)
 {
     cursorSetRowCol(focusCursor(), row, col, focusDoc());
     focusTrackCursor(AUTO_SCROLL_HEIGHT);
+    doSearchIfNeeded();
 }
 
 void backwardChar()
@@ -1387,7 +1486,7 @@ void insertChar(uchar c)
     forwardChar();
 }
 
-void backwardStartOfElem()
+void backwardStartOfElem() // BAL: remove(?)
 {
   int offset = focusView()->cursor.offset;
   int i = distanceToStartOfElem(focusDoc()->contents.start, offset);
@@ -1449,20 +1548,24 @@ void docPushCommand(commandTag_t tag, doc_t *doc, int offset, char *s, int len)
 
 void docPushDelete(doc_t *doc, int offset, int len)
 {
+  if (doc->isReadOnly) return;
   if (doc->isUserDoc)
     {
       docPushCommand(DELETE, doc, offset, doc->contents.start + offset, len);
     }
   docDelete(doc, offset, len);
+  doSearchIfNeeded();
 }
 
 void docPushInsert(doc_t *doc, int offset, char *s, int len)
 {
+  if (doc->isReadOnly) return;
   if (doc->isUserDoc)
     {
       docPushCommand(INSERT, doc, offset, s, len);
     }
   docInsert(doc, offset, s, len);
+  doSearchIfNeeded();
 }
 
 void docDoCommand(doc_t *doc, commandTag_t tag, int offset, string_t *string)
@@ -1501,9 +1604,6 @@ void redo()
 
 void cut()
 {
-  int refFrame = focusFrameRef();
-  if (refFrame == BUILTINS_FRAME || focusViewRef() == COPY_BUF) return;
-
   int column;
   int row;
   int offset;
@@ -1613,22 +1713,22 @@ void stopRecordingOrPlayMacro()
 /*     if (noActiveSearch(frame)) return; */
 /*     view_t *view = focusView(); */
 /*     doc_t *doc = focusDoc(); */
-/*     uint *off = arrayFocus(&st.results); */
+/*     uint *off = arrayFocus(&st.searchResults); */
 /*     cursorSetOffset(&view->cursor, *off, doc); */
 /*     cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc); */
 /* } */
 
 void forwardSearch()
 {
-/*     st.results.offset++; */
-/*     st.results.offset %= st.results.numElems; */
+/*     st.searchResults.offset++; */
+/*     st.searchResults.offset %= st.searchResults.numElems; */
 /*     setCursorToSearch(); */
 }
 
 void backwardSearch()
 {
-/*     st.results.offset += st.results.numElems - 1; */
-/*     st.results.offset %= st.results.numElems; */
+/*     st.searchResults.offset += st.searchResults.numElems - 1; */
+/*     st.searchResults.offset %= st.searchResults.numElems; */
 /*     setCursorToSearch(); */
 }
 
@@ -1658,10 +1758,10 @@ void backwardSearch()
 
 /*     char *haystack = doc->contents.start; */
 /*     char *p = haystack; */
-/*     arrayReinit(&st.results); */
+/*     arrayReinit(&st.searchResults); */
 /*     while ((p = strcasestr(p, needle))) */
 /*     { */
-/*         uint *off = arrayPushUninit(&st.results); */
+/*         uint *off = arrayPushUninit(&st.searchResults); */
 /*         *off = (uint)(p - haystack); */
 /*         p++; */
 /*     } */
@@ -1674,32 +1774,12 @@ void backwardSearch()
 /*     setFocusView(refView); */
 /* } */
 
-void setSearchMode()
+void newSearch()
 {
-/*     if ((focusFrame()->refView) == SEARCH_BUF) */
-/*     { */
-/*       // popView(); */
-/*       //  computeSearchResults(); */
-
-/*       setFocusFrame(MAIN_FRAME); */
-
-/*       //  stSetViewFocus(st.searchRefView); */
-/*       //  setCursorToSearch(); */
-/*         return; */
-/*     } */
-
-/*     st.searchRefView = focusFrame()->refView; */
-
-/*     // insert null at the end of the doc */
-/*     doc_t *doc = focusDoc(); */
-/*     docInsert(doc, doc->contents.numElems, "", 1); */
-/*     doc->contents.numElems--; */
-
-/*     int refView = focusViewRef(); */
-/*     setFocusView(SEARCH_BUF); */
-/*     setInsertMode(); */
-  /* insertNewElem(); */
-/*     setFocusView(refView); */
+  setFocusFrame(BUILTINS_FRAME);
+  setFocusView(SEARCH_BUF);
+  setInsertMode();
+  insertNewElem();
 }
 
 /* void gotoView() */
@@ -1716,23 +1796,6 @@ void setSearchMode()
     /* setFocusFrame(frame); */
     /* stSetViewFocus(view->cursor.row); */
 /* } */
-
-/*
-
-  0 0 => 0
-  0 1 => 0
-  1 0 => 0
-  1 1 => 1
-  AND
-
-  XOR
-
-  0 0 => 0
-  0 1 => 1
-  1 0 => 1
-  1 1 => 0
-
- */
 
 void forwardFrame()
 {
@@ -1771,6 +1834,7 @@ void insertChars(char c, int n)
       insertString(&c, 1);
     }
 }
+
 int indentLine()
 {
   string_t *s = &focusDoc()->contents;
@@ -1965,13 +2029,11 @@ int main(int argc, char **argv)
 /*
 TODO:
 CORE:
-    Scroll when mouse selection goes off screen
     Search and replace
-    Display operation buffer during operation
+    Scroll when mouse selection goes off screen
     command line args/config to set config items (e.g. demo mode)
     status bar that has modified, etc.
     cut/copy/paste with mouse
-    multiple files
     create new file
     input screen (for search, paste, load, tab completion, etc.)
     Hook Cut/Copy/Paste into system Cut/Copy/Paste
@@ -2006,6 +2068,8 @@ MACRO:
 
 DONE:
 Undo/Redo commands
+Display operation buffer during operation
+multiple files
 Track cursor when it goes off screen
 make each frame have a list of independent views
 Move to next/prev blank line

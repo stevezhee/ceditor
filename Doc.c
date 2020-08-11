@@ -47,12 +47,14 @@ void docWrite(doc_t *doc)
 
 }
 
-void docInit(doc_t *doc, char *filepath, bool isUserDoc)
+void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly)
 {
   doc->filepath = filepath;
   doc->isUserDoc = isUserDoc;
+  doc->isReadOnly = isReadOnly;
   arrayInit(&doc->contents, sizeof(char));
   arrayInit(&doc->undoStack, sizeof(command_t));
+  arrayInit(&doc->searchResults, sizeof(int));
 }
 
 void docRead(doc_t *doc)

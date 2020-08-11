@@ -22,7 +22,7 @@ void doNothing(uchar c);
 void setNavigateModeAndDoKeyPress(uchar c);
 void forwardEOF();
 void backwardSOF();
-void setSearchMode();
+void newSearch();
 void gotoView();
 void backwardChar();
 void forwardChar();
