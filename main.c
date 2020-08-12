@@ -938,13 +938,6 @@ void stResize(void)
       }
 }
 
-void helpBufInit()
-{
-  setFocusFrame(BUILTINS_FRAME);
-  setFocusView(HELP_BUF);
-  insertCString("here is some help text.");
-}
-
 void insertNewElem()
 {
   backwardSOF();
@@ -998,6 +991,8 @@ void message(char *s)
   insertCString(s);
   setFocusFrame(refFrame);
 }
+
+void helpBufInit(void);
 
 void stInit(int argc, char **argv)
 {
@@ -1476,16 +1471,105 @@ void insertString(char *s, uint len)
   docPushInsert(focusDoc(), focusCursor()->offset, s, len);
 }
 
+void builtinInsertString(char *s, uint len)
+{
+  assert(s);
+  if(len <= 0) return;
+  docInsert(focusDoc(), focusCursor()->offset, s, len);
+}
+
 void insertCString(char *s)
 {
     assert(s);
     insertString(s, (uint)strlen(s));
 }
 
+void builtinInsertCString(char *s)
+{
+  assert(s);
+  builtinInsertString(s, (uint)strlen(s));
+}
+
 void insertChar(uchar c)
 {
     insertString((char*)&c, 1);
     forwardChar();
+}
+
+void helpBufInit()
+{
+  setFocusFrame(BUILTINS_FRAME);
+  setFocusView(HELP_BUF);
+
+  char s[1024];
+
+  for(int i = 0; i < NUM_BUILTIN_MACROS; ++i)
+    {
+      char c = builtinMacros[i][0];
+      if (c == '\n')
+        {
+          sprintf(s, "'\\n': %s\n", builtinMacrosHelp[i]);
+        }
+      else
+        {
+          sprintf(s, "'%c': %s\n", c, builtinMacrosHelp[i]);
+        }
+      builtinInsertCString(s);
+    }
+
+  builtinInsertCString("\nBuiltin Macros:\n");
+
+  for(int i = 0; i < NUM_MODES; ++i)
+    {
+      for(int c = 0; c < NUM_KEYS; ++c)
+        {
+          if (!keyHandlerHelp[i][c]) continue;
+          switch (c) {
+          case '\0':
+            continue;
+          case '\t':
+            sprintf(s, "'\t': %s\n", keyHandlerHelp[i][c]);
+            break;
+          case KEY_END:
+            sprintf(s, "'END': %s\n", keyHandlerHelp[i][c]);
+            break;
+          case KEY_HOME:
+            sprintf(s, "'HOME': %s\n", keyHandlerHelp[i][c]);
+            break;
+          case KEY_PAGEUP:
+            sprintf(s, "'PAGEUP': %s\n", keyHandlerHelp[i][c]);
+            break;
+          case KEY_PAGEDOWN:
+            sprintf(s, "'PAGEDOWN': %s\n", keyHandlerHelp[i][c]);
+            break;
+          case KEY_DELETE:
+            sprintf(s, "'DEL': %s\n", keyHandlerHelp[i][c]);
+            break;
+          case KEY_SHIFT_UP:
+            sprintf(s, "'SHIFT_UP': %s\n", keyHandlerHelp[i][c]);
+            break;
+          case KEY_SHIFT_DOWN:
+            sprintf(s, "'SHIFT_DOWN': %s\n", keyHandlerHelp[i][c]);
+            break;
+          case KEY_SHIFT_LEFT:
+            sprintf(s, "'SHIFT_LEFT': %s\n", keyHandlerHelp[i][c]);
+            break;
+          case KEY_SHIFT_RIGHT:
+            sprintf(s, "'SHIFT_RIGHT': %s\n", keyHandlerHelp[i][c]);
+            break;
+          case KEY_SHIFT_TAB:
+            sprintf(s, "'SHIFT_TAB': %s\n", keyHandlerHelp[i][c]);
+            break;
+          default:
+            sprintf(s, "'%c': %s\n", c, keyHandlerHelp[i][c]);
+            break;
+          }
+          builtinInsertCString(s);
+        }
+    }
+
+  builtinInsertCString("Builtin Keys:\n");
+
 }
 
 void backwardStartOfElem() // BAL: remove(?)

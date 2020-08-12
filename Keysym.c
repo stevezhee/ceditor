@@ -12,13 +12,12 @@ const char shiftChars[] = "\"....<_>?)!@#$%^&*(.:.+.............................
 // BAL: really need this for shift characters?  Nothing in SDL lib?
 
 keyHandler_t keyHandler[NUM_MODES][NUM_KEYS];
+char *keyHandlerHelp[NUM_MODES][NUM_KEYS];
 
 char *macro[256];
 char *macroHelp[256];
 
-#define NUM_BUILTIN_MACROS 17
-
-char builtinMacros[NUM_BUILTIN_MACROS][8] = {
+char builtinMacros[NUM_BUILTIN_MACROS][MAX_BUILTIN_MACRO_LEN] = {
     { KEY_BACKSPACE, KEY_LEFT, KEY_DELETE, '\0' },
     { 'p', KEY_RIGHT, 'P', '\0' },
     { 'c', 'x', 'P', '\0' },
@@ -69,6 +68,8 @@ void initMacros(void)
 
 void keysymInit(void)
 {
+  memset(keyHandlerHelp, 0, sizeof(keyHandlerHelp));
+
     for(int i = 0; i < NUM_KEYS; ++i)
     {
       keyHandler[NAVIGATE_MODE][i] = doNothing;
@@ -76,53 +77,81 @@ void keysymInit(void)
     }
 
     keyHandler[NAVIGATE_MODE]['\t'] = (keyHandler_t)indent;
+    keyHandlerHelp[NAVIGATE_MODE]['\t'] = "indent region";
     keyHandler[NAVIGATE_MODE][KEY_SHIFT_TAB] = (keyHandler_t)outdent;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_SHIFT_TAB] = "outdent region";
 
     keyHandler[NAVIGATE_MODE][KEY_DELETE] = (keyHandler_t)cut;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_DELETE] = "cut/delete";
 
     //    keyHandler[NAVIGATE_MODE][KEY_SHIFT_RETURN] = (keyHandler_t)prependLine;
 
     keyHandler[NAVIGATE_MODE]['P'] = (keyHandler_t)pasteBefore;
+    keyHandlerHelp[NAVIGATE_MODE]['P'] = "paste before";
 
     keyHandler[NAVIGATE_MODE]['v'] = (keyHandler_t)selectChars;
+    keyHandlerHelp[NAVIGATE_MODE]['v'] = "select characters";
     keyHandler[NAVIGATE_MODE]['V'] = (keyHandler_t)selectLines;
+    keyHandlerHelp[NAVIGATE_MODE]['V'] = "select lines";
 
     keyHandler[NAVIGATE_MODE][KEY_LEFT] = (keyHandler_t)backwardChar;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_LEFT] = "backward char";
     keyHandler[NAVIGATE_MODE][KEY_RIGHT] = (keyHandler_t)forwardChar;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_RIGHT] = "forward char";
     keyHandler[NAVIGATE_MODE][KEY_UP] = (keyHandler_t)backwardLine;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_UP] = "backward line";
     keyHandler[NAVIGATE_MODE][KEY_DOWN] = (keyHandler_t)forwardLine;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_DOWN] = "forward line";
     keyHandler[NAVIGATE_MODE][KEY_PAGEUP] = (keyHandler_t)backwardPage;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_PAGEUP] = "backward page";
     keyHandler[NAVIGATE_MODE][KEY_PAGEDOWN] = (keyHandler_t)forwardPage;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_PAGEDOWN] = "forward page";
     keyHandler[NAVIGATE_MODE][KEY_HOME] = (keyHandler_t)backwardSOF;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_HOME] = "backward to start of file";
     keyHandler[NAVIGATE_MODE][KEY_END] = (keyHandler_t)forwardEOF;
-
+    keyHandlerHelp[NAVIGATE_MODE][KEY_END] = "forward to end of file";
     keyHandler[NAVIGATE_MODE]['h'] = (keyHandler_t)backwardFrame;
+    keyHandlerHelp[NAVIGATE_MODE]['h'] = "backward frame";
     keyHandler[NAVIGATE_MODE]['g'] = (keyHandler_t)forwardFrame;
+    keyHandlerHelp[NAVIGATE_MODE]['g'] = "forward frame";
     keyHandler[NAVIGATE_MODE]['j'] = (keyHandler_t)backwardView;
+    keyHandlerHelp[NAVIGATE_MODE]['j'] = "backward view";
     keyHandler[NAVIGATE_MODE]['f'] = (keyHandler_t)forwardView;
+    keyHandlerHelp[NAVIGATE_MODE]['f'] = "forward view";
     keyHandler[NAVIGATE_MODE][KEY_SHIFT_RIGHT] = (keyHandler_t)forwardSpace;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_SHIFT_RIGHT] = "forward to space";
     keyHandler[NAVIGATE_MODE][KEY_SHIFT_LEFT] = (keyHandler_t)backwardSpace;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_SHIFT_LEFT] = "backward to space";
     keyHandler[NAVIGATE_MODE][KEY_SHIFT_DOWN] = (keyHandler_t)forwardBlankLine;
+    keyHandlerHelp[NAVIGATE_MODE][KEY_SHIFT_DOWN] = "forward to blank line";
     keyHandler[NAVIGATE_MODE][KEY_SHIFT_UP] = (keyHandler_t)backwardBlankLine;
-    // BAL: 'h' or '?' goto help buffer?
+    keyHandlerHelp[NAVIGATE_MODE][KEY_SHIFT_UP] = "backward to blank line";
     keyHandler[NAVIGATE_MODE]['0'] = (keyHandler_t)backwardSOL;
+    keyHandlerHelp[NAVIGATE_MODE]['0'] = "backward to start of line";
     keyHandler[NAVIGATE_MODE]['$'] = (keyHandler_t)forwardEOL;
-//
+    keyHandlerHelp[NAVIGATE_MODE]['$'] = "forward to end of line";
     keyHandler[NAVIGATE_MODE]['i'] = (keyHandler_t)setInsertMode;
+    keyHandlerHelp[NAVIGATE_MODE]['i'] = "insert mode";
+    keyHandler[NAVIGATE_MODE]['u'] = (keyHandler_t)undo;
+    keyHandlerHelp[NAVIGATE_MODE]['u'] = "undo";
+    keyHandler[NAVIGATE_MODE]['r'] = (keyHandler_t)redo;
+    keyHandlerHelp[NAVIGATE_MODE]['r'] = "redo";
+    keyHandler[NAVIGATE_MODE]['/'] = (keyHandler_t)newSearch;
+    keyHandlerHelp[NAVIGATE_MODE]['/'] = "new search";
+    keyHandler[NAVIGATE_MODE]['n'] = (keyHandler_t)forwardSearch;
+    keyHandlerHelp[NAVIGATE_MODE]['n'] = "search forward";
+    keyHandler[NAVIGATE_MODE]['N'] = (keyHandler_t)backwardSearch;
+    keyHandlerHelp[NAVIGATE_MODE]['N'] = "search backward";
+    keyHandler[NAVIGATE_MODE][','] = (keyHandler_t)stopRecordingOrPlayMacro;
+    keyHandlerHelp[NAVIGATE_MODE][','] = "play/stop recording macro";
+    keyHandler[NAVIGATE_MODE]['m'] = (keyHandler_t)startOrStopRecording;
+    keyHandlerHelp[NAVIGATE_MODE]['m'] = "start/stop recording macro";
 
+
+    // BAL: 'h' or '?' goto help buffer?
 //    keyHandler[NAVIGATE_MODE]['-'] = decreaseFont;
 //    keyHandler[NAVIGATE_MODE]['+'] = increaseFont;
 //
-    keyHandler[NAVIGATE_MODE]['u'] = (keyHandler_t)undo;
-    keyHandler[NAVIGATE_MODE]['r'] = (keyHandler_t)redo;
-
-    keyHandler[NAVIGATE_MODE]['/'] = (keyHandler_t)newSearch;
-    keyHandler[NAVIGATE_MODE]['n'] = (keyHandler_t)forwardSearch;
-    keyHandler[NAVIGATE_MODE]['N'] = (keyHandler_t)backwardSearch;
-
-    keyHandler[NAVIGATE_MODE][','] = (keyHandler_t)stopRecordingOrPlayMacro;
-    keyHandler[NAVIGATE_MODE]['m'] = (keyHandler_t)startOrStopRecording;
-
     for(char c = '!'; c <= '~'; ++c)
     {
         keyHandler[INSERT_MODE][c] = insertChar;

@@ -13,6 +13,13 @@
 
 typedef void (*keyHandler_t)(uchar c);
 extern keyHandler_t keyHandler[NUM_MODES][NUM_KEYS];
+extern char *keyHandlerHelp[NUM_MODES][NUM_KEYS];
+#define NUM_BUILTIN_MACROS 17
+#define MAX_BUILTIN_MACRO_LEN 8
+char builtinMacros[NUM_BUILTIN_MACROS][MAX_BUILTIN_MACRO_LEN];
+
+extern char *builtinMacrosHelp[NUM_BUILTIN_MACROS];
+
 void initMacros(void);
 
 void keysymInit(void);
