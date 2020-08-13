@@ -59,7 +59,6 @@ void setTextureColorMod(SDL_Texture *t, color_t c);
 #define SELECTION_COLOR CURSOR_BACKGROUND_COLOR
 #define SEARCH_COLOR 0xffff4080
 #define INIT_WINDOW_WIDTH 2488
-
 #define INIT_WINDOW_HEIGHT 1300
 #define INIT_FONT_SIZE 24
 #define INIT_FONT_FILE "./assets/SourceCodePro-Semibold.ttf"
