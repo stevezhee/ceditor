@@ -56,6 +56,7 @@ void docGitCommit(doc_t *doc)
   system(systemBuf);
 }
 
+
 void docWrite(doc_t *doc)
 {
   if (DEMO_MODE) return;
