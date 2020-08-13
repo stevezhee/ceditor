@@ -60,8 +60,7 @@ void docMake(doc_t *doc)
 {
 
   if (DEMO_MODE || NO_COMPILE) return;
-  system("make");
-
+  system("make&");
 }
 
 void docWrite(doc_t *doc)
