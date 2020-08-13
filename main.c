@@ -2121,7 +2121,8 @@ CORE:
     Hook Cut/Copy/Paste into system Cut/Copy/Paste
     support editor API
     Name macro
-    continual compile (on exiting insert or delete).  highlight errors/warnings
+    continual compile (on exiting insert or delete).
+highlight errors/warnings
     jump to next error
     tab completion
     sort lines
