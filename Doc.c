@@ -60,7 +60,8 @@ void docMake(doc_t *doc)
 {
 
   if (DEMO_MODE || NO_COMPILE) return;
-message("make");
+message("make")hello
+;
 
 }
 
@@ -77,7 +78,7 @@ void docWrite(doc_t *doc)
     die("unable to close file");
 
   docGitCommit(doc);
-
+  docMake(doc);
 }
 
 void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly)
