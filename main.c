@@ -1,4 +1,3 @@
-hello
 #include "Cursor.h"
 #include "Doc.h"
 #include "DynamicArray.h"
