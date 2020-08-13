@@ -50,6 +50,7 @@ void docGitAdd(doc_t *doc)
 
 void docGitCommit(doc_t *doc)
 {
+  if (DEMO_MODE || NO_GIT) return;
   docGitAdd(doc);
   sprintf(systemBuf, "git commit -m\"cp\" %s", doc->filepath);
   system(systemBuf);
