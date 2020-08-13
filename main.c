@@ -904,6 +904,7 @@ void frameResize(frame_t *frame)
   frame->width = st.window.width / 3;
   frame->height = st.window.height - st.font.lineSkip;
 }
+void message(char *s);
 
 void stResize(void)
 {
