@@ -2148,6 +2148,7 @@ MACRO:
     select all
 
 DONE:
+    continual compile (on exiting insert or delete).
 help screen
 Undo/Redo commands
 Display operation buffer during operation
