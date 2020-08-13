@@ -56,7 +56,7 @@ void docGitCommit(doc_t *doc)
   system(systemBuf);
 }
 
-void docompile()
+void docMake(doc_t *doc)
 {
 
   if (DEMO_MODE || NO_COMPILE) return;
@@ -77,6 +77,7 @@ void docWrite(doc_t *doc)
     die("unable to close file");
 
   docGitCommit(doc);
+
 }
 
 void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly)
