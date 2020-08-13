@@ -918,6 +918,7 @@ void stResize(void)
       {
         frameResize(frameOf(i));
       }
+char s[1024];
 
 message("resize");
 
