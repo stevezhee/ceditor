@@ -65,7 +65,6 @@ void setTextureColorMod(SDL_Texture *t, color_t c);
 #define SELECTION_RECT_GAP 8
 #define AUTO_SCROLL_HEIGHT 4
 
-
 extern color_t viewColors[];
 
 #define CURSOR_WIDTH 3
