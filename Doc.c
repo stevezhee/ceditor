@@ -60,8 +60,7 @@ void docMake(doc_t *doc)
 {
 
   if (DEMO_MODE || NO_COMPILE) return;
-message("make")hello
-;
+message("make");
 
 }
 
