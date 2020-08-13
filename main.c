@@ -918,9 +918,9 @@ void stResize(void)
       {
         frameResize(frameOf(i));
       }
-char s[1024];
-
-message("resize");
+   char s[1024];
+   sprintf(s, "resize %dx%d", w, h);
+   message(s);
 
 }
 
