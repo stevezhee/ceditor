@@ -58,6 +58,7 @@ void docGitCommit(doc_t *doc)
 
 void docCompile()
 {
+
 }
 
 void docWrite(doc_t *doc)
