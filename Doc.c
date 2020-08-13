@@ -62,7 +62,6 @@ void docMake(doc_t *doc)
   if (DEMO_MODE || NO_COMPILE) return;
   sprintf(systemBuf, "git commit -m\"cp\" %s", doc->filepath);
   system(systemBuf);
-message("make");
 
 }
 
