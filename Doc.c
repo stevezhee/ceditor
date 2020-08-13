@@ -58,7 +58,8 @@ void docGitCommit(doc_t *doc)
 
 void docCompile()
 {
-  if (DEMO_MODE || NO_GIT) return;
+
+  if (DEMO_MODE ||) return;
 
 }
 
