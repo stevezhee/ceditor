@@ -33,6 +33,29 @@ void docInsert(doc_t *doc, int offset, char *s, int len)
     }
 }
 
+char systemBuf[1024];  // BAL: use string_t
+
+void gitInit(void)
+{
+  if (DEMO_MODE || NO_GIT) return;
+  if (system("git init") != 0) die("git init failed");
+}
+
+void docGitAdd(doc_t *doc)
+{
+  if (DEMO_MODE || NO_GIT) return;
+  sprintf(systemBuf, "git add %s", doc->filepath);
+  system(systemBuf);
+}
+
+void docGitCommit(doc_t *doc)
+{
+  if (DEMO_MODE || NO_GIT) return;
+  docGitAdd(doc);
+  sprintf(systemBuf, "git commit -m\"cp\" %s", doc->filepath);
+  system(systemBuf);
+}
+
 void docWrite(doc_t *doc)
 {
   if (DEMO_MODE) return;
@@ -45,6 +68,7 @@ void docWrite(doc_t *doc)
   if (fclose(fp) != 0)
     die("unable to close file");
 
+  docGitCommit(doc);
 }
 
 void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly)

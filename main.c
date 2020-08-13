@@ -11,6 +11,9 @@ color_t focusedFrameColor = 0x101010ff;
 
 void insertCString(char *s);
 void insertString(char *s, uint len);
+void builtinInsertCString(char *s);
+void builtinInsertString(char *s, uint len);
+void builtinInsertChar(uchar c);
 
 typedef enum { HSPC, VSPC, DRAW, COLOR, FONT, SCROLL_Y, WID, OVER, HCAT, VCAT, HCATR, VCATR, NUM_WIDGET_TAGS } widgetTag_t;
 
@@ -76,19 +79,6 @@ frame_t *focusFrame()
   return arrayFocus(&st.frames);
 }
 
-void setFocusFrame(int i)
-{
-  int j = focusFrameRef();
-  if (i != j)
-  {
-    frame_t *frame = focusFrame();
-    frame->color = unfocusedFrameColor;
-    arraySetFocus(&st.frames, i);
-    frame = focusFrame();
-    frame->color = focusedFrameColor;
-  }
-}
-
 frame_t *frameOf(int i)
 {
   return arrayElemAt(&st.frames, i);
@@ -107,6 +97,20 @@ view_t *viewOf(frame_t *frame)
 view_t *focusView()
 {
   return viewOf(focusFrame());
+}
+
+void setFocusFrame(int i)
+{
+  assert(i >= 0);
+  assert(i < numFrames());
+  int j = focusFrameRef();
+  if (i == j) return;
+
+  frame_t *frame = frameOf(j);
+  frame->color = unfocusedFrameColor;
+  arraySetFocus(&st.frames, i);
+  frame = frameOf(i);
+  frame->color = focusedFrameColor;
 }
 
 int numViews()
@@ -887,29 +891,6 @@ void stDraw(void)
   rendererPresent();
 }
 
-char systemBuf[1024];  // BAL: use string_t
-
-void gitInit(void)
-{
-    if (system("git inint") != 0) die("git init failed");
-}
-
-void docGitAdd(doc_t *doc)
-{
-    if (DEMO_MODE || NO_GIT) return;
-    sprintf(systemBuf, "git add %s", doc->filepath);
-    system(systemBuf);
-}
-
-void docGitCommit(doc_t *doc)
-{
-    if (DEMO_MODE || NO_GIT) return;
-    docGitAdd(doc);
-    sprintf(systemBuf, "git commit -m\"cp\" %s", doc->filepath);
-    system(systemBuf);
-}
-// BAL: put back in docGitCommit(doc);
-
 void windowInit(window_t *win, int width, int height)
 {
     win->window = dieIfNull(SDL_CreateWindow("Editor", 0, 0, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI));
@@ -941,7 +922,7 @@ void stResize(void)
 void insertNewElem()
 {
   backwardSOF();
-  insertString("\0\n", 2);
+  builtinInsertString("\0\n", 2);
 }
 
 // BAL: delete
@@ -953,7 +934,7 @@ void insertNewElem()
 /*   { */
 /*     view_t *view = arrayElemAt(&st.views, i); */
 /*     insertNewElem(); */
-/*     insertCString(docOf(view)->filepath); */
+/*     builtinInsertCString(docOf(view)->filepath); */
 /*   } */
 /* } */
 
@@ -988,7 +969,7 @@ void message(char *s)
   setFocusFrame(BUILTINS_FRAME);
   setFocusView(MESSAGE_BUF);
   insertNewElem();
-  insertCString(s);
+  builtinInsertCString(s);
   setFocusFrame(refFrame);
 }
 
@@ -1231,10 +1212,12 @@ void doKeyPress(uchar c)
 
 void recordKeyPress(uchar c)
 {
-  int refView = focusViewRef();
+  int refFrame = focusFrameRef();
+  if (refFrame == BUILTINS_FRAME) return;
+  setFocusFrame(BUILTINS_FRAME);
   setFocusView(MACRO_BUF);
-  insertChar(c);
-  setFocusView(refView);
+  builtinInsertChar(c);
+  setFocusFrame(refFrame);
 }
 
 void keyDownEvent()
@@ -1345,7 +1328,9 @@ void setNavigateMode()
 
 void setInsertMode()
 {
-    focusView()->mode = INSERT_MODE;
+  if (focusDoc()->isReadOnly) return;
+
+  focusView()->mode = INSERT_MODE;
 }
 
 void setNavigateModeAndDoKeyPress(uchar c)
@@ -1492,7 +1477,13 @@ void builtinInsertCString(char *s)
 
 void insertChar(uchar c)
 {
-    insertString((char*)&c, 1);
+  insertString((char*)&c, 1);
+  forwardChar();
+}
+
+void builtinInsertChar(uchar c)
+{
+    builtinInsertString((char*)&c, 1);
     forwardChar();
 }
 
@@ -1610,7 +1601,7 @@ void copy(char *s, uint len)
   setFocusFrame(BUILTINS_FRAME);
   setFocusView(COPY_BUF);
   insertNewElem();
-  insertString(s, len);
+  builtinInsertString(s, len);
   setClipboardText(focusDoc()->contents.start);
   setFocusFrame(refFrame);
 }
@@ -1752,7 +1743,7 @@ void startOrStopRecording()
 {
   int refFrame = focusFrameRef();
 
-  if (st.isRecording || refFrame == BUILTINS_FRAME || focusViewRef() == MACRO_BUF) {
+  if (st.isRecording || refFrame == BUILTINS_FRAME) {
     stopRecording();
     return;
   }
@@ -1915,10 +1906,10 @@ int numLinesSelected(char *s, int len)
 
 void insertChars(char c, int n)
 {
-  for(int i = 0; i < n; ++i)
-    {
-      insertString(&c, 1);
-    }
+  assert(n < 1024);
+  char s[1024];
+  memset(s, c, n);
+  insertString(s, n);
 }
 
 int indentLine()
@@ -2128,7 +2119,6 @@ CORE:
     continual compile (on exiting insert or delete).  highlight errors/warnings
     jump to next error
     tab completion
-    help screen
     sort lines
     check spelling
     jump to prev/next placeholders
@@ -2153,6 +2143,7 @@ MACRO:
     select all
 
 DONE:
+help screen
 Undo/Redo commands
 Display operation buffer during operation
 multiple files
