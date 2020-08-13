@@ -74,6 +74,7 @@ extern color_t viewColors[];
 #define DISPLAY_EOF false
 #define DEMO_MODE false
 #define NO_GIT false
+#define NO_COMPILE false
 
 enum { HELP_BUF, MESSAGE_BUF, BUFFERS_BUF, MACRO_BUF, COPY_BUF, SEARCH_BUF, CONFIG_BUF, NUM_BUILTIN_BUFFERS };  // BAL: DIRECTORY_BUF for loading files?  or just put in config?
 
