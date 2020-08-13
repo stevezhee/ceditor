@@ -6,7 +6,6 @@
 //  Copyright © 2020 Brett Letner. All rights reserved.
 //
 
-
 #ifndef Util_h
 #define Util_h
 
