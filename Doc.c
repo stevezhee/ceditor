@@ -56,7 +56,8 @@ void docGitCommit(doc_t *doc)
   system(systemBuf);
 }
 
-void docCompile()
+void dochello
+ompile()
 {
 
   if (DEMO_MODE || NO_COMPILE) return;
