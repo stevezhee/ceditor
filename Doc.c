@@ -16,7 +16,7 @@ void docDelete(doc_t *doc, int offset, int len)
   arrayDelete(&doc->contents, offset, len);
   if (doc->isUserDoc && n > 0)
     {
-      docWrite(doc); // BAL: this shouldn't be here, just mark it as dirty or something
+      docWriteAndMake(doc); // BAL: this shouldn't be here, just mark it as dirty or something
     }
 }
 
@@ -29,7 +29,7 @@ void docInsert(doc_t *doc, int offset, char *s, int len)
 
   if (doc->isUserDoc && n > 0)
     {
-      docWrite(doc); // BAL: this shouldn't be here, just mark it as dirty or something
+      docWriteAndMake(doc); // BAL: this shouldn't be here, just mark it as dirty or something
     }
 }
 
@@ -56,7 +56,7 @@ void docGitCommit(doc_t *doc)
   system(systemBuf);
 }
 
-void docMake(doc_t *doc)
+void docMake(void)
 {
 
   if (DEMO_MODE || NO_COMPILE) return;
@@ -76,7 +76,12 @@ void docWrite(doc_t *doc)
     die("unable to close file");
 
   docGitCommit(doc);
-  docMake(doc);
+}
+
+void docWriteAndMake(doc_t *doc)
+{
+  docWrite(doc);
+  docMake();
 }
 
 void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly)
