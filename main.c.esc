@@ -1,0 +1,2192 @@
+[01;34m#include[m [31m"Cursor.h"[m
+[01;34m#include[m [31m"Doc.h"[m
+[01;34m#include[m [31m"DynamicArray.h"[m
+[01;34m#include[m [31m"Font.h"[m
+[01;34m#include[m [31m"Keysym.h"[m
+[01;34m#include[m [31m"Util.h"[m
+[01;34m#include[m [31m"Search.h"[m
+
+[37mcolor_t[m unfocusedFrameColor [31m=[m [35m0x303030ff[m[31m;[m
+[37mcolor_t[m focusedFrameColor [31m=[m [35m0x101010ff[m[31m;[m
+
+[32mvoid[m [01;30minsertCString[m[31m([m[32mchar[m [31m*[ms[31m);[m
+[32mvoid[m [01;30minsertString[m[31m([m[32mchar[m [31m*[ms[31m,[m [37muint[m len[31m);[m
+[32mvoid[m [01;30mbuiltinInsertCString[m[31m([m[32mchar[m [31m*[ms[31m);[m
+[32mvoid[m [01;30mbuiltinInsertString[m[31m([m[32mchar[m [31m*[ms[31m,[m [37muint[m len[31m);[m
+[32mvoid[m [01;30mbuiltinInsertChar[m[31m([m[37muchar[m c[31m);[m
+
+[01;34mtypedef[m [01;34menum[m [31m{[m HSPC[31m,[m VSPC[31m,[m DRAW[31m,[m COLOR[31m,[m FONT[31m,[m SCROLL_Y[31m,[m WID[31m,[m OVER[31m,[m HCAT[31m,[m VCAT[31m,[m HCATR[31m,[m VCATR[31m,[m NUM_WIDGET_TAGS [31m}[m widgetTag_t[31m;[m
+
+[01;34mstruct[m [37mwidget_s[m[31m;[m
+
+[01;34mtypedef[m [01;34mstruct[m [37mwidget_s[m widget_t[31m;[m
+
+[01;34mstruct[m [37mwidget_s[m
+[31m{[m
+  [37mwidgetTag_t[m tag[31m;[m
+  [01;34munion[m [31m{[m
+    [32mint[m wid[31m;[m
+    [32mint[m [31m*[mlength[31m;[m
+    [32mint[m [31m*[mcolor[31m;[m
+    [37mfont_t[m [31m**[mfont[31m;[m
+    [37mwidget_t[m [31m*[mchild[31m;[m
+    [32mvoid[m [31m(*[mdrawFun[31m)([m[32mvoid[m [31m*);[m
+    [32mint[m [31m(*[mscrollYFun[31m)([m[32mvoid[m [31m*);[m
+    [32mvoid[m [31m*[mdata[31m;[m
+  [31m}[m a[31m;[m
+  [01;34munion[m [31m{[m
+    [37mwidget_t[m [31m*[mchild[31m;[m
+    [32mvoid[m [31m*[mdata[31m;[m
+  [31m}[m b[31m;[m
+  [01;34munion[m [31m{[m
+    [32mvoid[m [31m*[mdata[31m;[m
+  [31m}[m c[31m;[m
+[31m}[m[31m;[m
+
+[37mstate_t[m st[31m;[m
+[37mwidget_t[m [31m*[mgui[31m;[m
+[32mint[m [01;30mxToColumn[m[31m([m[32mint[m x[31m)[m
+[31m{[m
+  [01;34mreturn[m x [31m/[m st[31m.[mfont[31m.[mcharSkip[31m;[m
+[31m}[m
+[32mint[m [01;30myToRow[m[31m([m[32mint[m x[31m)[m
+[31m{[m
+  [01;34mreturn[m x [31m/[m st[31m.[mfont[31m.[mlineSkip[31m;[m
+[31m}[m
+
+[32mint[m [01;30mnumFrames[m[31m()[m
+[31m{[m
+  [01;34mreturn[m st[31m.[mframes[31m.[mnumElems[31m;[m
+[31m}[m
+
+[32mint[m [01;30mnumDocs[m[31m()[m
+[31m{[m
+  [01;34mreturn[m st[31m.[mdocs[31m.[mnumElems[31m;[m
+[31m}[m
+
+[37muint[m [01;30mframeRows[m[31m([m[37mframe_t[m [31m*[mframe[31m)[m
+[31m{[m
+    [01;34mreturn[m frame[31m->[mheight [31m/[m st[31m.[mfont[31m.[mlineSkip[31m;[m
+[31m}[m
+
+[32mint[m [01;30mfocusFrameRef[m[31m()[m
+[31m{[m
+  [01;34mreturn[m st[31m.[mframes[31m.[moffset[31m;[m
+[31m}[m
+
+[37mframe_t[m [31m*[m[01;30mfocusFrame[m[31m()[m
+[31m{[m
+  [01;34mreturn[m [01;30marrayFocus[m[31m(&[mst[31m.[mframes[31m);[m
+[31m}[m
+
+[37mframe_t[m [31m*[m[01;30mframeOf[m[31m([m[32mint[m i[31m)[m
+[31m{[m
+  [01;34mreturn[m [01;30marrayElemAt[m[31m(&[mst[31m.[mframes[31m,[m i[31m);[m
+[31m}[m
+
+[32mint[m [01;30mfocusViewRef[m[31m()[m
+[31m{[m
+  [01;34mreturn[m [01;30mfocusFrame[m[31m()->[mviews[31m.[moffset[31m;[m
+[31m}[m
+
+[37mview_t[m [31m*[m[01;30mviewOf[m[31m([m[37mframe_t[m [31m*[mframe[31m)[m
+[31m{[m
+  [01;34mreturn[m [01;30marrayFocus[m[31m(&[mframe[31m->[mviews[31m);[m
+[31m}[m
+
+[37mview_t[m [31m*[m[01;30mfocusView[m[31m()[m
+[31m{[m
+  [01;34mreturn[m [01;30mviewOf[m[31m([m[01;30mfocusFrame[m[31m());[m
+[31m}[m
+
+[32mvoid[m [01;30msetFocusFrame[m[31m([m[32mint[m i[31m)[m
+[31m{[m
+  [01;30massert[m[31m([mi [31m>=[m [35m0[m[31m);[m
+  [01;30massert[m[31m([mi [31m<[m [01;30mnumFrames[m[31m());[m
+  [32mint[m j [31m=[m [01;30mfocusFrameRef[m[31m();[m
+  [01;34mif[m [31m([mi [31m==[m j[31m)[m [01;34mreturn[m[31m;[m
+
+  [37mframe_t[m [31m*[mframe [31m=[m [01;30mframeOf[m[31m([mj[31m);[m
+  frame[31m->[mcolor [31m=[m unfocusedFrameColor[31m;[m
+  [01;30marraySetFocus[m[31m(&[mst[31m.[mframes[31m,[m i[31m);[m
+  frame [31m=[m [01;30mframeOf[m[31m([mi[31m);[m
+  frame[31m->[mcolor [31m=[m focusedFrameColor[31m;[m
+[31m}[m
+
+[32mint[m [01;30mnumViews[m[31m()[m
+[31m{[m
+  [01;34mreturn[m [01;30mfocusFrame[m[31m()->[mviews[31m.[mnumElems[31m;[m
+[31m}[m
+
+[37mdoc_t[m [31m*[m[01;30mdocOf[m[31m([m[37mview_t[m [31m*[mview[31m)[m
+[31m{[m
+  [01;34mreturn[m [01;30marrayElemAt[m[31m(&[mst[31m.[mdocs[31m,[m view[31m->[mrefDoc[31m);[m
+[31m}[m
+
+[37mdoc_t[m [31m*[m[01;30mfocusDoc[m[31m()[m
+[31m{[m
+  [01;34mreturn[m [01;30mdocOf[m[31m([m[01;30mfocusView[m[31m());[m
+[31m}[m
+
+[37mcursor_t[m [31m*[m[01;30mfocusCursor[m[31m()[m
+[31m{[m
+  [01;34mreturn[m [31m&[m[01;30mfocusView[m[31m()->[mcursor[31m;[m
+[31m}[m
+
+[37mcursor_t[m [31m*[m[01;30mfocusSelection[m[31m()[m
+[31m{[m
+  [01;34mreturn[m [31m&[m[01;30mfocusView[m[31m()->[mselection[31m;[m
+[31m}[m
+
+[32mbool[m [01;30mselectionActive[m[31m([m[37mview_t[m [31m*[mview[31m)[m
+[31m{[m
+  [01;34mreturn[m [31m([mview[31m->[mselectMode [31m!=[m NO_SELECT[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mframeUpdate[m[31m([m[37mframe_t[m [31m*[mframe[31m)[m
+[31m{[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mviewOf[m[31m([mframe[31m);[m
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mdocOf[m[31m([mview[31m);[m
+  [31m// BAL: make sure we don't overflow the buffer[m
+  [01;30marrayReinit[m[31m(&[mframe[31m->[mstatus[31m);[m
+  [01;30msprintf[m[31m([mframe[31m->[mstatus[31m.[mstart[31m,[m [31m"<%s> %3d:%2d %s"[m[31m,[m editorModeDescr[31m[[mview[31m->[mmode[31m],[m view[31m->[mcursor[31m.[mrow [31m+[m [35m1[m[31m,[m view[31m->[mcursor[31m.[mcolumn[31m,[m doc[31m->[mfilepath[31m);[m
+  frame[31m->[mstatus[31m.[mnumElems [31m=[m [01;30mstrlen[m[31m([mframe[31m->[mstatus[31m.[mstart[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30msetFrameView[m[31m([m[32mint[m refFrame[31m,[m [32mint[m refView[31m)[m
+[31m{[m
+  [37mframe_t[m [31m*[mframe [31m=[m [01;30mframeOf[m[31m([mrefFrame[31m);[m
+  [01;30massert[m[31m([mrefView [31m<[m frame[31m->[mviews[31m.[mnumElems[31m);[m
+  [01;30marraySetFocus[m[31m(&[mframe[31m->[mviews[31m,[m refView[31m);[m
+
+  [01;30mframeUpdate[m[31m([mframe[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30msetFocusView[m[31m([m[32mint[m refView[31m)[m
+[31m{[m
+  [01;30msetFrameView[m[31m([m[01;30mfocusFrameRef[m[31m(),[m refView[31m);[m
+[31m}[m
+
+[31m/* void stSetViewFocus(uint i) */[m
+[31m/* { */[m
+[31m/*     i = clamp(0, i, st.views.numElems - 1); */[m
+[31m/*     frame_t *frame = focusFrame(); */[m
+[31m/*     frame->refView = i; */[m
+[31m/*     printf("file:%s\n", focusDoc()->filepath); */[m
+[31m/* } */[m
+
+[32mvoid[m [01;30mframeInit[m[31m([m[37mframe_t[m [31m*[mframe[31m)[m
+[31m{[m
+    [01;30mmemset[m[31m([mframe[31m,[m [35m0[m[31m,[m [01;34msizeof[m[31m([mframe_t[31m));[m
+    frame[31m->[mcolor [31m=[m unfocusedFrameColor[31m;[m
+
+    [01;30marrayInit[m[31m(&[mframe[31m->[mviews[31m,[m [01;34msizeof[m[31m([mview_t[31m));[m
+    [01;30marrayInit[m[31m(&[mframe[31m->[mstatus[31m,[m [01;34msizeof[m[31m([m[32mchar[m[31m));[m
+    [01;30marrayGrow[m[31m(&[mframe[31m->[mstatus[31m,[m [35m1024[m[31m);[m
+    [31m// printf("frame init: %d\n", (int)frame->status.start);[m
+    [31m// printf("frame init status: %p %p %d %d\n", frame->status, frame->status.start, frame->status->numElems, frame->status->maxElems);[m
+    [31m//    printf("status size buf=%p start=%p\n", frame->status, frame->status.start);[m
+
+[31m}[m
+
+[32mvoid[m [01;30mviewInit[m[31m([m[37mview_t[m [31m*[mview[31m,[m [37muint[m i[31m)[m
+[31m{[m
+    [01;30mmemset[m[31m([mview[31m,[m [35m0[m[31m,[m [01;34msizeof[m[31m([mview_t[31m));[m
+    view[31m->[mrefDoc [31m=[m i[31m;[m
+[31m}[m
+
+[31m/* bool noActiveSearch(frame_t *frame) */[m
+[31m/* { */[m
+[31m/*     return */[m
+[31m/*       frame->refView != st.searchRefView || // BAL: there are now multiple views per frame */[m
+[31m/*       st.searchLen == 0 || */[m
+[31m/*       st.searchResults.numElems == 0; */[m
+[31m/* } */[m
+
+[37mwidget_t[m [31m*[m[01;30mnewWidget[m[31m()[m
+[31m{[m
+  [01;34mreturn[m [01;30mdieIfNull[m[31m([m[01;30mmalloc[m[31m([m[01;34msizeof[m[31m([mwidget_t[31m)));[m
+[31m}[m
+
+[37mwidget_t[m [31m*[m[01;30mleaf[m[31m([m[37mwidgetTag_t[m tag[31m,[m [32mvoid[m [31m*[ma[31m)[m
+[31m{[m
+  [37mwidget_t[m [31m*[mp [31m=[m [01;30mnewWidget[m[31m();[m
+  p[31m->[mtag [31m=[m tag[31m;[m
+  p[31m->[ma[31m.[mdata [31m=[m a[31m;[m
+  [01;34mreturn[m p[31m;[m
+[31m}[m
+
+[01;34m#define[m [01;30mhspc[m[31m([mlen[31m)[m [01;30mleaf[m[31m([mHSPC[31m,[m len[31m)[m
+[01;34m#define[m [01;30mvspc[m[31m([mlen[31m)[m [01;30mleaf[m[31m([mVSPC[31m,[m len[31m)[m
+
+[37mwidget_t[m [31m*[m[01;30msingleton[m[31m([m[37mwidgetTag_t[m tag[31m,[m [32mvoid[m [31m*[ma[31m,[m [37mwidget_t[m [31m*[mb[31m)[m
+[31m{[m
+  [37mwidget_t[m [31m*[mp [31m=[m [01;30mnewWidget[m[31m();[m
+  p[31m->[mtag [31m=[m tag[31m;[m
+  p[31m->[ma[31m.[mdata [31m=[m a[31m;[m
+  p[31m->[mb[31m.[mchild [31m=[m b[31m;[m
+  [01;34mreturn[m p[31m;[m
+[31m}[m
+
+[37mwidget_t[m [31m*[m[01;30msingleton2[m[31m([m[37mwidgetTag_t[m tag[31m,[m [32mvoid[m [31m*[ma[31m,[m [37mwidget_t[m [31m*[mb[31m,[m [32mvoid[m [31m*[mc[31m)[m
+[31m{[m
+  [37mwidget_t[m [31m*[mp [31m=[m [01;30mnewWidget[m[31m();[m
+  p[31m->[mtag [31m=[m tag[31m;[m
+  p[31m->[ma[31m.[mdata [31m=[m a[31m;[m
+  p[31m->[mb[31m.[mchild [31m=[m b[31m;[m
+  p[31m->[mc[31m.[mdata [31m=[m c[31m;[m
+  [01;34mreturn[m p[31m;[m
+[31m}[m
+
+[01;34m#define[m [01;30mcolor[m[31m([ma[31m,[m b[31m)[m [01;30msingleton[m[31m([mCOLOR[31m,[m a[31m,[m b[31m)[m
+[01;34m#define[m [01;30mfont[m[31m([ma[31m,[m b[31m)[m [01;30msingleton[m[31m([mFONT[31m,[m a[31m,[m b[31m)[m
+[01;34m#define[m [01;30mscrollY[m[31m([ma[31m,[m c[31m,[m b[31m)[m [01;30msingleton2[m[31m([mSCROLL_Y[31m,[m a[31m,[m b[31m,[m c[31m)[m
+
+[37mwidget_t[m [31m*[m[01;30mwid[m[31m([m[32mint[m i[31m,[m [37mwidget_t[m [31m*[ma[31m)[m
+[31m{[m
+  [37mwidget_t[m [31m*[mp [31m=[m [01;30mnewWidget[m[31m();[m
+  p[31m->[mtag [31m=[m WID[31m;[m
+  p[31m->[ma[31m.[mwid [31m=[m i[31m;[m
+  p[31m->[mb[31m.[mchild [31m=[m a[31m;[m
+  [01;34mreturn[m p[31m;[m
+[31m}[m
+
+[37mwidget_t[m [31m*[m[01;30mnode[m[31m([m[37mwidgetTag_t[m tag[31m,[m [32mvoid[m [31m*[ma[31m,[m [32mvoid[m [31m*[mb[31m)[m
+[31m{[m
+  [37mwidget_t[m [31m*[mp [31m=[m [01;30mnewWidget[m[31m();[m
+  p[31m->[mtag [31m=[m tag[31m;[m
+  p[31m->[ma[31m.[mdata [31m=[m a[31m;[m
+  p[31m->[mb[31m.[mdata [31m=[m b[31m;[m
+  [01;34mreturn[m p[31m;[m
+[31m}[m
+
+[01;34mtypedef[m [01;34mstruct[m
+[31m{[m
+  [32mint[m x[31m;[m
+  [32mint[m y[31m;[m
+  [32mint[m w[31m;[m
+  [32mint[m h[31m;[m
+  [32mint[m color[31m;[m
+  [37mfont_t[m [31m*[mfont[31m;[m
+  [32mint[m dy[31m;[m
+  [32mint[m wid[31m;[m
+[31m}[m context_t[31m;[m
+
+[37mcontext_t[m context[31m;[m
+
+[32mvoid[m [01;30mdrawBox[m[31m([m[32mvoid[m [31m*[m_unused[31m)[m
+[31m{[m
+  [01;30mfillRect[m[31m([mcontext[31m.[mw[31m,[m context[31m.[mh[31m);[m
+[31m}[m
+
+[01;34m#define[m [01;30mover[m[31m([ma[31m,[m b[31m)[m [01;30mnode[m[31m([mOVER[31m,[m a[31m,[m b[31m)[m
+[01;34m#define[m [01;30mhcat[m[31m([ma[31m,[m b[31m)[m [01;30mnode[m[31m([mHCAT[31m,[m a[31m,[m b[31m)[m
+[01;34m#define[m [01;30mhcatr[m[31m([ma[31m,[m b[31m)[m [01;30mnode[m[31m([mHCATR[31m,[m a[31m,[m b[31m)[m
+[01;34m#define[m [01;30mvcat[m[31m([ma[31m,[m b[31m)[m [01;30mnode[m[31m([mVCAT[31m,[m a[31m,[m b[31m)[m
+[01;34m#define[m [01;30mvcatr[m[31m([ma[31m,[m b[31m)[m [01;30mnode[m[31m([mVCATR[31m,[m a[31m,[m b[31m)[m
+[01;34m#define[m [01;30mdraw[m[31m([ma[31m,[m b[31m)[m [01;30mnode[m[31m([mDRAW[31m,[m a[31m,[m b[31m)[m
+[01;34m#define[m [01;30mbox[m[31m()[m [01;30mnode[m[31m([mDRAW[31m,[m drawBox[31m,[m NULL[31m)[m
+
+[32mint[m [01;30mmaxLineLength[m[31m([m[32mchar[m [31m*[ms[31m)[m
+[31m{[m
+  [01;30massert[m[31m([ms[31m);[m
+  [32mchar[m c[31m;[m
+  [32mint[m rmax [31m=[m [35m0[m[31m;[m
+  [32mint[m r [31m=[m [35m0[m[31m;[m
+  [01;34mwhile[m[31m(([mc [31m=[m [31m*[ms[31m)[m [31m!=[m [31m'[m[35m\0[m[31m'[m[31m)[m
+    [31m{[m
+      [01;34mswitch[m[31m([mc[31m)[m [31m{[m
+      [01;34mcase[m [31m'[m[35m\n[m[31m'[m[31m:[m
+        rmax [31m=[m [01;30mmax[m[31m([mrmax[31m,[m r [31m+[m [35m1[m[31m);[m
+        r [31m=[m [35m0[m[31m;[m
+        [01;34mbreak[m[31m;[m
+[01;37m      default:[m
+        r[31m++;[m
+      [31m}[m
+      s[31m++;[m
+    [31m}[m
+  [01;34mreturn[m [01;30mmax[m[31m([mrmax[31m,[m r[31m);[m
+[31m}[m
+
+[32mint[m [01;30mnumLinesCString[m[31m([m[32mchar[m [31m*[ms[31m)[m
+[31m{[m
+  [32mint[m n [31m=[m [35m0[m[31m;[m
+  [32mchar[m c[31m;[m
+  [01;34mwhile[m [31m(([mc [31m=[m [31m*[ms[31m)[m [31m!=[m [31m'[m[35m\0[m[31m'[m[31m)[m
+    [31m{[m
+      [01;34mif[m [31m([mc [31m==[m [31m'[m[35m\n[m[31m'[m[31m)[m n[31m++;[m
+      s[31m++;[m
+    [31m}[m
+  [01;34mreturn[m n[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mdrawStringSelection[m[31m([m[32mint[m x[31m,[m [32mint[m y[31m,[m [32mchar[m [31m*[ms[31m,[m [32mint[m len[31m)[m
+[31m{[m
+  [31m// BAL: would it look good to bold the characters in addition/instead?[m
+  [01;30massert[m[31m([ms[31m);[m
+  [32mint[m w [31m=[m context[31m.[mfont[31m->[mcharSkip[31m;[m
+  [32mint[m h [31m=[m context[31m.[mfont[31m->[mlineSkip[31m;[m
+  [32mchar[m [31m*[mp [31m=[m s [31m+[m len[31m;[m
+  [01;34mwhile[m[31m([ms [31m<[m p[31m)[m
+    [31m{[m
+      [01;30mfillRectAt[m[31m([mx[31m,[m y[31m,[m w[31m,[m h[31m);[m
+      [01;34mswitch[m[31m(*[ms[31m)[m [31m{[m
+      [01;34mcase[m [31m'[m[35m\n[m[31m'[m[31m:[m
+        x [31m=[m [35m0[m[31m;[m
+        y [31m+=[m h[31m;[m
+        [01;34mbreak[m[31m;[m
+[01;37m      default:[m
+        x [31m+=[m w[31m;[m
+      [31m}[m
+      s[31m++;[m
+    [31m}[m
+[31m}[m
+
+[32mvoid[m [01;30mdrawString[m[31m([m[37mstring_t[m [31m*[ms[31m)[m
+[31m{[m
+  [01;34mif[m[31m(![ms[31m)[m [01;34mreturn[m[31m;[m
+  [01;30massert[m[31m([ms[31m);[m
+  [01;34mif[m [31m(![ms[31m->[mstart[31m)[m [01;34mreturn[m[31m;[m
+  [37muchar[m c[31m;[m
+  [37mSDL_Texture[m [31m*[mtxtr[31m;[m
+  [37mSDL_Rect[m rect[31m;[m
+  rect[31m.[mx [31m=[m [35m0[m[31m;[m [31m// context.dx;[m
+  rect[31m.[my [31m=[m context[31m.[mdy[31m;[m
+  rect[31m.[mw [31m=[m context[31m.[mfont[31m->[mcharSkip[31m;[m
+  rect[31m.[mh [31m=[m context[31m.[mfont[31m->[mlineSkip[31m;[m
+
+  [32mchar[m [31m*[mp [31m=[m s[31m->[mstart[31m;[m
+  [32mchar[m [31m*[mq [31m=[m [01;30marrayTop[m[31m([ms[31m);[m
+
+  [01;34mwhile[m[31m([mp [31m<[m q[31m)[m
+    [31m{[m
+      c [31m=[m [31m*[mp[31m;[m
+      p[31m++;[m
+      [01;34mswitch[m[31m([mc[31m)[m [31m{[m
+      [01;34mcase[m [31m'[m[35m\n[m[31m'[m[31m:[m
+        rect[31m.[mx [31m=[m [35m0[m[31m;[m [31m// context.dx;[m
+        rect[31m.[my [31m+=[m rect[31m.[mh[31m;[m
+        [01;34mbreak[m[31m;[m
+      [01;34mcase[m [31m' '[m[31m:[m
+        rect[31m.[mx [31m+=[m rect[31m.[mw[31m;[m
+        [01;34mbreak[m[31m;[m
+[01;37m      default:[m
+        txtr [31m=[m context[31m.[mfont[31m->[mcharTexture[31m[[mc[31m];[m
+        [01;30msetTextureColorMod[m[31m([mtxtr[31m,[m context[31m.[mcolor[31m);[m [31m// BAL: could just do this once if using a texture map[m
+        [01;30mSDL_RenderCopy[m[31m([mrenderer[31m,[m txtr[31m,[m NULL[31m,[m [31m&[mrect[31m);[m
+        rect[31m.[mx [31m+=[m rect[31m.[mw[31m;[m
+      [31m}[m
+    [31m}[m
+[31m}[m
+
+[32mint[m [01;30mwidgetWidth[m[31m([m[37mwidget_t[m [31m*[mwidget[31m)[m
+[31m{[m
+  [32mint[m w [31m=[m [35m0[m[31m;[m
+
+  [01;34mswitch[m [31m([mwidget[31m->[mtag[31m)[m [31m{[m
+  [01;34mcase[m HCATR[31m:[m [31m// fall through[m
+  [01;34mcase[m HCAT[31m:[m
+    w [31m=[m [01;30mwidgetWidth[m[31m([mwidget[31m->[ma[31m.[mchild[31m)[m [31m+[m [01;30mwidgetWidth[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+    [01;34mbreak[m[31m;[m
+  [01;34mcase[m OVER[31m:[m [31m// fall through[m
+  [01;34mcase[m VCATR[31m:[m [31m// fall through[m
+  [01;34mcase[m VCAT[31m:[m
+    w [31m=[m [01;30mmax[m[31m([m[01;30mwidgetWidth[m[31m([mwidget[31m->[ma[31m.[mchild[31m),[m [01;30mwidgetWidth[m[31m([mwidget[31m->[mb[31m.[mchild[31m));[m
+    [01;34mbreak[m[31m;[m
+  [01;34mcase[m SCROLL_Y[31m:[m [31m// fall through[m
+  [01;34mcase[m WID[31m:[m [31m// fall through[m
+  [01;34mcase[m COLOR[31m:[m [31m// fall through[m
+  [01;34mcase[m FONT[31m:[m
+    w [31m=[m [01;30mwidgetWidth[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+    [01;34mbreak[m[31m;[m
+  [01;34mcase[m HSPC[31m:[m
+    w [31m=[m [31m*[mwidget[31m->[ma[31m.[mlength[31m;[m
+    [01;34mbreak[m[31m;[m
+[01;37m  default:[m
+    [01;30massert[m[31m([mwidget[31m->[mtag [31m==[m VSPC [31m||[m widget[31m->[mtag [31m==[m DRAW[31m);[m
+    [01;34mbreak[m[31m;[m
+  [31m}[m
+
+  [01;34mreturn[m [01;30mmin[m[31m([mw[31m,[m context[31m.[mw[31m);[m
+[31m}[m
+
+[32mint[m [01;30mwidgetHeight[m[31m([m[37mwidget_t[m [31m*[mwidget[31m)[m
+[31m{[m
+  [32mint[m h [31m=[m [35m0[m[31m;[m
+  [01;34mswitch[m [31m([mwidget[31m->[mtag[31m)[m
+    [31m{[m
+    [01;34mcase[m OVER[31m:[m [31m// fall through[m
+    [01;34mcase[m HCATR[31m:[m [31m// fall through[m
+    [01;34mcase[m HCAT[31m:[m
+      h [31m=[m [01;30mmax[m[31m([m[01;30mwidgetHeight[m[31m([mwidget[31m->[ma[31m.[mchild[31m),[m [01;30mwidgetHeight[m[31m([mwidget[31m->[mb[31m.[mchild[31m));[m
+      [01;34mbreak[m[31m;[m
+    [01;34mcase[m VCATR[31m:[m [31m// fall through[m
+    [01;34mcase[m VCAT[31m:[m
+      h [31m=[m [01;30mwidgetHeight[m[31m([mwidget[31m->[ma[31m.[mchild[31m)[m [31m+[m [01;30mwidgetHeight[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+      [01;34mbreak[m[31m;[m
+    [01;34mcase[m SCROLL_Y[31m:[m [31m// fall through[m
+    [01;34mcase[m COLOR[31m:[m [31m// fall through[m
+    [01;34mcase[m WID[31m:[m [31m// fall through[m
+    [01;34mcase[m FONT[31m:[m
+      h [31m=[m [01;30mwidgetHeight[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+      [01;34mbreak[m[31m;[m
+    [01;34mcase[m VSPC[31m:[m
+      h [31m=[m [31m*[mwidget[31m->[ma[31m.[mlength[31m;[m
+      [01;34mbreak[m[31m;[m
+[01;37m    default:[m
+      [01;30massert[m[31m([mwidget[31m->[mtag [31m==[m HSPC [31m||[m widget[31m->[mtag [31m==[m DRAW[31m);[m
+      [01;34mbreak[m[31m;[m
+    [31m}[m
+  [01;34mreturn[m [01;30mmin[m[31m([mh[31m,[m context[31m.[mh[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mcontextSetViewport[m[31m()[m
+[31m{[m
+  [37mSDL_Rect[m rect[31m;[m
+  rect[31m.[mx [31m=[m context[31m.[mx[31m;[m
+  rect[31m.[my [31m=[m context[31m.[my[31m;[m
+  rect[31m.[mw [31m=[m context[31m.[mw[31m;[m
+  rect[31m.[mh [31m=[m context[31m.[mh[31m;[m
+  [01;30msetViewport[m[31m(&[mrect[31m);[m
+[31m}[m
+
+[32mint[m [01;30mcolumnToX[m[31m([m[32mint[m column[31m)[m
+[31m{[m
+  [01;34mreturn[m column [31m*[m st[31m.[mfont[31m.[mcharSkip[31m;[m
+[31m}[m
+
+[32mint[m [01;30mrowToY[m[31m([m[32mint[m row[31m)[m
+[31m{[m
+  [01;34mreturn[m row [31m*[m st[31m.[mfont[31m.[mlineSkip [31m+[m context[31m.[mdy[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mdrawCursor[m[31m([m[37mview_t[m [31m*[mview[31m)[m
+[31m{[m
+  [32mint[m x [31m=[m [01;30mcolumnToX[m[31m([mview[31m->[mcursor[31m.[mcolumn[31m);[m
+  [32mint[m y [31m=[m [01;30mrowToY[m[31m([mview[31m->[mcursor[31m.[mrow[31m);[m
+
+  [01;34mif[m [31m([mview[31m->[mmode [31m==[m NAVIGATE_MODE[31m)[m
+    [31m{[m
+      [01;30msetDrawColor[m[31m([mCURSOR_BACKGROUND_COLOR[31m);[m
+      [01;30mfillRectAt[m[31m([mx[31m,[m y[31m,[m st[31m.[mfont[31m.[mcharSkip[31m,[m st[31m.[mfont[31m.[mlineSkip[31m);[m
+    [31m}[m
+
+  [01;30msetDrawColor[m[31m([mCURSOR_COLOR[31m);[m
+  [01;30mfillRectAt[m[31m([mx[31m,[m y[31m,[m CURSOR_WIDTH[31m,[m st[31m.[mfont[31m.[mlineSkip[31m);[m
+
+  [01;30msetDrawColor[m[31m([mcontext[31m.[mcolor[31m);[m
+[31m}[m
+
+[32mint[m [01;30mdistanceToEOL[m[31m([m[32mchar[m [31m*[ms[31m)[m
+[31m{[m
+  [32mchar[m [31m*[mp [31m=[m s[31m;[m
+  [32mchar[m c [31m=[m [31m*[mp[31m;[m
+
+  [01;34mwhile[m[31m([mc [31m!=[m [31m'[m[35m\n[m[31m'[m [31m&&[m c [31m!=[m [31m'[m[35m\0[m[31m'[m[31m)[m
+    [31m{[m
+      p[31m++;[m
+      c [31m=[m [31m*[mp[31m;[m
+    [31m}[m
+  [01;34mreturn[m p [31m-[m s[31m;[m
+[31m}[m
+
+[32mint[m [01;30mdistanceToNextSpace[m[31m([m[32mchar[m [31m*[ms0[31m,[m [32mchar[m [31m*[mt[31m)[m
+[31m{[m
+  [32mchar[m [31m*[ms [31m=[m s0[31m;[m
+  [32mchar[m c [31m=[m [31m*[ms[31m;[m
+
+  [01;34mwhile[m[31m([ms [31m<[m t[31m)[m
+    [31m{[m
+      s[31m++;[m
+      c [31m=[m [31m*[ms[31m;[m
+      [01;34mif[m [31m([mc [31m==[m [31m' '[m [31m||[m c [31m==[m [31m'[m[35m\n[m[31m'[m[31m)[m
+        [31m{[m
+          [01;34mwhile[m[31m([ms [31m<[m t[31m)[m
+            [31m{[m
+              s[31m++;[m
+              c [31m=[m [31m*[ms[31m;[m
+              [01;34mif[m [31m([mc [31m!=[m [31m' '[m [31m&&[m c [31m!=[m [31m'[m[35m\n[m[31m'[m[31m)[m [01;34mreturn[m s [31m-[m s0[31m;[m
+            [31m}[m
+          [01;34mreturn[m s [31m-[m s0[31m;[m
+        [31m}[m
+    [31m}[m
+
+  [01;34mreturn[m s [31m-[m s0[31m;[m
+[31m}[m
+[32mint[m [01;30mdistanceToIndent[m[31m([m[32mchar[m [31m*[mp0[31m,[m [32mchar[m [31m*[mq[31m)[m
+[31m{[m
+  [32mchar[m [31m*[mp [31m=[m p0[31m;[m
+  [01;34mwhile[m[31m([mp [31m<[m q [31m&&[m [31m*[mp [31m==[m [31m' '[m[31m)[m
+    [31m{[m
+      p[31m++;[m
+    [31m}[m
+  [01;34mreturn[m p [31m-[m p0[31m;[m
+[31m}[m
+[32mint[m [01;30mdistanceToPrevSpace[m[31m([m[32mchar[m [31m*[mt[31m,[m [32mchar[m [31m*[ms0[31m)[m
+[31m{[m
+  [32mchar[m [31m*[ms [31m=[m s0[31m;[m
+  [32mchar[m c [31m=[m [31m*[ms[31m;[m
+
+  [01;34mwhile[m[31m([ms [31m>[m t[31m)[m
+    [31m{[m
+      s[31m--;[m
+      c [31m=[m [31m*[ms[31m;[m
+      [01;34mif[m [31m([mc [31m==[m [31m' '[m [31m||[m c [31m==[m [31m'[m[35m\n[m[31m'[m[31m)[m
+        [31m{[m
+          [01;34mwhile[m[31m([ms [31m>[m t[31m)[m
+            [31m{[m
+              s[31m--;[m
+              c [31m=[m [31m*[ms[31m;[m
+              [01;34mif[m [31m([mc [31m!=[m [31m' '[m [31m&&[m c [31m!=[m [31m'[m[35m\n[m[31m'[m[31m)[m [01;34mreturn[m s [31m-[m s0[31m;[m
+            [31m}[m
+          [01;34mreturn[m s [31m-[m s0[31m;[m
+        [31m}[m
+    [31m}[m
+
+  [01;34mreturn[m s [31m-[m s0[31m;[m
+[31m}[m
+
+[32mint[m [01;30mdistanceToStartOfElem[m[31m([m[32mchar[m [31m*[ms[31m,[m [32mint[m offset[31m)[m
+[31m{[m
+  [32mchar[m [31m*[mp0 [31m=[m s [31m+[m offset[31m;[m
+  [32mchar[m [31m*[mp [31m=[m p0[31m;[m
+  [01;34mif[m [31m([mp [31m>[m s [31m&&[m [31m*[mp [31m==[m [31m'[m[35m\n[m[31m'[m[31m)[m p[31m--;[m
+  [01;34mif[m [31m([mp [31m>[m s [31m&&[m [31m*[mp [31m==[m [31m'[m[35m\0[m[31m'[m[31m)[m p[31m--;[m
+  [01;34mwhile[m[31m([mp [31m>[m s[31m)[m
+    [31m{[m
+      [01;34mif[m [31m(*[mp [31m==[m [31m'[m[35m\0[m[31m'[m[31m)[m
+        [31m{[m
+          [01;34mreturn[m p [31m-[m p0 [31m+[m [35m2[m[31m;[m
+        [31m}[m
+      p[31m--;[m
+    [31m}[m
+  [01;34mreturn[m p [31m-[m p0[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mgetSelectionCoords[m[31m([m[37mview_t[m [31m*[mview[31m,[m [32mint[m [31m*[mcolumn[31m,[m [32mint[m [31m*[mrow[31m,[m [32mint[m [31m*[moffset[31m,[m [32mint[m [31m*[mlen[31m)[m
+[31m{[m
+  [01;34mif[m[31m(![m[01;30mselectionActive[m[31m([mview[31m))[m
+    [31m{[m
+      [31m*[mcolumn [31m=[m view[31m->[mcursor[31m.[mcolumn[31m;[m
+      [31m*[mrow [31m=[m view[31m->[mcursor[31m.[mrow[31m;[m
+      [31m*[moffset [31m=[m view[31m->[mcursor[31m.[moffset[31m;[m
+      [31m*[mlen [31m=[m [35m1[m[31m;[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+
+  [37mcursor_t[m [31m*[ma [31m=[m [31m&[mview[31m->[mcursor[31m;[m
+  [37mcursor_t[m [31m*[mb [31m=[m [31m&[mview[31m->[mselection[31m;[m
+
+  [01;34mif[m [31m([ma[31m->[moffset [31m>[m b[31m->[moffset[31m)[m
+    [31m{[m
+      [01;30mswap[m[31m([mcursor_t[31m*,[m a[31m,[m b[31m);[m
+    [31m}[m
+
+  [31m*[moffset [31m=[m a[31m->[moffset[31m;[m
+  [31m*[mlen [31m=[m b[31m->[moffset [31m-[m [31m*[moffset[31m;[m
+  [31m*[mrow [31m=[m a[31m->[mrow[31m;[m
+  [31m*[mcolumn [31m=[m a[31m->[mcolumn[31m;[m
+
+  [32mchar[m [31m*[ms [31m=[m [01;30mdocOf[m[31m([mview[31m)->[mcontents[31m.[mstart[31m;[m
+
+  [01;34mif[m[31m([mview[31m->[mselectMode [31m==[m LINE_SELECT[31m)[m
+    [31m{[m
+      [31m*[mlen [31m+=[m [01;30mdistanceToEOL[m[31m([ms [31m+[m [31m*[moffset [31m+[m [31m*[mlen[31m);[m
+      [31m*[moffset [31m-=[m [31m*[mcolumn[31m;[m
+      [31m*[mlen [31m+=[m [31m*[mcolumn[31m;[m
+      [31m*[mcolumn [31m=[m [35m0[m[31m;[m
+    [31m}[m
+  [31m*[mlen [31m+=[m [35m1[m[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mdrawSearch[m[31m([m[37mview_t[m [31m*[mview[31m)[m
+[31m{[m
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mdocOf[m[31m([mview[31m);[m
+  [32mchar[m [31m*[ms [31m=[m doc[31m->[mcontents[31m.[mstart[31m;[m
+
+  [01;30msetDrawColor[m[31m([mSEARCH_COLOR[31m);[m
+
+  [37msearchBuffer_t[m [31m*[mresults [31m=[m [31m&[mdoc[31m->[msearchResults[31m;[m
+
+  [01;34mfor[m[31m([m[32mint[m i [31m=[m [35m0[m[31m;[m i [31m<[m results[31m->[mnumElems[31m;[m [31m++[mi[31m)[m
+    [31m{[m
+      [37mcursor_t[m c[31m;[m
+      [32mint[m [31m*[moffset [31m=[m [01;30marrayElemAt[m[31m([mresults[31m,[m i[31m);[m
+      [01;30mcursorSetOffset[m[31m(&[mc[31m,[m [31m*[moffset[31m,[m doc[31m);[m [31m// BAL: this is inefficient (it starts over every time)[m
+      [01;30mdrawStringSelection[m[31m([m[01;30mcolumnToX[m[31m([mc[31m.[mcolumn[31m),[m [01;30mrowToY[m[31m([mc[31m.[mrow[31m),[m s [31m+[m [31m*[moffset[31m,[m st[31m.[msearchLen[31m);[m
+    [31m}[m
+
+  [01;30msetDrawColor[m[31m([mcontext[31m.[mcolor[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mdrawSelection[m[31m([m[37mview_t[m [31m*[mview[31m)[m
+[31m{[m
+
+  [32mint[m offset[31m;[m
+  [32mint[m len[31m;[m
+  [32mint[m column[31m;[m
+  [32mint[m row[31m;[m
+  [32mchar[m [31m*[ms [31m=[m [01;30mdocOf[m[31m([mview[31m)->[mcontents[31m.[mstart[31m;[m
+
+  [01;30msetDrawColor[m[31m([mSELECTION_COLOR[31m);[m
+
+  [01;30mgetSelectionCoords[m[31m([mview[31m,[m [31m&[mcolumn[31m,[m [31m&[mrow[31m,[m [31m&[moffset[31m,[m [31m&[mlen[31m);[m
+
+  [01;30mdrawStringSelection[m[31m([m[01;30mcolumnToX[m[31m([mcolumn[31m),[m [01;30mrowToY[m[31m([mrow[31m),[m s [31m+[m offset[31m,[m len[31m);[m
+
+  [01;30msetDrawColor[m[31m([mcontext[31m.[mcolor[31m);[m
+[31m}[m
+
+[32mbool[m [01;30mcursorEq[m[31m([m[37mcursor_t[m [31m*[ma[31m,[m [37mcursor_t[m [31m*[mb[31m)[m
+[31m{[m
+  [01;34mreturn[m [31m([ma[31m->[mrow [31m==[m b[31m->[mrow [31m&&[m a[31m->[mcolumn [31m==[m b[31m->[mcolumn[31m);[m
+[31m}[m
+
+[32mbool[m [01;30msearchActive[m[31m([m[37mframe_t[m [31m*[mframe[31m)[m
+[31m{[m
+  [31m// if the doc in the builtins frame is searches[m
+  [31m// and this isn't the searches view[m
+  [01;34mreturn[m [01;30mframeOf[m[31m([mBUILTINS_FRAME[31m)->[mviews[31m.[moffset [31m==[m SEARCH_BUF [31m&&[m
+         frame[31m->[mviews[31m.[moffset [31m!=[m SEARCH_BUF[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mdrawCursorOrSelection[m[31m([m[37mframe_t[m [31m*[mframe[31m)[m
+[31m{[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mviewOf[m[31m([mframe[31m);[m
+  [01;34mif[m [31m([m[01;30msearchActive[m[31m([mframe[31m))[m
+    [31m{[m
+      [01;30mdrawSearch[m[31m([mview[31m);[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+  [01;34mif[m [31m([m[01;30mselectionActive[m[31m([mview[31m))[m
+    [31m{[m
+      [01;30mdrawSelection[m[31m([mview[31m);[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+  [01;30mdrawCursor[m[31m([mview[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mwidgetAt[m[31m([m[37mwidget_t[m [31m*[mwidget[31m,[m [32mint[m x[31m,[m [32mint[m y[31m)[m
+[31m{[m
+  [01;30massert[m[31m([mcontext[31m.[mw [31m>=[m [35m0[m[31m);[m
+  [01;30massert[m[31m([mcontext[31m.[mh [31m>=[m [35m0[m[31m);[m
+
+  [01;34mif[m [31m([mx [31m>=[m context[31m.[mw [31m||[m y [31m>=[m context[31m.[mh[31m)[m
+    [31m{[m
+      context[31m.[mwid [31m=[m [31m-[m[35m1[m[31m;[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+
+  [01;34mswitch[m [31m([mwidget[31m->[mtag[31m)[m [31m{[m
+  [01;34mcase[m HCAT[31m:[m [31m{[m
+    [32mint[m w [31m=[m [01;30mwidgetWidth[m[31m([mwidget[31m->[ma[31m.[mchild[31m);[m
+    [01;34mif[m [31m([mx [31m<[m w[31m)[m [31m{[m
+      context[31m.[mw [31m=[m w[31m;[m
+      [01;30mwidgetAt[m[31m([mwidget[31m->[ma[31m.[mchild[31m,[m x[31m,[m y[31m);[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+    context[31m.[mw [31m=[m context[31m.[mw [31m-[m w[31m;[m
+    context[31m.[mx [31m+=[m w[31m;[m
+    [01;30mwidgetAt[m[31m([mwidget[31m->[mb[31m.[mchild[31m,[m x [31m-[m w[31m,[m y[31m);[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m HCATR[31m:[m [31m{[m
+    [32mint[m w [31m=[m context[31m.[mw [31m-[m [01;30mwidgetWidth[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+    [01;34mif[m [31m([mcontext[31m.[mx [31m<[m w[31m)[m [31m{[m
+      context[31m.[mw [31m=[m w[31m;[m
+      [01;30mwidgetAt[m[31m([mwidget[31m->[ma[31m.[mchild[31m,[m x[31m,[m y[31m);[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+    context[31m.[mw [31m=[m context[31m.[mw [31m-[m w[31m;[m
+    context[31m.[mx [31m+=[m w[31m;[m
+    [01;30mwidgetAt[m[31m([mwidget[31m->[mb[31m.[mchild[31m,[m x [31m-[m w[31m,[m y[31m);[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m VCAT[31m:[m [31m{[m
+    [32mint[m h [31m=[m [01;30mwidgetHeight[m[31m([mwidget[31m->[ma[31m.[mchild[31m);[m
+    [01;34mif[m [31m([mcontext[31m.[my [31m<[m h[31m)[m [31m{[m
+      context[31m.[mh [31m=[m h[31m;[m
+      [01;30mwidgetAt[m[31m([mwidget[31m->[ma[31m.[mchild[31m,[m x[31m,[m y[31m);[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+    context[31m.[mh [31m=[m context[31m.[mh [31m-[m h[31m;[m
+    context[31m.[my [31m+=[m h[31m;[m
+    [01;30mwidgetAt[m[31m([mwidget[31m->[mb[31m.[mchild[31m,[m x[31m,[m y [31m-[m h[31m);[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m VCATR[31m:[m [31m{[m
+    [32mint[m h [31m=[m context[31m.[mh [31m-[m [01;30mwidgetHeight[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+    [01;34mif[m [31m([mcontext[31m.[my [31m<[m h[31m)[m [31m{[m
+      context[31m.[mh [31m=[m h[31m;[m
+      [01;30mwidgetAt[m[31m([mwidget[31m->[ma[31m.[mchild[31m,[m x[31m,[m y[31m);[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+    context[31m.[mh [31m=[m context[31m.[mh [31m-[m h[31m;[m
+    context[31m.[my [31m+=[m h[31m;[m
+    [01;30mwidgetAt[m[31m([mwidget[31m->[mb[31m.[mchild[31m,[m x[31m,[m y [31m-[m h[31m);[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m OVER[31m:[m
+    [01;30mwidgetAt[m[31m([mwidget[31m->[ma[31m.[mchild[31m,[m x[31m,[m y[31m);[m
+    [01;34mreturn[m[31m;[m
+  [01;34mcase[m WID[31m:[m
+    context[31m.[mwid [31m=[m widget[31m->[ma[31m.[mwid[31m;[m
+    [01;30mwidgetAt[m[31m([mwidget[31m->[mb[31m.[mchild[31m,[m x[31m,[m y[31m);[m
+    [01;34mreturn[m[31m;[m
+  [01;34mcase[m COLOR[31m:[m [31m// fall through[m
+  [01;34mcase[m FONT[31m:[m [31m// fall through[m
+    [01;30mwidgetAt[m[31m([mwidget[31m->[mb[31m.[mchild[31m,[m x[31m,[m y[31m);[m
+    [01;34mreturn[m[31m;[m
+  [01;34mcase[m SCROLL_Y[31m:[m [31m{[m
+    [32mint[m dy [31m=[m widget[31m->[ma[31m.[m[01;30mscrollYFun[m[31m([mwidget[31m->[mc[31m.[mdata[31m);[m
+    context[31m.[my [31m+=[m dy[31m;[m
+    [01;30mwidgetAt[m[31m([mwidget[31m->[mb[31m.[mchild[31m,[m x[31m,[m y [31m+[m dy[31m);[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+[01;37m  default:[m
+    [01;30massert[m[31m([mwidget[31m->[mtag [31m==[m VSPC [31m||[m widget[31m->[mtag [31m==[m HSPC [31m||[m widget[31m->[mtag [31m==[m DRAW[31m);[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+[31m}[m
+[32mvoid[m [01;30mwidgetDraw[m[31m([m[37mwidget_t[m [31m*[mwidget[31m)[m
+[31m{[m
+  [01;34mswitch[m [31m([mwidget[31m->[mtag[31m)[m [31m{[m
+  [01;34mcase[m HCAT[31m:[m [31m{[m
+    [32mint[m x [31m=[m context[31m.[mx[31m;[m
+    [32mint[m w [31m=[m context[31m.[mw[31m;[m
+    [32mint[m wa [31m=[m [01;30mwidgetWidth[m[31m([mwidget[31m->[ma[31m.[mchild[31m);[m
+
+    context[31m.[mx [31m+=[m wa[31m;[m
+    context[31m.[mw [31m=[m context[31m.[mw [31m-[m wa[31m;[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+
+    context[31m.[mx [31m=[m x[31m;[m
+    context[31m.[mw [31m=[m wa[31m;[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[ma[31m.[mchild[31m);[m
+
+    context[31m.[mw [31m=[m w[31m;[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m HCATR[31m:[m [31m{[m
+    [32mint[m x [31m=[m context[31m.[mx[31m;[m
+    [32mint[m w [31m=[m context[31m.[mw[31m;[m
+
+    context[31m.[mw [31m=[m context[31m.[mw [31m-[m [01;30mwidgetWidth[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[ma[31m.[mchild[31m);[m
+
+    context[31m.[mx [31m+=[m context[31m.[mw[31m;[m
+    context[31m.[mw [31m=[m w [31m-[m context[31m.[mw[31m;[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+
+    context[31m.[mx [31m=[m x[31m;[m
+    context[31m.[mw [31m=[m w[31m;[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m VCAT[31m:[m [31m{[m
+    [32mint[m y [31m=[m context[31m.[my[31m;[m
+    [32mint[m h [31m=[m context[31m.[mh[31m;[m
+
+    context[31m.[mh [31m=[m [01;30mwidgetHeight[m[31m([mwidget[31m->[ma[31m.[mchild[31m);[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[ma[31m.[mchild[31m);[m
+
+    context[31m.[my [31m+=[m context[31m.[mh[31m;[m
+    context[31m.[mh [31m=[m h [31m-[m context[31m.[mh[31m;[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+
+    context[31m.[mh [31m=[m h[31m;[m
+    context[31m.[my [31m=[m y[31m;[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m VCATR[31m:[m [31m{[m
+    [32mint[m y [31m=[m context[31m.[my[31m;[m
+    [32mint[m h [31m=[m context[31m.[mh[31m;[m
+
+    context[31m.[mh [31m=[m context[31m.[mh [31m-[m [01;30mwidgetHeight[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[ma[31m.[mchild[31m);[m
+
+    context[31m.[my [31m+=[m context[31m.[mh[31m;[m
+    context[31m.[mh [31m=[m h [31m-[m context[31m.[mh[31m;[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+
+    context[31m.[mh [31m=[m h[31m;[m
+    context[31m.[my [31m=[m y[31m;[m
+    [01;30mcontextSetViewport[m[31m();[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m OVER[31m:[m [31m{[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[ma[31m.[mchild[31m);[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m SCROLL_Y[31m:[m [31m{[m
+    [32mint[m dy [31m=[m context[31m.[mdy[31m;[m
+    context[31m.[mdy [31m+=[m widget[31m->[ma[31m.[m[01;30mscrollYFun[m[31m([mwidget[31m->[mc[31m.[mdata[31m);[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+    context[31m.[mdy [31m=[m dy[31m;[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m FONT[31m:[m [31m{[m
+    [37mfont_t[m [31m*[mfont [31m=[m context[31m.[mfont[31m;[m
+    context[31m.[mfont [31m=[m [31m*[mwidget[31m->[ma[31m.[mfont[31m;[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+    context[31m.[mfont [31m=[m font[31m;[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m WID[31m:[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+    [01;34mreturn[m[31m;[m
+  [01;34mcase[m COLOR[31m:[m [31m{[m
+    [32mint[m color [31m=[m context[31m.[mcolor[31m;[m
+    context[31m.[mcolor [31m=[m [31m*[mwidget[31m->[ma[31m.[mcolor[31m;[m
+    [01;30msetDrawColor[m[31m([mcontext[31m.[mcolor[31m);[m
+    [01;30mwidgetDraw[m[31m([mwidget[31m->[mb[31m.[mchild[31m);[m
+    context[31m.[mcolor [31m=[m color[31m;[m
+    [01;30msetDrawColor[m[31m([mcontext[31m.[mcolor[31m);[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+  [01;34mcase[m DRAW[31m:[m
+    widget[31m->[ma[31m.[m[01;30mdrawFun[m[31m([mwidget[31m->[mb[31m.[mdata[31m);[m
+    [01;34mreturn[m[31m;[m
+[01;37m  default:[m
+    [01;30massert[m[31m([mwidget[31m->[mtag [31m==[m VSPC [31m||[m widget[31m->[mtag [31m==[m HSPC[31m);[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+[31m}[m
+
+[32mvoid[m [01;30mcontextReinit[m[31m()[m
+[31m{[m
+  context[31m.[mx [31m=[m [35m0[m[31m;[m
+  context[31m.[my [31m=[m [35m0[m[31m;[m
+  context[31m.[mcolor [31m=[m [35m0xffffffff[m[31m;[m
+  context[31m.[mfont [31m=[m [31m&[mst[31m.[mfont[31m;[m
+  context[31m.[mw [31m=[m st[31m.[mwindow[31m.[mwidth[31m;[m
+  context[31m.[mh [31m=[m st[31m.[mwindow[31m.[mheight[31m;[m
+  context[31m.[mdy [31m=[m [35m0[m[31m;[m
+  context[31m.[mwid [31m=[m [31m-[m[35m1[m[31m;[m
+  [37mSDL_Rect[m rect[31m;[m
+  rect[31m.[mx [31m=[m [35m0[m[31m;[m
+  rect[31m.[my [31m=[m [35m0[m[31m;[m
+  rect[31m.[mw [31m=[m context[31m.[mw[31m;[m
+  rect[31m.[mh [31m=[m context[31m.[mh[31m;[m
+  [01;30msetViewport[m[31m(&[mrect[31m);[m
+  [01;30msetDrawColor[m[31m([mcontext[31m.[mcolor[31m);[m
+[31m}[m
+[32mvoid[m [01;30mstDraw[m[31m([m[32mvoid[m[31m)[m
+[31m{[m
+  [01;30msetDrawColor[m[31m([m[35m0x00ff00ff[m[31m);[m
+  [01;30mrendererClear[m[31m();[m
+  [01;30mcontextReinit[m[31m();[m
+  [01;30mwidgetDraw[m[31m([mgui[31m);[m
+  [01;30mrendererPresent[m[31m();[m
+[31m}[m
+
+[32mvoid[m [01;30mwindowInit[m[31m([m[37mwindow_t[m [31m*[mwin[31m,[m [32mint[m width[31m,[m [32mint[m height[31m)[m
+[31m{[m
+    win[31m->[mwindow [31m=[m [01;30mdieIfNull[m[31m([m[01;30mSDL_CreateWindow[m[31m([m[31m"Editor"[m[31m,[m [35m0[m[31m,[m [35m0[m[31m,[m width[31m,[m height[31m,[m SDL_WINDOW_RESIZABLE [31m|[m SDL_WINDOW_ALLOW_HIGHDPI[31m));[m
+
+    win[31m->[mwidth [31m=[m width[31m;[m
+    win[31m->[mheight [31m=[m height[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mframeResize[m[31m([m[37mframe_t[m [31m*[mframe[31m)[m
+[31m{[m
+  frame[31m->[mwidth [31m=[m st[31m.[mwindow[31m.[mwidth [31m/[m [35m3[m[31m;[m
+  frame[31m->[mheight [31m=[m st[31m.[mwindow[31m.[mheight [31m-[m st[31m.[mfont[31m.[mlineSkip[31m;[m
+[31m}[m
+[32mvoid[m [01;30mmessage[m[31m([m[32mchar[m [31m*[ms[31m);[m
+
+[32mvoid[m [01;30mstResize[m[31m([m[32mvoid[m[31m)[m
+[31m{[m
+    [32mint[m w[31m;[m
+    [32mint[m h[31m;[m
+
+    [01;30mSDL_GetWindowSize[m[31m([mst[31m.[mwindow[31m.[mwindow[31m,[m [31m&[mw[31m,[m [31m&[mh[31m);[m
+    st[31m.[mwindow[31m.[mwidth [31m=[m w[31m;[m
+    st[31m.[mwindow[31m.[mheight [31m=[m h[31m;[m
+    [01;34mfor[m[31m([m[32mint[m i [31m=[m [35m0[m[31m;[m i [31m<[m [01;30mnumFrames[m[31m();[m [31m++[mi[31m)[m
+      [31m{[m
+        [01;30mframeResize[m[31m([m[01;30mframeOf[m[31m([mi[31m));[m
+      [31m}[m
+   [32mchar[m s[31m[[m[35m1024[m[31m];[m
+   [01;30msprintf[m[31m([ms[31m,[m [31m"resize %dx%d"[m[31m,[m w[31m,[m h[31m);[m
+   [01;30mmessage[m[31m([ms[31m);[m
+
+[31m}[m
+
+[32mvoid[m [01;30minsertNewElem[m[31m()[m
+[31m{[m
+  [01;30mbackwardSOF[m[31m();[m
+  [01;30mbuiltinInsertString[m[31m([m[31m"[m[35m\0\n[m[31m"[m[31m,[m [35m2[m[31m);[m
+[31m}[m
+
+[31m// BAL: delete[m
+[31m/* void buffersBufInit() */[m
+[31m/* { */[m
+[31m/*   setFocusView(BUFFERS_BUF); */[m
+
+[31m/*   for(int i = 0; i < numViews(); ++i) */[m
+[31m/*   { */[m
+[31m/*     view_t *view = arrayElemAt(&st.views, i); */[m
+[31m/*     insertNewElem(); */[m
+[31m/*     builtinInsertCString(docOf(view)->filepath); */[m
+[31m/*   } */[m
+[31m/* } */[m
+
+[32mvoid[m [01;30mdrawFrameCursor[m[31m([m[37mframe_t[m [31m*[mframe[31m)[m
+[31m{[m
+  [01;30mdrawCursorOrSelection[m[31m([mframe[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mdrawFrameDoc[m[31m([m[37mframe_t[m [31m*[mframe[31m)[m
+[31m{[m
+  [01;30mdrawString[m[31m(&[m[01;30mdocOf[m[31m([m[01;30mviewOf[m[31m([mframe[31m))->[mcontents[31m);[m
+[31m}[m
+
+[32mint[m [01;30mframeScrollY[m[31m([m[37mframe_t[m [31m*[mframe[31m)[m
+[31m{[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mviewOf[m[31m([mframe[31m);[m
+  [01;34mreturn[m view[31m->[mscrollY[31m;[m
+[31m}[m
+
+[37mwidget_t[m [31m*[m[01;30mframe[m[31m([m[32mint[m i[31m)[m
+[31m{[m
+  [37mframe_t[m [31m*[mframe [31m=[m [01;30marrayElemAt[m[31m(&[mst[31m.[mframes[31m,[m i[31m);[m
+  [37mwidget_t[m [31m*[mtextarea [31m=[m [01;30mwid[m[31m([mi[31m,[m [01;30mscrollY[m[31m([mframeScrollY[31m,[m frame[31m,[m [01;30mover[m[31m([m[01;30mdraw[m[31m([mdrawFrameDoc[31m,[m frame[31m),[m [01;30mdraw[m[31m([mdrawFrameCursor[31m,[m frame[31m))));[m
+  [37mwidget_t[m [31m*[mstatus [31m=[m [01;30mover[m[31m([m[01;30mdraw[m[31m([mdrawString[31m,[m [31m&[mframe[31m->[mstatus[31m),[m [01;30mvspc[m[31m(&[mst[31m.[mfont[31m.[mlineSkip[31m));[m
+  [37mwidget_t[m [31m*[mbackground [31m=[m [01;30mcolor[m[31m(&[mframe[31m->[mcolor[31m,[m [01;30mover[m[31m([m[01;30mbox[m[31m(),[m [01;30mhspc[m[31m(&[mframe[31m->[mwidth[31m)));[m
+  [01;34mreturn[m [01;30mover[m[31m([m[01;30mvcatr[m[31m([mtextarea[31m,[m status[31m),[m background[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mmessage[m[31m([m[32mchar[m [31m*[ms[31m)[m
+[31m{[m
+  [32mint[m refFrame [31m=[m [01;30mfocusFrameRef[m[31m();[m
+  [01;30msetFocusFrame[m[31m([mBUILTINS_FRAME[31m);[m
+  [01;30msetFocusView[m[31m([mMESSAGE_BUF[31m);[m
+  [01;30minsertNewElem[m[31m();[m
+  [01;30mbuiltinInsertCString[m[31m([ms[31m);[m
+  [01;30msetFocusFrame[m[31m([mrefFrame[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mhelpBufInit[m[31m([m[32mvoid[m[31m);[m
+
+[32mvoid[m [01;30mstInit[m[31m([m[32mint[m argc[31m,[m [32mchar[m [31m**[margv[31m)[m
+[31m{[m
+  argc[31m--;[m
+  argv[31m++;[m
+  [01;30mmemset[m[31m(&[mst[31m,[m [35m0[m[31m,[m [01;34msizeof[m[31m([mstate_t[31m));[m
+
+  [01;34mif[m [31m([m[01;30mSDL_Init[m[31m([mSDL_INIT_VIDEO [31m|[m SDL_INIT_TIMER[31m)[m [31m!=[m [35m0[m[31m)[m [01;30mdie[m[31m([m[01;30mSDL_GetError[m[31m());[m
+
+  [01;30mwindowInit[m[31m(&[mst[31m.[mwindow[31m,[m INIT_WINDOW_WIDTH[31m,[m INIT_WINDOW_HEIGHT[31m);[m
+
+  [01;30mrendererInit[m[31m([mst[31m.[mwindow[31m.[mwindow[31m);[m
+
+  [01;30minitFont[m[31m(&[mst[31m.[mfont[31m,[m INIT_FONT_FILE[31m,[m INIT_FONT_SIZE[31m);[m
+
+  [01;30minitMacros[m[31m();[m
+
+
+    [01;30marrayInit[m[31m(&[mst[31m.[mdocs[31m,[m [01;34msizeof[m[31m([mdoc_t[31m));[m
+    [01;30marrayInit[m[31m(&[mst[31m.[mframes[31m,[m [01;34msizeof[m[31m([mframe_t[31m));[m
+    [01;30marrayInit[m[31m(&[mst[31m.[mreplace[31m,[m [01;34msizeof[m[31m([m[32mchar[m[31m));[m
+
+    [01;30mkeysymInit[m[31m();[m
+
+    [01;34mfor[m[31m([m[32mint[m i [31m=[m [35m0[m[31m;[m i [31m<[m NUM_BUILTIN_BUFFERS[31m;[m [31m++[mi[31m)[m
+      [31m{[m
+        [37mdoc_t[m [31m*[mdoc [31m=[m [01;30marrayPushUninit[m[31m(&[mst[31m.[mdocs[31m);[m
+        [01;30mdocInit[m[31m([mdoc[31m,[m builtinBufferTitle[31m[[mi[31m],[m false[31m,[m builtinBufferReadOnly[31m[[mi[31m]);[m
+      [31m}[m
+
+    [01;34mfor[m[31m([m[32mint[m i [31m=[m [35m0[m[31m;[m i [31m<[m argc[31m;[m [31m++[mi[31m)[m [31m{[m
+      [37mdoc_t[m [31m*[mdoc [31m=[m [01;30marrayPushUninit[m[31m(&[mst[31m.[mdocs[31m);[m
+      [01;30mdocInit[m[31m([mdoc[31m,[m argv[31m[[mi[31m],[m true[31m,[m false[31m);[m
+      [01;30mdocRead[m[31m([mdoc[31m);[m
+    [31m}[m
+
+    [01;34mfor[m[31m([m[32mint[m i [31m=[m [35m0[m[31m;[m i [31m<[m NUM_FRAMES[31m;[m [31m++[mi[31m)[m
+    [31m{[m
+        [37mframe_t[m [31m*[mv [31m=[m [01;30marrayPushUninit[m[31m(&[mst[31m.[mframes[31m);[m
+        [01;30mframeInit[m[31m([mv[31m);[m
+        [01;34mif[m [31m([mi [31m==[m BUILTINS_FRAME[31m)[m
+          [31m{[m
+            [01;34mfor[m[31m([m[32mint[m j [31m=[m [35m0[m[31m;[m j [31m<[m NUM_BUILTIN_BUFFERS[31m;[m [31m++[mj[31m)[m
+              [31m{[m
+                [01;30mviewInit[m[31m([m[01;30marrayPushUninit[m[31m(&[mv[31m->[mviews[31m),[m j[31m);[m
+              [31m}[m
+          [31m}[m
+        [01;34melse[m
+          [31m{[m
+            [01;34mfor[m[31m([m[32mint[m j [31m=[m [35m0[m[31m;[m j [31m<[m argc[31m;[m [31m++[mj[31m)[m
+              [31m{[m
+                [01;30mviewInit[m[31m([m[01;30marrayPushUninit[m[31m(&[mv[31m->[mviews[31m),[m NUM_BUILTIN_BUFFERS [31m+[m j[31m);[m
+              [31m}[m
+          [31m}[m
+        [01;30msetFrameView[m[31m([mi[31m,[m [35m0[m[31m);[m
+    [31m}[m
+
+    [01;30msetFocusFrame[m[31m([mMAIN_FRAME[31m);[m
+
+    gui [31m=[m [01;30mhcat[m[31m([m[01;30mframe[m[31m([m[35m0[m[31m),[m [01;30mhcat[m[31m([m[01;30mframe[m[31m([m[35m1[m[31m),[m [01;30mframe[m[31m([m[35m2[m[31m)));[m
+
+    [01;30mmessage[m[31m([m[31m"hello from the beyond"[m[31m);[m
+
+    [01;30mhelpBufInit[m[31m();[m
+
+    [01;30mstResize[m[31m();[m
+
+    [31m// BAL: buffersBufInit();[m
+
+
+    [31m/* setFocusFrame(SECONDARY_FRAME); */[m
+    [31m/* stSetViewFocus(MESSAGE_BUF); */[m
+    [31m/* setFocusFrame(BUILTINS_FRAME); */[m
+    [31m/* stSetViewFocus(BUFFERS_BUF); */[m
+    [31m/* setFocusFrame(MAIN_FRAME); */[m
+    [31m/* stSetViewFocus(NUM_BUILTIN_BUFFERS); */[m
+
+[31m}[m
+
+[32mvoid[m [01;30mquitEvent[m[31m()[m
+[31m{[m
+    [01;34mfor[m[31m([m[32mint[m i [31m=[m NUM_BUILTIN_BUFFERS[31m;[m i [31m<[m st[31m.[mdocs[31m.[mnumElems[31m;[m [31m++[mi[31m)[m
+    [31m{[m
+        [37mdoc_t[m [31m*[mdoc [31m=[m [01;30marrayElemAt[m[31m(&[mst[31m.[mdocs[31m,[m i[31m);[m
+        [01;30massert[m[31m([mdoc[31m);[m
+        [01;30mdocWrite[m[31m([mdoc[31m);[m
+    [31m}[m
+    [01;30mTTF_Quit[m[31m();[m
+    [01;30mSDL_Quit[m[31m();[m
+    [01;30mexit[m[31m([m[35m0[m[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mwindowEvent[m[31m()[m
+[31m{[m
+    [01;34mswitch[m [31m([mst[31m.[mevent[31m.[mwindow[31m.[mevent[31m)[m [31m{[m
+        [01;34mcase[m SDL_WINDOWEVENT_SIZE_CHANGED[31m:[m
+            [01;30mstResize[m[31m();[m
+            [01;34mbreak[m[31m;[m
+[01;37m        default:[m
+            [01;34mbreak[m[31m;[m
+    [31m}[m
+[31m}[m
+
+[32mvoid[m [01;30mselectChars[m[31m()[m
+[31m{[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mfocusView[m[31m();[m
+  [01;30mcursorCopy[m[31m(&[mview[31m->[mselection[31m,[m [31m&[mview[31m->[mcursor[31m);[m
+  view[31m->[mselectMode [31m=[m CHAR_SELECT[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mselectLines[m[31m()[m
+[31m{[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mfocusView[m[31m();[m
+  [01;30mcursorCopy[m[31m(&[mview[31m->[mselection[31m,[m [31m&[mview[31m->[mcursor[31m);[m
+  view[31m->[mselectMode [31m=[m LINE_SELECT[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mselectionCancel[m[31m()[m
+[31m{[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mfocusView[m[31m();[m
+  view[31m->[mselectMode [31m=[m NO_SELECT[31m;[m
+[31m}[m
+
+[32mint[m [01;30mdocHeight[m[31m([m[37mdoc_t[m [31m*[mdoc[31m)[m
+[31m{[m
+  [01;34mreturn[m doc[31m->[mnumLines [31m*[m st[31m.[mfont[31m.[mlineSkip[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mfocusScrollY[m[31m([m[32mint[m dR[31m)[m
+[31m{[m
+  [37mframe_t[m [31m*[mframe [31m=[m [01;30mfocusFrame[m[31m();[m
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mfocusDoc[m[31m();[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mfocusView[m[31m();[m
+
+  view[31m->[mscrollY [31m+=[m dR [31m*[m st[31m.[mfont[31m.[mlineSkip[31m;[m
+
+  view[31m->[mscrollY [31m=[m [01;30mclamp[m[31m([mframe[31m->[mheight [31m-[m [01;30mdocHeight[m[31m([mdoc[31m)[m [31m-[m st[31m.[mfont[31m.[mlineSkip[31m,[m view[31m->[mscrollY[31m,[m [35m0[m[31m);[m
+[31m}[m
+
+[31m// BAL: do this on mouse clicks...[m
+[32mvoid[m [01;30mfocusTrackCursor[m[31m([m[32mint[m height[31m)[m
+[31m{[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mfocusView[m[31m();[m
+  [32mint[m scrollR [31m=[m view[31m->[mscrollY [31m/[m st[31m.[mfont[31m.[mlineSkip[31m;[m
+
+  [32mint[m dR [31m=[m scrollR [31m+[m [31m([mst[31m.[mmouseSelectionInProgress [31m?[m view[31m->[mselection[31m.[mrow [31m:[m view[31m->[mcursor[31m.[mrow[31m);[m
+
+  [01;34mif[m [31m([mdR [31m<[m height[31m)[m
+    [31m{[m
+      [01;30mfocusScrollY[m[31m([mheight [31m-[m dR[31m);[m
+    [31m}[m [01;34melse[m [31m{[m
+    [32mint[m lastRow [31m=[m [01;30mframeRows[m[31m([m[01;30mfocusFrame[m[31m())[m [31m-[m height[31m;[m
+    [01;34mif[m [31m([mdR [31m>[m lastRow[31m)[m [31m{[m
+      [01;30mfocusScrollY[m[31m([mlastRow [31m-[m dR[31m);[m
+    [31m}[m
+  [31m}[m
+[31m}[m
+
+[32mvoid[m [01;30mselectionSetRowCol[m[31m()[m
+[31m{[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mfocusView[m[31m();[m
+  [32mint[m column [31m=[m [01;30mxToColumn[m[31m([mst[31m.[mevent[31m.[mbutton[31m.[mx [31m-[m st[31m.[mdownCxtX[31m);[m
+  [01;30mcursorSetRowCol[m[31m(&[mview[31m->[mselection[31m,[m [01;30myToRow[m[31m([mst[31m.[mevent[31m.[mbutton[31m.[my [31m-[m st[31m.[mdownCxtY[31m),[m column[31m,[m [01;30mfocusDoc[m[31m());[m
+[31m}[m
+
+[32mvoid[m [01;30mselectionEnd[m[31m()[m
+[31m{[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mfocusView[m[31m();[m
+  view[31m->[mselectMode [31m=[m NO_SELECT[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mmouseButtonUpEvent[m[31m()[m
+[31m{[m
+  st[31m.[mmouseSelectionInProgress [31m=[m false[31m;[m
+  [01;30mselectionSetRowCol[m[31m();[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mfocusView[m[31m();[m
+  [01;34mif[m [31m([m[01;30mcursorEq[m[31m(&[mview[31m->[mcursor[31m,[m [31m&[mview[31m->[mselection[31m))[m [01;30mselectionEnd[m[31m();[m
+[31m}[m
+
+[32mvoid[m [01;30mmouseButtonDownEvent[m[31m()[m
+[31m{[m
+  [01;30mcontextReinit[m[31m();[m
+  [01;30mwidgetAt[m[31m([mgui[31m,[m st[31m.[mevent[31m.[mbutton[31m.[mx[31m,[m st[31m.[mevent[31m.[mbutton[31m.[my[31m);[m
+  [01;34mif[m [31m([mcontext[31m.[mwid [31m<[m [35m0[m [31m||[m context[31m.[mwid [31m>[m [01;30mnumFrames[m[31m())[m
+    [31m{[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+
+  st[31m.[mmouseSelectionInProgress [31m=[m true[31m;[m
+  [01;30msetFocusFrame[m[31m([mcontext[31m.[mwid[31m);[m
+
+  [37mview_t[m [31m*[mview [31m=[m [01;30mfocusView[m[31m();[m
+  view[31m->[mselectMode [31m=[m CHAR_SELECT[31m;[m
+  [01;34mif[m [31m([mst[31m.[mevent[31m.[mbutton[31m.[mbutton [31m==[m SDL_BUTTON_RIGHT[31m)[m view[31m->[mselectMode [31m=[m LINE_SELECT[31m;[m
+
+  st[31m.[mdownCxtX [31m=[m context[31m.[mx[31m;[m
+  st[31m.[mdownCxtY [31m=[m context[31m.[my[31m;[m
+
+  [01;30mselectionSetRowCol[m[31m();[m
+  [01;30mcursorCopy[m[31m(&[mview[31m->[mcursor[31m,[m [31m&[mview[31m->[mselection[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mmouseMotionEvent[m[31m()[m
+[31m{[m
+    [01;34mif[m [31m([mst[31m.[mmouseSelectionInProgress[31m)[m
+    [31m{[m
+      [01;30mselectionSetRowCol[m[31m();[m
+      [31m/* int height = 1; */[m
+      [31m/* view_t *view = focusView(); */[m
+      [31m/* int scrollR = view->scrollY / st.font.lineSkip; */[m
+
+      [31m/* int dR = scrollR + view->selection.row; */[m
+      [31m/* if (dR < height) */[m
+      [31m/*   { */[m
+      [31m/*     focusScrollY(height - dR); */[m
+      [31m/*     SDL_PushEvent(&st.event); */[m
+      [31m/*   } else { */[m
+      [31m/*   int lastRow = frameRows(focusFrame()) - height; */[m
+      [31m/*   if (dR > lastRow) { */[m
+      [31m/*     focusScrollY(lastRow - dR); */[m
+      [31m/*     SDL_PushEvent(&st.event); */[m
+      [31m/*   } */[m
+      [31m/* } */[m
+    [31m}[m
+[31m}[m
+
+[32mvoid[m [01;30mmouseWheelEvent[m[31m()[m
+[31m{[m
+  [01;30mfocusScrollY[m[31m([mst[31m.[mevent[31m.[mwheel[31m.[my[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mdoKeyPress[m[31m([m[37muchar[m c[31m)[m
+[31m{[m
+    keyHandler[31m[[m[01;30mfocusView[m[31m()->[mmode[31m][[mc[31m]([mc[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mrecordKeyPress[m[31m([m[37muchar[m c[31m)[m
+[31m{[m
+  [32mint[m refFrame [31m=[m [01;30mfocusFrameRef[m[31m();[m
+  [01;34mif[m [31m([mrefFrame [31m==[m BUILTINS_FRAME[31m)[m [01;34mreturn[m[31m;[m
+  [01;30msetFocusFrame[m[31m([mBUILTINS_FRAME[31m);[m
+  [01;30msetFocusView[m[31m([mMACRO_BUF[31m);[m
+  [01;30mbuiltinInsertChar[m[31m([mc[31m);[m
+  [01;30msetFocusFrame[m[31m([mrefFrame[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mkeyDownEvent[m[31m()[m
+[31m{[m
+    [37mSDL_Keycode[m sym [31m=[m st[31m.[mevent[31m.[mkey[31m.[mkeysym[31m.[msym[31m;[m
+    [01;34mif[m [31m([msym [31m==[m SDLK_LSHIFT [31m||[m sym [31m==[m SDLK_RSHIFT[31m)[m [01;34mreturn[m[31m;[m
+    [37muchar[m c [31m=[m [01;30mgetKeyChar[m[31m([msym[31m);[m
+    [32mbool[m wasRecording [31m=[m st[31m.[misRecording[31m;[m
+    [01;30mdoKeyPress[m[31m([mc[31m);[m
+    [01;34mif[m [31m([mwasRecording [31m&&[m st[31m.[misRecording[31m)[m
+    [31m{[m
+        [01;30mrecordKeyPress[m[31m([mc[31m);[m
+    [31m}[m
+[31m}[m
+
+[32mvoid[m [01;30mstringAppendNull[m[31m([m[37mstring_t[m [31m*[ms[31m)[m
+[31m{[m
+  [32mchar[m [31m*[mc [31m=[m [01;30marrayPushUninit[m[31m([ms[31m);[m
+  [31m*[mc [31m=[m [31m'[m[35m\0[m[31m'[m[31m;[m
+  [01;30marrayPop[m[31m([ms[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mdoSearch[m[31m([m[37mdoc_t[m [31m*[mdoc[31m,[m [32mchar[m [31m*[msearch[31m)[m
+[31m{[m
+  [01;30massert[m[31m([msearch[31m);[m
+  [01;30mstringAppendNull[m[31m(&[mdoc[31m->[mcontents[31m);[m
+  [32mchar[m [31m*[mhaystack [31m=[m doc[31m->[mcontents[31m.[mstart[31m;[m
+  [32mchar[m [31m*[mreplace [31m=[m [01;30mdieIfNull[m[31m([m[01;30mstrdup[m[31m([msearch[31m));[m
+  [32mchar[m [31m*[mtemp [31m=[m replace[31m;[m
+  [32mchar[m [31m*[mneedle [31m=[m [01;30mstrsep[m[31m(&[mreplace[31m,[m [31m"/"[m[31m);[m
+  [31m// needle is length 0 if no needle[m
+  [31m// replace is NULL if no replace[m
+  st[31m.[msearchLen [31m=[m [01;30mstrlen[m[31m([mneedle[31m);[m
+  st[31m.[misReplace [31m=[m replace [31m!=[m NULL[31m;[m
+  [01;30marrayReinit[m[31m(&[mst[31m.[mreplace[31m);[m
+  [37msearchBuffer_t[m [31m*[mresults [31m=[m [31m&[mdoc[31m->[msearchResults[31m;[m
+  [01;30marrayReinit[m[31m([mresults[31m);[m
+  [01;34mif[m [31m([mst[31m.[misReplace[31m)[m [31m{[m
+    [01;30marrayInsert[m[31m(&[mst[31m.[mreplace[31m,[m [35m0[m[31m,[m replace[31m,[m [01;30mstrlen[m[31m([mreplace[31m));[m
+  [31m}[m
+  [01;34mif[m [31m([mst[31m.[msearchLen [31m==[m [35m0[m[31m)[m [01;34mgoto[m done[31m;[m
+
+  [32mchar[m [31m*[mp [31m=[m haystack[31m;[m
+  [01;34mwhile[m [31m(([mp [31m=[m [01;30mstrcasestr[m[31m([mp[31m,[m needle[31m)))[m
+    [31m{[m
+      [32mint[m [31m*[moff [31m=[m [01;30marrayPushUninit[m[31m([mresults[31m);[m
+      [31m*[moff [31m=[m p [31m-[m haystack[31m;[m
+      p[31m++;[m
+    [31m}[m
+
+[01;37m done:[m
+  [01;30mfree[m[31m([mtemp[31m);[m
+[31m}[m
+
+[32mchar[m [31m*[m[01;30mfocusElem[m[31m()[m
+[31m{[m
+  [01;34mif[m [31m([m[01;30mfocusFrameRef[m[31m()[m [31m!=[m BUILTINS_FRAME[31m)[m [01;34mreturn[m NULL[31m;[m
+  [32mint[m offset [31m=[m [01;30mfocusView[m[31m()->[mcursor[31m.[moffset[31m;[m
+  [32mint[m i [31m=[m [01;30mdistanceToStartOfElem[m[31m([m[01;30mfocusDoc[m[31m()->[mcontents[31m.[mstart[31m,[m offset[31m);[m
+  [32mchar[m [31m*[mp [31m=[m [01;30mfocusDoc[m[31m()->[mcontents[31m.[mstart [31m+[m offset [31m+[m i[31m;[m
+  [01;34mreturn[m p[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mdoSearchIfNeeded[m[31m()[m
+[31m{[m
+  [01;34mif[m [31m([m[01;30mfocusViewRef[m[31m()[m [31m!=[m SEARCH_BUF[31m)[m [01;34mreturn[m[31m;[m
+  [32mchar[m [31m*[msearch [31m=[m [01;30mfocusElem[m[31m();[m
+  [01;34mif[m [31m(![msearch[31m)[m [01;34mreturn[m[31m;[m
+  [31m// search main frame doc[m
+  [37mframe_t[m [31m*[mframe [31m=[m [01;30mframeOf[m[31m([mMAIN_FRAME[31m);[m
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mdocOf[m[31m([m[01;30mviewOf[m[31m([mframe[31m));[m
+  [01;30mdoSearch[m[31m([mdoc[31m,[m search[31m);[m
+  [31m// search secondary frame doc (if different)[m
+  frame [31m=[m [01;30mframeOf[m[31m([mSECONDARY_FRAME[31m);[m
+  [37mdoc_t[m [31m*[mdoc1 [31m=[m [01;30mdocOf[m[31m([m[01;30mviewOf[m[31m([mframe[31m));[m
+  [01;34mif[m [31m([mdoc1 [31m==[m doc[31m)[m [01;34mreturn[m[31m;[m
+  [01;30mdoSearch[m[31m([mdoc1[31m,[m search[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mstMoveCursorOffset[m[31m([m[32mint[m offset[31m)[m
+[31m{[m
+    [01;30mcursorSetOffset[m[31m([m[01;30mfocusCursor[m[31m(),[m offset[31m,[m [01;30mfocusDoc[m[31m());[m
+    [01;30mfocusTrackCursor[m[31m([mAUTO_SCROLL_HEIGHT[31m);[m
+    [01;30mdoSearchIfNeeded[m[31m();[m
+[31m}[m
+
+[32mvoid[m [01;30mstMoveCursorRowCol[m[31m([m[32mint[m row[31m,[m [32mint[m col[31m)[m
+[31m{[m
+    [01;30mcursorSetRowCol[m[31m([m[01;30mfocusCursor[m[31m(),[m row[31m,[m col[31m,[m [01;30mfocusDoc[m[31m());[m
+    [01;30mfocusTrackCursor[m[31m([mAUTO_SCROLL_HEIGHT[31m);[m
+    [01;30mdoSearchIfNeeded[m[31m();[m
+[31m}[m
+
+[32mvoid[m [01;30mbackwardChar[m[31m()[m
+[31m{[m
+  [01;30mstMoveCursorOffset[m[31m([m[01;30mfocusCursor[m[31m()->[moffset [31m-[m [35m1[m[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mforwardChar[m[31m()[m
+[31m{[m
+  [01;30mstMoveCursorOffset[m[31m([m[01;30mfocusCursor[m[31m()->[moffset [31m+[m [35m1[m[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30msetNavigateMode[m[31m()[m
+[31m{[m
+    [01;30mfocusView[m[31m()->[mmode [31m=[m NAVIGATE_MODE[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30msetInsertMode[m[31m()[m
+[31m{[m
+  [01;34mif[m [31m([m[01;30mfocusDoc[m[31m()->[misReadOnly[31m)[m [01;34mreturn[m[31m;[m
+
+  [01;30mfocusView[m[31m()->[mmode [31m=[m INSERT_MODE[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30msetNavigateModeAndDoKeyPress[m[31m([m[37muchar[m c[31m)[m
+[31m{[m
+    [01;30msetNavigateMode[m[31m();[m
+    [01;30mdoKeyPress[m[31m([mc[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mmoveLines[m[31m([m[32mint[m dRow[31m)[m
+[31m{[m
+  [37mcursor_t[m [31m*[mcursor [31m=[m [01;30mfocusCursor[m[31m();[m
+  [32mint[m col [31m=[m cursor[31m->[mpreferredColumn[31m;[m
+
+  [01;30mstMoveCursorRowCol[m[31m([mcursor[31m->[mrow [31m+[m dRow[31m,[m col[31m);[m
+  cursor[31m->[mpreferredColumn [31m=[m col[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mbackwardLine[m[31m()[m
+[31m{[m
+    [01;30mmoveLines[m[31m(-[m[35m1[m[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mforwardLine[m[31m()[m
+[31m{[m
+    [01;30mmoveLines[m[31m([m[35m1[m[31m);[m
+[31m}[m
+
+[32mchar[m [01;30mnextCharAfterSpaces[m[31m()[m
+[31m{[m
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mfocusDoc[m[31m();[m
+  [32mchar[m [31m*[mp [31m=[m doc[31m->[mcontents[31m.[mstart [31m+[m [01;30mfocusCursor[m[31m()->[moffset[31m;[m
+  [32mchar[m [31m*[mend [31m=[m [01;30marrayTop[m[31m(&[mdoc[31m->[mcontents[31m);[m
+
+  [01;34mwhile[m[31m([mp [31m<[m end [31m&&[m [31m*[mp [31m==[m [31m' '[m[31m)[m p[31m++;[m
+  [01;34mreturn[m p [31m==[m end [31m?[m [31m'[m[35m\0[m[31m'[m [31m:[m [31m*[mp[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mforwardBlankLine[m[31m()[m
+[31m{[m
+  [01;30mbackwardSOL[m[31m();[m
+  [32mchar[m r [31m=[m [01;30mnextCharAfterSpaces[m[31m();[m
+  [01;34mwhile[m [31m([mr [31m!=[m [31m'[m[35m\0[m[31m'[m [31m&&[m r [31m!=[m [31m'[m[35m\n[m[31m'[m[31m)[m
+    [31m{[m
+      [01;30mforwardLine[m[31m();[m
+      r [31m=[m [01;30mnextCharAfterSpaces[m[31m();[m
+    [31m}[m
+  [01;34mwhile[m [31m([mr [31m!=[m [31m'[m[35m\0[m[31m'[m [31m&&[m r [31m==[m [31m'[m[35m\n[m[31m'[m[31m)[m
+    [31m{[m
+      [01;30mforwardLine[m[31m();[m
+      r [31m=[m [01;30mnextCharAfterSpaces[m[31m();[m
+    [31m}[m
+[31m}[m
+
+[32mbool[m [01;30misSOF[m[31m()[m
+[31m{[m
+  [01;34mreturn[m [01;30mfocusCursor[m[31m()->[moffset [31m==[m [35m0[m[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mbackwardBlankLine[m[31m()[m
+[31m{[m
+  [01;30mbackwardSOL[m[31m();[m
+  [32mchar[m r [31m=[m [01;30mnextCharAfterSpaces[m[31m();[m
+  [01;34mwhile[m [31m(![m[01;30misSOF[m[31m()[m [31m&&[m r [31m!=[m [31m'[m[35m\n[m[31m'[m[31m)[m
+    [31m{[m
+      [01;30mbackwardLine[m[31m();[m
+      r [31m=[m [01;30mnextCharAfterSpaces[m[31m();[m
+    [31m}[m
+  [01;34mwhile[m [31m(![m[01;30misSOF[m[31m()[m [31m&&[m r [31m==[m [31m'[m[35m\n[m[31m'[m[31m)[m
+    [31m{[m
+      [01;30mbackwardLine[m[31m();[m
+      r [31m=[m [01;30mnextCharAfterSpaces[m[31m();[m
+    [31m}[m
+[31m}[m
+
+[32mvoid[m [01;30mforwardSpace[m[31m()[m
+[31m{[m
+  [32mint[m i [31m=[m [01;30mfocusCursor[m[31m()->[moffset[31m;[m
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mfocusDoc[m[31m();[m
+  [01;30mstMoveCursorOffset[m[31m([mi [31m+[m [01;30mdistanceToNextSpace[m[31m([mdoc[31m->[mcontents[31m.[mstart [31m+[m i[31m,[m [01;30marrayTop[m[31m(&[mdoc[31m->[mcontents[31m)));[m
+[31m}[m
+
+[32mvoid[m [01;30mbackwardSpace[m[31m()[m
+[31m{[m
+  [32mint[m i [31m=[m [01;30mfocusCursor[m[31m()->[moffset[31m;[m
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mfocusDoc[m[31m();[m
+  [01;30mstMoveCursorOffset[m[31m([mi [31m+[m [01;30mdistanceToPrevSpace[m[31m([mdoc[31m->[mcontents[31m.[mstart[31m,[m doc[31m->[mcontents[31m.[mstart [31m+[m i[31m));[m
+[31m}[m
+
+[32mvoid[m [01;30mbackwardPage[m[31m()[m
+[31m{[m
+    [01;30mmoveLines[m[31m(-[m[01;30mmax[m[31m([m[35m1[m[31m,[m [01;30mframeRows[m[31m([m[01;30mfocusFrame[m[31m())[m [31m-[m AUTO_SCROLL_HEIGHT[31m));[m
+[31m}[m
+
+[32mvoid[m [01;30mforwardPage[m[31m()[m
+[31m{[m
+    [01;30mmoveLines[m[31m([m[01;30mmax[m[31m([m[35m1[m[31m,[m [01;30mframeRows[m[31m([m[01;30mfocusFrame[m[31m())[m [31m-[m AUTO_SCROLL_HEIGHT[31m));[m
+[31m}[m
+
+[32mvoid[m [01;30mbackwardSOF[m[31m()[m
+[31m{[m
+    [01;30mstMoveCursorOffset[m[31m([m[35m0[m[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mforwardEOF[m[31m()[m
+[31m{[m
+    [01;30mstMoveCursorOffset[m[31m([mINT_MAX [31m-[m [35m1[m[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mbackwardSOL[m[31m()[m
+[31m{[m
+    [01;30mstMoveCursorRowCol[m[31m([m[01;30mfocusCursor[m[31m()->[mrow[31m,[m [35m0[m[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mforwardEOL[m[31m()[m
+[31m{[m
+    [01;30mstMoveCursorRowCol[m[31m([m[01;30mfocusCursor[m[31m()->[mrow[31m,[m INT_MAX[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30minsertString[m[31m([m[32mchar[m [31m*[ms[31m,[m [37muint[m len[31m)[m
+[31m{[m
+  [01;30massert[m[31m([ms[31m);[m
+  [01;34mif[m[31m([mlen [31m<=[m [35m0[m[31m)[m [01;34mreturn[m[31m;[m
+  [01;30mdocPushInsert[m[31m([m[01;30mfocusDoc[m[31m(),[m [01;30mfocusCursor[m[31m()->[moffset[31m,[m s[31m,[m len[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mbuiltinInsertString[m[31m([m[32mchar[m [31m*[ms[31m,[m [37muint[m len[31m)[m
+[31m{[m
+  [01;30massert[m[31m([ms[31m);[m
+  [01;34mif[m[31m([mlen [31m<=[m [35m0[m[31m)[m [01;34mreturn[m[31m;[m
+  [01;30mdocInsert[m[31m([m[01;30mfocusDoc[m[31m(),[m [01;30mfocusCursor[m[31m()->[moffset[31m,[m s[31m,[m len[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30minsertCString[m[31m([m[32mchar[m [31m*[ms[31m)[m
+[31m{[m
+    [01;30massert[m[31m([ms[31m);[m
+    [01;30minsertString[m[31m([ms[31m,[m [31m([muint[31m)[m[01;30mstrlen[m[31m([ms[31m));[m
+[31m}[m
+
+[32mvoid[m [01;30mbuiltinInsertCString[m[31m([m[32mchar[m [31m*[ms[31m)[m
+[31m{[m
+  [01;30massert[m[31m([ms[31m);[m
+  [01;30mbuiltinInsertString[m[31m([ms[31m,[m [31m([muint[31m)[m[01;30mstrlen[m[31m([ms[31m));[m
+[31m}[m
+
+[32mvoid[m [01;30minsertChar[m[31m([m[37muchar[m c[31m)[m
+[31m{[m
+  [01;30minsertString[m[31m(([m[32mchar[m[31m*)&[mc[31m,[m [35m1[m[31m);[m
+  [01;30mforwardChar[m[31m();[m
+[31m}[m
+
+[32mvoid[m [01;30mbuiltinInsertChar[m[31m([m[37muchar[m c[31m)[m
+[31m{[m
+    [01;30mbuiltinInsertString[m[31m(([m[32mchar[m[31m*)&[mc[31m,[m [35m1[m[31m);[m
+    [01;30mforwardChar[m[31m();[m
+[31m}[m
+
+[32mvoid[m [01;30mhelpBufInit[m[31m()[m
+[31m{[m
+  [01;30msetFocusFrame[m[31m([mBUILTINS_FRAME[31m);[m
+  [01;30msetFocusView[m[31m([mHELP_BUF[31m);[m
+
+  [32mchar[m s[31m[[m[35m1024[m[31m];[m
+
+  [01;34mfor[m[31m([m[32mint[m i [31m=[m [35m0[m[31m;[m i [31m<[m NUM_BUILTIN_MACROS[31m;[m [31m++[mi[31m)[m
+    [31m{[m
+      [32mchar[m c [31m=[m builtinMacros[31m[[mi[31m][[m[35m0[m[31m];[m
+      [01;34mif[m [31m([mc [31m==[m [31m'[m[35m\n[m[31m'[m[31m)[m
+        [31m{[m
+          [01;30msprintf[m[31m([ms[31m,[m [31m"'[m[35m\\[m[31mn': %s[m[35m\n[m[31m"[m[31m,[m builtinMacrosHelp[31m[[mi[31m]);[m
+        [31m}[m
+      [01;34melse[m
+        [31m{[m
+          [01;30msprintf[m[31m([ms[31m,[m [31m"'%c': %s[m[35m\n[m[31m"[m[31m,[m c[31m,[m builtinMacrosHelp[31m[[mi[31m]);[m
+        [31m}[m
+      [01;30mbuiltinInsertCString[m[31m([ms[31m);[m
+    [31m}[m
+
+  [01;30mbuiltinInsertCString[m[31m([m[31m"[m[35m\n[m[31mBuiltin Macros:[m[35m\n[m[31m"[m[31m);[m
+
+  [01;34mfor[m[31m([m[32mint[m i [31m=[m [35m0[m[31m;[m i [31m<[m NUM_MODES[31m;[m [31m++[mi[31m)[m
+    [31m{[m
+      [01;34mfor[m[31m([m[32mint[m c [31m=[m [35m0[m[31m;[m c [31m<[m NUM_KEYS[31m;[m [31m++[mc[31m)[m
+        [31m{[m
+          [01;34mif[m [31m(![mkeyHandlerHelp[31m[[mi[31m][[mc[31m])[m [01;34mcontinue[m[31m;[m
+          [01;34mswitch[m [31m([mc[31m)[m [31m{[m
+          [01;34mcase[m [31m'[m[35m\0[m[31m'[m[31m:[m
+            [01;34mcontinue[m[31m;[m
+          [01;34mcase[m [31m'[m[35m\t[m[31m'[m[31m:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'[m[35m\t[m[31m': %s[m[35m\n[m[31m"[m[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+          [01;34mcase[m KEY_END[31m:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'END': %s[m[35m\n[m[31m"[m[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+          [01;34mcase[m KEY_HOME[31m:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'HOME': %s[m[35m\n[m[31m"[m[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+          [01;34mcase[m KEY_PAGEUP[31m:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'PAGEUP': %s[m[35m\n[m[31m"[m[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+          [01;34mcase[m KEY_PAGEDOWN[31m:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'PAGEDOWN': %s[m[35m\n[m[31m"[m[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+          [01;34mcase[m KEY_DELETE[31m:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'DEL': %s[m[35m\n[m[31m"[m[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+          [01;34mcase[m KEY_SHIFT_UP[31m:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'SHIFT_UP': %s[m[35m\n[m[31m"[m[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+          [01;34mcase[m KEY_SHIFT_DOWN[31m:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'SHIFT_DOWN': %s[m[35m\n[m[31m"[m[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+          [01;34mcase[m KEY_SHIFT_LEFT[31m:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'SHIFT_LEFT': %s[m[35m\n[m[31m"[m[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+          [01;34mcase[m KEY_SHIFT_RIGHT[31m:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'SHIFT_RIGHT': %s[m[35m\n[m[31m"[m[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+          [01;34mcase[m KEY_SHIFT_TAB[31m:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'SHIFT_TAB': %s[m[35m\n[m[31m"[m[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+[01;37m          default:[m
+            [01;30msprintf[m[31m([ms[31m,[m [31m"'%c': %s[m[35m\n[m[31m"[m[31m,[m c[31m,[m keyHandlerHelp[31m[[mi[31m][[mc[31m]);[m
+            [01;34mbreak[m[31m;[m
+          [31m}[m
+          [01;30mbuiltinInsertCString[m[31m([ms[31m);[m
+        [31m}[m
+    [31m}[m
+
+  [01;30mbuiltinInsertCString[m[31m([m[31m"Builtin Keys:[m[35m\n[m[31m"[m[31m);[m
+
+[31m}[m
+
+[32mvoid[m [01;30mbackwardStartOfElem[m[31m()[m [31m// BAL: remove(?)[m
+[31m{[m
+  [32mint[m offset [31m=[m [01;30mfocusView[m[31m()->[mcursor[31m.[moffset[31m;[m
+  [32mint[m i [31m=[m [01;30mdistanceToStartOfElem[m[31m([m[01;30mfocusDoc[m[31m()->[mcontents[31m.[mstart[31m,[m offset[31m);[m
+  [01;30mstMoveCursorOffset[m[31m([moffset [31m+[m i[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mcopyElemToClipboard[m[31m()[m
+[31m{[m
+  [01;30mbackwardStartOfElem[m[31m();[m
+  [32mchar[m [31m*[ms [31m=[m [01;30mfocusDoc[m[31m()->[mcontents[31m.[mstart [31m+[m [01;30mfocusView[m[31m()->[mcursor[31m.[moffset[31m;[m
+  [01;30msetClipboardText[m[31m([ms[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mpasteBefore[m[31m()[m
+[31m{[m
+  [01;34mif[m [31m([m[01;30mfocusViewRef[m[31m()[m [31m==[m COPY_BUF[31m)[m
+    [31m{[m
+      [01;30mcopyElemToClipboard[m[31m();[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+
+  [32mchar[m [31m*[ms [31m=[m [01;30mgetClipboardText[m[31m();[m
+  [01;34mif[m [31m([ms[31m)[m [01;30minsertCString[m[31m([ms[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mcopy[m[31m([m[32mchar[m [31m*[ms[31m,[m [37muint[m len[31m)[m
+[31m{[m
+  [01;34mif[m [31m([m[01;30mfocusViewRef[m[31m()[m [31m==[m COPY_BUF[31m)[m
+    [31m{[m
+      [01;30mcopyElemToClipboard[m[31m();[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+
+  [32mint[m refFrame [31m=[m [01;30mfocusFrameRef[m[31m();[m
+  [01;30msetFocusFrame[m[31m([mBUILTINS_FRAME[31m);[m
+  [01;30msetFocusView[m[31m([mCOPY_BUF[31m);[m
+  [01;30minsertNewElem[m[31m();[m
+  [01;30mbuiltinInsertString[m[31m([ms[31m,[m len[31m);[m
+  [01;30msetClipboardText[m[31m([m[01;30mfocusDoc[m[31m()->[mcontents[31m.[mstart[31m);[m
+  [01;30msetFocusFrame[m[31m([mrefFrame[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mdocPushCommand[m[31m([m[37mcommandTag_t[m tag[31m,[m [37mdoc_t[m [31m*[mdoc[31m,[m [32mint[m offset[31m,[m [32mchar[m [31m*[ms[31m,[m [32mint[m len[31m)[m
+[31m{[m
+  [37mcommand_t[m [31m*[mcmd[31m;[m
+  [01;34mwhile[m [31m([mdoc[31m->[mundoStack[31m.[moffset [31m<[m doc[31m->[mundoStack[31m.[mnumElems[31m)[m
+    [31m{[m
+      cmd [31m=[m [01;30marrayPop[m[31m(&[mdoc[31m->[mundoStack[31m);[m
+      [01;30marrayFree[m[31m(&[mcmd[31m->[mstring[31m);[m
+    [31m}[m
+  cmd [31m=[m [01;30marrayPushUninit[m[31m(&[mdoc[31m->[mundoStack[31m);[m
+  cmd[31m->[mtag [31m=[m tag[31m;[m
+  cmd[31m->[moffset [31m=[m offset[31m;[m
+  [01;30marrayInit[m[31m(&[mcmd[31m->[mstring[31m,[m [01;34msizeof[m[31m([m[32mchar[m[31m));[m
+  [01;30marrayInsert[m[31m(&[mcmd[31m->[mstring[31m,[m [35m0[m[31m,[m s[31m,[m len[31m);[m
+  doc[31m->[mundoStack[31m.[moffset[31m++;[m
+  [01;30massert[m[31m([mdoc[31m->[mundoStack[31m.[moffset [31m==[m doc[31m->[mundoStack[31m.[mnumElems[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mdocPushDelete[m[31m([m[37mdoc_t[m [31m*[mdoc[31m,[m [32mint[m offset[31m,[m [32mint[m len[31m)[m
+[31m{[m
+  [01;34mif[m [31m([mdoc[31m->[misReadOnly[31m)[m [01;34mreturn[m[31m;[m
+  [01;34mif[m [31m([mdoc[31m->[misUserDoc[31m)[m
+    [31m{[m
+      [01;30mdocPushCommand[m[31m([mDELETE[31m,[m doc[31m,[m offset[31m,[m doc[31m->[mcontents[31m.[mstart [31m+[m offset[31m,[m len[31m);[m
+    [31m}[m
+  [01;30mdocDelete[m[31m([mdoc[31m,[m offset[31m,[m len[31m);[m
+  [01;30mdoSearchIfNeeded[m[31m();[m
+[31m}[m
+
+[32mvoid[m [01;30mdocPushInsert[m[31m([m[37mdoc_t[m [31m*[mdoc[31m,[m [32mint[m offset[31m,[m [32mchar[m [31m*[ms[31m,[m [32mint[m len[31m)[m
+[31m{[m
+  [01;34mif[m [31m([mdoc[31m->[misReadOnly[31m)[m [01;34mreturn[m[31m;[m
+  [01;34mif[m [31m([mdoc[31m->[misUserDoc[31m)[m
+    [31m{[m
+      [01;30mdocPushCommand[m[31m([mINSERT[31m,[m doc[31m,[m offset[31m,[m s[31m,[m len[31m);[m
+    [31m}[m
+  [01;30mdocInsert[m[31m([mdoc[31m,[m offset[31m,[m s[31m,[m len[31m);[m
+  [01;30mdoSearchIfNeeded[m[31m();[m
+[31m}[m
+
+[32mvoid[m [01;30mdocDoCommand[m[31m([m[37mdoc_t[m [31m*[mdoc[31m,[m [37mcommandTag_t[m tag[31m,[m [32mint[m offset[31m,[m [37mstring_t[m [31m*[mstring[31m)[m
+[31m{[m
+  [01;30mselectionCancel[m[31m();[m
+  [01;30mstMoveCursorOffset[m[31m([moffset[31m);[m
+  [01;34mswitch[m [31m([mtag[31m)[m
+    [31m{[m
+    [01;34mcase[m DELETE[31m:[m
+      [01;30mdocDelete[m[31m([mdoc[31m,[m offset[31m,[m string[31m->[mnumElems[31m);[m
+      [01;34mreturn[m[31m;[m
+[01;37m    default:[m
+      [01;30massert[m[31m([mtag [31m==[m INSERT[31m);[m
+      [01;30mdocInsert[m[31m([mdoc[31m,[m offset[31m,[m string[31m->[mstart[31m,[m string[31m->[mnumElems[31m);[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+[31m}[m
+
+[32mvoid[m [01;30mundo[m[31m()[m
+[31m{[m
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mfocusDoc[m[31m();[m
+  [01;34mif[m [31m([mdoc[31m->[mundoStack[31m.[moffset [31m==[m [35m0[m[31m)[m [01;34mreturn[m[31m;[m
+  doc[31m->[mundoStack[31m.[moffset[31m--;[m
+  [37mcommand_t[m [31m*[mcmd [31m=[m [01;30marrayFocus[m[31m(&[mdoc[31m->[mundoStack[31m);[m
+  [01;30mdocDoCommand[m[31m([mdoc[31m,[m [31m![mcmd[31m->[mtag[31m,[m cmd[31m->[moffset[31m,[m [31m&[mcmd[31m->[mstring[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mredo[m[31m()[m
+[31m{[m
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mfocusDoc[m[31m();[m
+  [01;34mif[m [31m([mdoc[31m->[mundoStack[31m.[moffset [31m==[m doc[31m->[mundoStack[31m.[mnumElems[31m)[m [01;34mreturn[m[31m;[m
+  [37mcommand_t[m [31m*[mcmd [31m=[m [01;30marrayFocus[m[31m(&[mdoc[31m->[mundoStack[31m);[m
+  [01;30mdocDoCommand[m[31m([mdoc[31m,[m cmd[31m->[mtag[31m,[m cmd[31m->[moffset[31m,[m [31m&[mcmd[31m->[mstring[31m);[m
+  doc[31m->[mundoStack[31m.[moffset[31m++;[m
+[31m}[m
+
+[32mvoid[m [01;30mcut[m[31m()[m
+[31m{[m
+  [32mint[m column[31m;[m
+  [32mint[m row[31m;[m
+  [32mint[m offset[31m;[m
+  [32mint[m length[31m;[m
+
+  [37mview_t[m [31m*[mview [31m=[m [01;30mfocusView[m[31m();[m
+
+  [01;30mgetSelectionCoords[m[31m([mview[31m,[m [31m&[mcolumn[31m,[m [31m&[mrow[31m,[m [31m&[moffset[31m,[m [31m&[mlength[31m);[m
+
+  [01;30mselectionCancel[m[31m();[m
+
+  [01;34mif[m [31m([mlength [31m<=[m [35m0[m[31m)[m [01;34mreturn[m[31m;[m
+
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mfocusDoc[m[31m();[m
+
+  [01;34mif[m [31m([mlength [31m>[m [35m1[m[31m)[m [01;30mcopy[m[31m([mdoc[31m->[mcontents[31m.[mstart [31m+[m offset[31m,[m length[31m);[m
+
+  [01;30mdocPushDelete[m[31m([mdoc[31m,[m offset[31m,[m length[31m);[m
+
+  [01;30mcursorSetRowCol[m[31m(&[mview[31m->[mcursor[31m,[m row[31m,[m column[31m,[m [01;30mfocusDoc[m[31m());[m
+[31m}[m
+
+[32mvoid[m [01;30mplayMacroString[m[31m([m[32mchar[m [31m*[ms[31m,[m [37muint[m len[31m)[m
+[31m{[m
+    [32mchar[m [31m*[mdone [31m=[m s [31m+[m len[31m;[m
+
+    [01;34mwhile[m [31m([ms [31m<[m done[31m)[m
+    [31m{[m
+        [01;30mdoKeyPress[m[31m(*[ms[31m);[m
+        s[31m++;[m
+    [31m}[m
+[31m}[m
+
+[32mvoid[m [01;30mplayMacroCString[m[31m([m[32mchar[m [31m*[ms[31m)[m
+[31m{[m
+  [01;30mplayMacroString[m[31m([ms[31m,[m [31m([muint[31m)[m[01;30mstrlen[m[31m([ms[31m));[m
+[31m}[m
+
+[32mvoid[m [01;30mdoNothing[m[31m([m[37muchar[m c[31m)[m
+[31m{[m
+    [01;34mif[m [31m([mmacro[31m[[mc[31m])[m
+    [31m{[m
+        [01;30mplayMacroCString[m[31m([mmacro[31m[[mc[31m]);[m
+        [01;34mreturn[m[31m;[m
+    [31m}[m
+    [01;30mselectionEnd[m[31m();[m
+[31m}[m
+
+[32mvoid[m [01;30mstopRecording[m[31m()[m
+[31m{[m
+  [32mint[m refFrame [31m=[m [01;30mfocusFrameRef[m[31m();[m
+  st[31m.[misRecording [31m=[m false[31m;[m
+  [01;30msetFocusFrame[m[31m([mBUILTINS_FRAME[31m);[m
+  [01;30msetFocusView[m[31m([mMACRO_BUF[31m);[m
+  [01;30mbackwardStartOfElem[m[31m();[m
+  [01;30msetFocusFrame[m[31m([mrefFrame[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mstartOrStopRecording[m[31m()[m
+[31m{[m
+  [32mint[m refFrame [31m=[m [01;30mfocusFrameRef[m[31m();[m
+
+  [01;34mif[m [31m([mst[31m.[misRecording [31m||[m refFrame [31m==[m BUILTINS_FRAME[31m)[m [31m{[m
+    [01;30mstopRecording[m[31m();[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+
+  [31m// start recording[m
+  st[31m.[misRecording [31m=[m true[31m;[m
+  [01;30msetFocusFrame[m[31m([mBUILTINS_FRAME[31m);[m
+  [01;30msetFocusView[m[31m([mMACRO_BUF[31m);[m
+  [01;30minsertNewElem[m[31m();[m
+  [31m// BAL: if 1st line in macro buf is empty delete it (or reuse it)[m
+  [01;30msetFocusFrame[m[31m([mrefFrame[31m);[m
+[31m}[m
+
+[32mvoid[m [01;30mstopRecordingOrPlayMacro[m[31m()[m
+[31m{[m
+  [32mint[m refFrame [31m=[m [01;30mfocusFrameRef[m[31m();[m
+
+  [01;34mif[m [31m([mst[31m.[misRecording [31m||[m refFrame [31m==[m BUILTINS_FRAME [31m||[m [01;30mfocusViewRef[m[31m()[m [31m==[m MACRO_BUF[31m)[m [31m{[m
+    [01;30mstopRecording[m[31m();[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+
+  [31m// play macro[m
+  [01;30msetFocusFrame[m[31m([mBUILTINS_FRAME[31m);[m
+  [01;30msetFocusView[m[31m([mMACRO_BUF[31m);[m
+  [01;30mbackwardStartOfElem[m[31m();[m
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mfocusDoc[m[31m();[m
+  [37mview_t[m [31m*[mview [31m=[m [01;30mfocusView[m[31m();[m
+
+  [01;34mif[m [31m(![mdoc[31m->[mcontents[31m.[mstart[31m)[m
+    [31m{[m
+      [01;30mmessage[m[31m([m[31m"no macros to play"[m[31m);[m
+      [01;30msetFocusFrame[m[31m([mrefFrame[31m);[m
+      [01;34mreturn[m[31m;[m
+    [31m}[m
+
+  [01;30msetFocusFrame[m[31m([mrefFrame[31m);[m
+  [01;30mplayMacroCString[m[31m([mdoc[31m->[mcontents[31m.[mstart [31m+[m view[31m->[mcursor[31m.[moffset[31m);[m
+[31m}[m
+
+[31m/* void setCursorToSearch() */[m
+[31m/* { */[m
+[31m/*     frame_t *frame = focusFrame(); */[m
+[31m/*     if (noActiveSearch(frame)) return; */[m
+[31m/*     view_t *view = focusView(); */[m
+[31m/*     doc_t *doc = focusDoc(); */[m
+[31m/*     uint *off = arrayFocus(&st.searchResults); */[m
+[31m/*     cursorSetOffset(&view->cursor, *off, doc); */[m
+[31m/*     cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc); */[m
+[31m/* } */[m
+
+[32mvoid[m [01;30mforwardSearch[m[31m()[m
+[31m{[m
+[31m/*     st.searchResults.offset++; */[m
+[31m/*     st.searchResults.offset %= st.searchResults.numElems; */[m
+[31m/*     setCursorToSearch(); */[m
+[31m}[m
+
+[32mvoid[m [01;30mbackwardSearch[m[31m()[m
+[31m{[m
+[31m/*     st.searchResults.offset += st.searchResults.numElems - 1; */[m
+[31m/*     st.searchResults.offset %= st.searchResults.numElems; */[m
+[31m/*     setCursorToSearch(); */[m
+[31m}[m
+
+[31m/* void setCursorToSearch(); */[m
+
+[31m/* void computeSearchResults() */[m
+[31m/* { */[m
+[31m/*     view_t *view = arrayElemAt(&st.views, st.searchRefView); */[m
+[31m/*     doc_t *doc = docOf(view); */[m
+
+[31m/*     int refView = focusViewRef(); */[m
+[31m/*     setFocusView(SEARCH_BUF); */[m
+
+[31m/*     view_t *viewFind = focusView(); */[m
+[31m/*     doc_t *find = focusDoc(); */[m
+
+[31m/*     cursor_t cursorFind; */[m
+[31m/*     cursorCopy(&cursorFind, &viewFind->cursor); */[m
+[31m/*     cursorSetRowCol(&cursorFind, cursorFind.row, 0, find); */[m
+
+[31m/*     char *search = find->contents.start + cursorFind.offset; */[m
+[31m/*     if (!search) goto nofree; */[m
+[31m/*     char *replace = dieIfNull(strdup(search)); */[m
+[31m/*     char *needle = strsep(&replace, "/"); */[m
+[31m/*     st.searchLen = (uint)strlen(needle); */[m
+[31m/*     if (st.searchLen == 0) goto done; */[m
+
+[31m/*     char *haystack = doc->contents.start; */[m
+[31m/*     char *p = haystack; */[m
+[31m/*     arrayReinit(&st.searchResults); */[m
+[31m/*     while ((p = strcasestr(p, needle))) */[m
+[31m/*     { */[m
+[31m/*         uint *off = arrayPushUninit(&st.searchResults); */[m
+[31m/*         *off = (uint)(p - haystack); */[m
+[31m/*         p++; */[m
+[31m/*     } */[m
+
+[31m/*     // copy replace string to copy buffer // BAL: don't use copy buffer ... */[m
+[31m/*     if (replace) copy(replace, (uint)strlen(replace)); */[m
+[31m/* done: */[m
+[31m/*     free(needle); */[m
+[31m/* nofree: */[m
+[31m/*     setFocusView(refView); */[m
+[31m/* } */[m
+
+[32mvoid[m [01;30mnewSearch[m[31m()[m
+[31m{[m
+  [01;30msetFocusFrame[m[31m([mBUILTINS_FRAME[31m);[m
+  [01;30msetFocusView[m[31m([mSEARCH_BUF[31m);[m
+  [01;30msetInsertMode[m[31m();[m
+  [01;30minsertNewElem[m[31m();[m
+[31m}[m
+
+[31m/* void gotoView() */[m
+[31m/* { */[m
+    [31m/* int frame = st.frames.offset; */[m
+
+    [31m/* if (frame == BUILTINS_FRAME) frame = MAIN_FRAME; */[m
+
+    [31m/* setFocusFrame(BUILTINS_FRAME); */[m
+    [31m/* stSetViewFocus(BUFFERS_BUF); */[m
+
+    [31m/* view_t *view = focusView(); */[m
+
+    [31m/* setFocusFrame(frame); */[m
+    [31m/* stSetViewFocus(view->cursor.row); */[m
+[31m/* } */[m
+
+[32mvoid[m [01;30mforwardFrame[m[31m()[m
+[31m{[m
+  [01;30msetFocusFrame[m[31m(([m[01;30mfocusFrameRef[m[31m()[m [31m+[m [35m1[m[31m)[m [31m%[m [01;30mnumFrames[m[31m());[m
+[31m}[m
+
+[32mvoid[m [01;30mbackwardFrame[m[31m()[m
+[31m{[m
+  [01;30msetFocusFrame[m[31m(([m[01;30mfocusFrameRef[m[31m()[m [31m+[m [01;30mnumFrames[m[31m()[m [31m-[m [35m1[m[31m)[m [31m%[m [01;30mnumFrames[m[31m());[m
+[31m}[m
+
+[32mvoid[m [01;30mforwardView[m[31m()[m
+[31m{[m
+  [01;30msetFocusView[m[31m(([m[01;30mfocusViewRef[m[31m()[m [31m+[m [35m1[m[31m)[m [31m%[m [01;30mnumViews[m[31m());[m
+[31m}[m
+
+[32mvoid[m [01;30mbackwardView[m[31m()[m
+[31m{[m
+  [01;30msetFocusView[m[31m(([m[01;30mfocusViewRef[m[31m()[m [31m+[m [01;30mnumViews[m[31m()[m [31m-[m [35m1[m[31m)[m [31m%[m [01;30mnumViews[m[31m());[m
+[31m}[m
+
+[01;34m#define[m INDENT_LENGTH [35m3[m
+
+[32mint[m [01;30mnumLinesSelected[m[31m([m[32mchar[m [31m*[ms[31m,[m [32mint[m len[31m)[m
+[31m{[m
+  [01;34mif[m [31m([mlen [31m<=[m [35m0[m[31m)[m [01;34mreturn[m [35m0[m[31m;[m
+  [32mint[m n [31m=[m [01;30mnumLinesString[m[31m([ms[31m,[m len[31m);[m
+  [01;34mif[m [31m(*([ms [31m+[m len [31m-[m [35m1[m[31m)[m [31m!=[m [31m'[m[35m\n[m[31m'[m[31m)[m n[31m++;[m
+  [01;34mreturn[m n[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30minsertChars[m[31m([m[32mchar[m c[31m,[m [32mint[m n[31m)[m
+[31m{[m
+  [01;30massert[m[31m([mn [31m<[m [35m1024[m[31m);[m
+  [32mchar[m s[31m[[m[35m1024[m[31m];[m
+  [01;30mmemset[m[31m([ms[31m,[m c[31m,[m n[31m);[m
+  [01;30minsertString[m[31m([ms[31m,[m n[31m);[m
+[31m}[m
+
+[32mint[m [01;30mindentLine[m[31m()[m
+[31m{[m
+  [37mstring_t[m [31m*[ms [31m=[m [31m&[m[01;30mfocusDoc[m[31m()->[mcontents[31m;[m
+  [01;30mbackwardSOL[m[31m();[m
+  [32mint[m offset [31m=[m [01;30mfocusCursor[m[31m()->[moffset[31m;[m
+  [32mint[m x [31m=[m [01;30mdistanceToIndent[m[31m([ms[31m->[mstart [31m+[m offset[31m,[m [01;30marrayTop[m[31m([ms[31m));[m
+  [32mint[m n [31m=[m INDENT_LENGTH [31m-[m x [31m%[m INDENT_LENGTH[31m;[m
+  [01;30minsertChars[m[31m([m[31m' '[m[31m,[m n[31m);[m
+  [01;34mreturn[m n[31m;[m
+[31m}[m
+
+[32mint[m [01;30moutdentLine[m[31m()[m
+[31m{[m
+  [37mdoc_t[m [31m*[mdoc [31m=[m [01;30mfocusDoc[m[31m();[m
+  [37mstring_t[m [31m*[ms [31m=[m [31m&[mdoc[31m->[mcontents[31m;[m
+  [01;30mbackwardSOL[m[31m();[m
+  [32mint[m offset [31m=[m [01;30mfocusCursor[m[31m()->[moffset[31m;[m
+  [32mint[m x [31m=[m [01;30mdistanceToIndent[m[31m([ms[31m->[mstart [31m+[m offset[31m,[m [01;30marrayTop[m[31m([ms[31m));[m
+  [32mint[m n [31m=[m x [31m==[m [35m0[m [31m?[m [35m0[m [31m:[m [31m([mx [31m-[m [31m((([mx [31m-[m [35m1[m[31m)[m [31m/[m INDENT_LENGTH[31m)[m [31m*[m INDENT_LENGTH[31m));[m
+  [01;30mdocPushDelete[m[31m([mdoc[31m,[m offset[31m,[m n[31m);[m
+  [01;34mreturn[m n[31m;[m
+[31m}[m
+
+[32mvoid[m [01;30mindentSelection[m[31m()[m
+[31m{[m
+  [31m// save a offset and b offset[m
+  [31m// if:[m
+  [31m//   l1 == l2 => indentLine, update a offset and b offset[m
+  [31m//   l1 < l2 => indentLine, update a offset, indent intermediate lines, indentLine, update b offset[m
+
+  [31m//   l1 > l2 => indentLine, update a offset, indent intermediate lines,[m
+[31m}[m
+[32mvoid[m [01;30mindent[m[31m()[m
+[31m{[m
+  [32mint[m col[31m;[m
+  [32mint[m row[31m;[m
+  [32mint[m off[31m;[m
+  [32mint[m len[31m;[m
+
+  [01;30mgetSelectionCoords[m[31m([m[01;30mfocusView[m[31m(),[m [31m&[mcol[31m,[m [31m&[mrow[31m,[m [31m&[moff[31m,[m [31m&[mlen[31m);[m
+
+  [32mint[m n [31m=[m [01;30mnumLinesSelected[m[31m([m[01;30mfocusDoc[m[31m()->[mcontents[31m.[mstart [31m+[m off[31m,[m len[31m);[m
+
+  [32mint[m coff [31m=[m [01;30mfocusCursor[m[31m()->[moffset[31m;[m
+  [32mint[m soff [31m=[m [01;30mfocusSelection[m[31m()->[moffset[31m;[m
+  [32mint[m m [31m=[m [01;30mindentLine[m[31m();[m
+  [32mint[m m0 [31m=[m m[31m;[m
+
+  [01;34mif[m [31m([msoff [31m>=[m coff[31m)[m [31m{[m [31m// left to right highlight order[m
+    [01;34mfor[m [31m([m[32mint[m i [31m=[m [35m1[m[31m;[m i [31m<[m n[31m;[m [31m++[mi[31m)[m
+      [31m{[m
+        [01;30mforwardLine[m[31m();[m
+        m [31m+=[m [01;30mindentLine[m[31m();[m
+      [31m}[m
+    [01;30mcursorSetOffset[m[31m([m[01;30mfocusCursor[m[31m(),[m coff [31m+[m m0[31m,[m [01;30mfocusDoc[m[31m());[m
+    [01;30mcursorSetOffset[m[31m([m[01;30mfocusSelection[m[31m(),[m soff [31m+[m m[31m,[m [01;30mfocusDoc[m[31m());[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+
+  [31m// coff > soff // right to left highlight order[m
+  [01;34mfor[m [31m([m[32mint[m i [31m=[m [35m1[m[31m;[m i [31m<[m n[31m;[m [31m++[mi[31m)[m
+    [31m{[m
+      [01;30mbackwardLine[m[31m();[m
+      m0 [31m=[m [01;30mindentLine[m[31m();[m
+      m [31m+=[m m0[31m;[m
+    [31m}[m
+
+  [01;30mcursorSetOffset[m[31m([m[01;30mfocusCursor[m[31m(),[m coff [31m+[m m[31m,[m [01;30mfocusDoc[m[31m());[m
+  [01;30mcursorSetOffset[m[31m([m[01;30mfocusSelection[m[31m(),[m soff [31m+[m m0[31m,[m [01;30mfocusDoc[m[31m());[m
+
+[31m}[m
+[32mvoid[m [01;30moutdent[m[31m()[m
+[31m{[m
+  [32mint[m col[31m;[m
+  [32mint[m row[31m;[m
+  [32mint[m off[31m;[m
+  [32mint[m len[31m;[m
+
+  [01;30mgetSelectionCoords[m[31m([m[01;30mfocusView[m[31m(),[m [31m&[mcol[31m,[m [31m&[mrow[31m,[m [31m&[moff[31m,[m [31m&[mlen[31m);[m
+
+  [32mint[m n [31m=[m [01;30mnumLinesSelected[m[31m([m[01;30mfocusDoc[m[31m()->[mcontents[31m.[mstart [31m+[m off[31m,[m len[31m);[m
+
+  [32mint[m coff [31m=[m [01;30mfocusCursor[m[31m()->[moffset[31m;[m
+  [32mint[m soff [31m=[m [01;30mfocusSelection[m[31m()->[moffset[31m;[m
+  [32mint[m m [31m=[m [01;30moutdentLine[m[31m();[m
+  [32mint[m m0 [31m=[m m[31m;[m
+
+  [01;34mif[m [31m([msoff [31m>=[m coff[31m)[m [31m{[m [31m// left to right highlight order[m
+    [01;34mfor[m [31m([m[32mint[m i [31m=[m [35m1[m[31m;[m i [31m<[m n[31m;[m [31m++[mi[31m)[m
+      [31m{[m
+        [01;30mforwardLine[m[31m();[m
+        m [31m+=[m [01;30moutdentLine[m[31m();[m
+      [31m}[m
+    [01;30mcursorSetOffset[m[31m([m[01;30mfocusCursor[m[31m(),[m coff [31m-[m m0[31m,[m [01;30mfocusDoc[m[31m());[m
+    [01;30mcursorSetOffset[m[31m([m[01;30mfocusSelection[m[31m(),[m soff [31m-[m m[31m,[m [01;30mfocusDoc[m[31m());[m
+    [01;34mreturn[m[31m;[m
+  [31m}[m
+
+  [31m// coff > soff // right to left highlight order[m
+  [01;34mfor[m [31m([m[32mint[m i [31m=[m [35m1[m[31m;[m i [31m<[m n[31m;[m [31m++[mi[31m)[m
+    [31m{[m
+      [01;30mbackwardLine[m[31m();[m
+      m0 [31m=[m [01;30moutdentLine[m[31m();[m
+      m [31m+=[m m0[31m;[m
+    [31m}[m
+
+  [01;30mcursorSetOffset[m[31m([m[01;30mfocusCursor[m[31m(),[m coff [31m-[m m[31m,[m [01;30mfocusDoc[m[31m());[m
+  [01;30mcursorSetOffset[m[31m([m[01;30mfocusSelection[m[31m(),[m soff [31m-[m m0[31m,[m [01;30mfocusDoc[m[31m());[m
+
+[31m}[m
+[31m/* void timerEvent() */[m
+[31m/* { */[m
+[31m/*   if (st.mouseSelectionInProgress) */[m
+[31m/*     { */[m
+[31m/*       focusTrackCursor(4); */[m
+[31m/*       printf("boom\n"); */[m
+[31m/*     } */[m
+[31m/* } */[m
+[31m/* Uint32 timerInit(Uint32 interval, void *param) */[m
+[31m/* { */[m
+[31m/*   SDL_Event event; */[m
+[31m/*   SDL_UserEvent userevent; */[m
+
+[31m/*   userevent.type = SDL_USEREVENT; */[m
+[31m/*   userevent.code = 0; */[m
+[31m/*   userevent.data1 = NULL; */[m
+[31m/*   userevent.data2 = NULL; */[m
+
+[31m/*   event.type = SDL_USEREVENT; */[m
+[31m/*   event.user = userevent; */[m
+
+[31m/*   SDL_PushEvent(&event); */[m
+[31m/*   return(interval); */[m
+[31m/* } */[m
+
+[32mint[m [01;30mmain[m[31m([m[32mint[m argc[31m,[m [32mchar[m [31m**[margv[31m)[m
+[31m{[m
+    [01;30massert[m[31m([m[01;34msizeof[m[31m([m[32mchar[m[31m)[m [31m==[m [35m1[m[31m);[m
+    [01;30massert[m[31m([m[01;34msizeof[m[31m([m[32mint[m[31m)[m [31m==[m [35m4[m[31m);[m
+    [01;30massert[m[31m([m[01;34msizeof[m[31m([m[32munsigned[m [32mint[m[31m)[m [31m==[m [35m4[m[31m);[m
+    [01;30massert[m[31m([m[01;34msizeof[m[31m([m[32mvoid[m[31m*)[m [31m==[m [35m8[m[31m);[m
+
+    [01;30mstInit[m[31m([margc[31m,[m argv[31m);[m
+    [01;30mstDraw[m[31m();[m
+    [31m//    SDL_AddTimer(1000, timerInit, NULL);[m
+    [01;34mwhile[m [31m([m[01;30mSDL_WaitEvent[m[31m(&[mst[31m.[mevent[31m))[m
+    [31m{[m
+        [01;34mswitch[m [31m([mst[31m.[mevent[31m.[mtype[31m)[m [31m{[m
+            [01;34mcase[m SDL_WINDOWEVENT[31m:[m
+                [01;30mwindowEvent[m[31m();[m
+                [01;34mbreak[m[31m;[m
+            [01;34mcase[m SDL_MOUSEWHEEL[31m:[m
+                [01;30mmouseWheelEvent[m[31m();[m
+                [01;34mbreak[m[31m;[m
+            [01;34mcase[m SDL_MOUSEBUTTONDOWN[31m:[m
+                [01;30mmouseButtonDownEvent[m[31m();[m
+                [01;34mbreak[m[31m;[m
+            [01;34mcase[m SDL_MOUSEBUTTONUP[31m:[m
+                [01;30mmouseButtonUpEvent[m[31m();[m
+                [01;34mbreak[m[31m;[m
+            [01;34mcase[m SDL_MOUSEMOTION[31m:[m
+                [01;30mmouseMotionEvent[m[31m();[m
+                [01;34mbreak[m[31m;[m
+            [01;34mcase[m SDL_KEYDOWN[31m:[m
+                [01;30mkeyDownEvent[m[31m();[m
+                [01;34mbreak[m[31m;[m
+            [01;34mcase[m SDL_QUIT[31m:[m
+                [01;30mquitEvent[m[31m();[m
+                [01;34mbreak[m[31m;[m
+            [01;34mcase[m SDL_USEREVENT[31m:[m
+              [31m//                timerEvent();[m
+                [01;34mbreak[m[31m;[m
+[01;37m            default:[m
+                [01;34mbreak[m[31m;[m
+        [31m}[m
+        [01;30mframeUpdate[m[31m([m[01;30mfocusFrame[m[31m());[m
+        [01;30mstDraw[m[31m();[m
+        [31m/* { */[m
+        [31m/*     computeSearchResults(&st); */[m
+        [31m/* } */[m
+        [31m/* { */[m
+        [31m/*   stDraw(); */[m
+        [31m/*   stRenderFull(&st); */[m
+        [31m/* { */[m
+        [31m/*     stRender(&st); */[m
+        [31m/* } */[m
+    [31m}[m
+
+  [01;34mreturn[m [35m0[m[31m;[m
+[31m}[m
+
+[31m/*[m
+[01mTODO:[m
+[31mCORE:[m
+[31m    Search and replace[m
+[31m    Scroll when mouse selection goes off screen[m
+[31m    command line args/config to set config items (e.g. demo mode)[m
+[31m    status bar that has modified, etc.[m
+[31m    cut/copy/paste with mouse[m
+[31m    create new file[m
+[31m    input screen (for search, paste, load, tab completion, etc.)[m
+[31m    Hook Cut/Copy/Paste into system Cut/Copy/Paste[m
+[31m    support editor API[m
+[31m    Name macro[m
+[31m    highlight compile errors/warnings[m
+[31m    jump to next error[m
+[31m    tab completion[m
+[31m    sort lines[m
+[31m    check spelling[m
+[31m    jump to prev/next placeholders[m
+[31m    jump to prev/next change[m
+[31m    collapse/expand selection (code folding)[m
+[31m    reload file when changed outside of editor[m
+[31m    (tons of) optimizations[m
+[31m    make builtin buffers readonly (except config and search?)[m
+
+[31mVIS:[m
+[31m    Display line number of every line[m
+[31m    Minimap[m
+[31m    syntax highlighting[m
+[31m    highlight nested parens[m
+[31m    resize nested parens[m
+[31m    display multiple characters as one (e.g. lambda)[m
+[31m    buffer list screen[m
+
+[31mMACRO:[m
+[31m    comment/uncomment region[m
+[31m    more move, delete, insert commands[m
+[31m    select all[m
+
+[31mDONE:[m
+[31m    continual compile (on exiting insert or delete).[m
+[31mhelp screen[m
+[31mUndo/Redo commands[m
+[31mDisplay operation buffer during operation[m
+[31mmultiple files[m
+[31mTrack cursor when it goes off screen[m
+[31mmake each frame have a list of independent views[m
+[31mMove to next/prev blank line[m
+[31mindent/outdent region[m
+[31mindent/outdent line[m
+[31mswitch between views[m
+[31mswitch between frames[m
+[31mstatus bar that has filename, row/col, mode.[m
+[31mcursor per frame[m
+[31mselect region with mouse[m
+[31mstatus bar per frame[m
+[31msplit screen[m
+[31mRecord/play macro[m
+[31mScroll[m
+[31mMove cursor on mouse click[m
+[31mFile automatically loads on startup[m
+[31mFile automatically saves (on return)[m
+[31mFile automatically checkpoints into git (on return)[m
+[31mSelect region[m
+[31mCut/Copy/Paste[m
+[31mMove cursor to the start/end of a line[m
+[31mMove cursor up/down[m
+[31mMove cursor to next/prev whitespace[m
+[31mInsert characters[m
+[31mDelete characters[m
+[31mEnforce cursor boundaries[m
+[31mwait for events, don't poll[m
+[31mswitch between insert and navigation mode[m
+[31mDisplay filename and mode in status bar[m
+[31mRedraw on window size change[m
+[31mDisplay cursor[m
+[31mMove cursor left/right[m
+[31mDisplay text with spaces and newlines[m
+[31mDisplay text[m
+[31mDisplay window[m
+[31mexit on quit[m
+[31m*/[m
