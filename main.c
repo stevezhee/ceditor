@@ -342,6 +342,8 @@ void drawStringSelection(int x, int y, char *s, int len)
     }
 }
 
+#define ESC 0x1B
+
 void drawString(string_t *s)
 {
   if(!s) return;
@@ -1066,6 +1068,7 @@ void quitEvent()
         assert(doc);
         docWrite(doc);
     }
+    docMake();
     TTF_Quit();
     SDL_Quit();
     exit(0);
