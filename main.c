@@ -372,13 +372,7 @@ void drawString(string_t *s)
         break;
       default:
         txtr = context.font->charTexture[c];
-        if (c == 'e')
-          {
-            setTextureColorMod(txtr, 0xff0000ff); // BAL: could just do this once if using a texture map
-            
-          } else {
         setTextureColorMod(txtr, context.color); // BAL: could just do this once if using a texture map
-        }
         SDL_RenderCopy(renderer, txtr, NULL, &rect);
         rect.x += rect.w;
       }
@@ -2154,7 +2148,7 @@ MACRO:
     select all
 
 DONE:
-    continual compile (on exiting insert or delete).
+continual compile (on exiting insert or delete)
 help screen
 Undo/Redo commands
 Display operation buffer during operation
