@@ -19,7 +19,8 @@ void docRead(doc_t *doc);
 char *docCString(doc_t *doc);
 void docPushInsert(doc_t *doc, int offset, char *s, int len);
 void docPushDelete(doc_t *doc, int offset, int len);
-void docMake(void);
+void docMakeAll(void);
+void docGitCommitAll(void);
 void docWriteAndMake(doc_t *doc);
 
 #endif /* Doc_h */

@@ -56,7 +56,13 @@ void docGitCommit(doc_t *doc)
   system(systemBuf);
 }
 
-void docMake(void)
+void docGitCommitAll(void)
+{
+  if (DEMO_MODE || NO_GIT) return;
+  sprintf(systemBuf, "git commit -am\"cp\"");
+  system(systemBuf);
+}
+void docMakeAll(void)
 {
 
   if (DEMO_MODE || NO_COMPILE) return;
@@ -81,7 +87,7 @@ void docWrite(doc_t *doc)
 void docWriteAndMake(doc_t *doc)
 {
   docWrite(doc);
-  docMake();
+  docMakeAll();
 }
 
 void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly)
