@@ -1068,7 +1068,8 @@ void quitEvent()
         assert(doc);
         docWrite(doc);
     }
-    docMake();
+    docGitCommitAll();
+    docMakeAll();
     TTF_Quit();
     SDL_Quit();
     exit(0);
