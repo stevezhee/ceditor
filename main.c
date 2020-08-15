@@ -342,7 +342,21 @@ void drawStringSelection(int x, int y, char *s, int len)
     }
 }
 
-#define ESC 0x1B
+typedef struct colorElem_s
+{
+  char *lexeme;
+  int color_t;
+} colorElem_t;
+
+typedef dynamicArray_t colorTable_t; // contains colorElem_t
+
+typedef enum{ LIDENT, UIDENT, SYMBOL, DIGITS, STRING, PREPROC, NUM_LEXEME_TAGS } lexeme_tag_t;
+
+color_t getCharColor(char *p, char *q)
+{
+  if (*p == '#') return 0xff0000ff;
+  return context.color;
+}
 
 void drawString(string_t *s)
 {
@@ -374,7 +388,10 @@ void drawString(string_t *s)
         break;
       default:
         txtr = context.font->charTexture[c];
-        setTextureColorMod(txtr, context.color); // BAL: could just do this once if using a texture map
+
+        // BAL: could do setTextureColorMod only when the color changes if we used a texture atlas
+        setTextureColorMod(txtr, getCharColor(p, q));
+
         SDL_RenderCopy(renderer, txtr, NULL, &rect);
         rect.x += rect.w;
       }
@@ -658,7 +675,6 @@ void drawCursorOrSelection(frame_t *frame)
   if (searchActive(frame))
     {
       drawSearch(view);
-      return;
     }
   if (selectionActive(view))
     {
