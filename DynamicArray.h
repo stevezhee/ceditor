@@ -26,5 +26,6 @@ void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len);
 void arrayDelete(dynamicArray_t *arr, int offset, int len);
 void *arrayTop(dynamicArray_t *arr);
 void arrayFree(dynamicArray_t *arr);
+bool arrayAtTop(dynamicArray_t *arr);
 
 #endif /* DynamicArray_h */

@@ -51,6 +51,11 @@ void *arrayTop(dynamicArray_t *arr)
   return arr->start + arr->numElems * arr->elemSize;
 }
 
+bool arrayAtTop(dynamicArray_t *arr)
+{
+  return arr->offset >= arr->numElems;
+}
+
 void arrayDelete(dynamicArray_t *arr, int offset, int len)
 {
   assert(arr);
