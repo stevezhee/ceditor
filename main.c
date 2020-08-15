@@ -355,7 +355,8 @@ typedef enum{ LIDENT, UIDENT, SYMBOL, DIGITS, STRING, PREPROC, NUM_LEXEME_TAGS }
 color_t getCharColor(char *p, char *q)
 {
   if (*p == '#') return 0xff0000ff;
-  return context.color;
+  return 0x00ff00ff;
+  // return context.color;
 }
 
 void drawString(string_t *s)
