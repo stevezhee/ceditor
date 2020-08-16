@@ -2104,15 +2104,6 @@ int outdentLine()
   return n;
 }
 
-void indentSelection()
-{
-  // save a offset and b offset
-  // if:
-  //   l1 == l2 => indentLine, update a offset and b offset
-  //   l1 < l2 => indentLine, update a offset, indent intermediate lines, indentLine, update b offset
-
-  //   l1 > l2 => indentLine, update a offset, indent intermediate lines,
-}
 void indent()
 {
   int col;
@@ -2298,12 +2289,16 @@ CORE:
     make builtin buffers readonly (except config and search?)
 
 VIS:
-    Display line number of every line
+    Put border on frames
+    Make the active frame the biggest (both in width and font size)
+    Make builtin frame very thin when not in use
+    Make frame widths resizeable
+    slightly change color of status bar
+    Display line number of every line(hmmm, takes up horiz space)
     Minimap
-    syntax highlighting
-    highlight nested parens
+    highlight matching paren
     resize nested parens
-    display multiple characters as one (e.g. lambda)
+    display multiple characters as one (e.g. ->)
     buffer list screen
 
 MACRO:
@@ -2312,6 +2307,7 @@ MACRO:
     select all
 
 DONE:
+syntax highlighting
 continual compile (on exiting insert or delete)
 help screen
 Undo/Redo commands
