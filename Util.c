@@ -15,8 +15,6 @@ bool builtinBufferReadOnly[NUM_BUILTIN_BUFFERS] = { true, true, true, true, true
 
 char *editorModeDescr[NUM_MODES] = { "NAV", "INS", "FND" };
 
-color_t viewColors[] = { VIEW_COLOR, FOCUS_VIEW_COLOR };
-
 void die(const char *msg)
 {
   fprintf(stdout, "error: %s\n", msg);
@@ -56,6 +54,7 @@ void setTextureColorMod(SDL_Texture *t, color_t c)
 
 void rendererClear(void)
 {
+  setDrawColor(FRAME_COLOR);
   if (SDL_RenderClear(renderer) != 0) die(SDL_GetError());
 }
 

@@ -6,9 +6,6 @@
 #include "Util.h"
 #include "Search.h"
 
-color_t unfocusedFrameColor = 0x303030ff;
-color_t focusedFrameColor = 0x101010ff;
-
 void insertCString(char *s);
 void insertString(char *s, uint len);
 void builtinInsertCString(char *s);
@@ -107,10 +104,10 @@ void setFocusFrame(int i)
   if (i == j) return;
 
   frame_t *frame = frameOf(j);
-  frame->color = unfocusedFrameColor;
+  frame->color = FRAME_COLOR;
   arraySetFocus(&st.frames, i);
   frame = frameOf(i);
-  frame->color = focusedFrameColor;
+  frame->color = FOCUS_FRAME_COLOR;
 }
 
 int numViews()
@@ -178,7 +175,7 @@ void setFocusView(int refView)
 void frameInit(frame_t *frame)
 {
     memset(frame, 0, sizeof(frame_t));
-    frame->color = unfocusedFrameColor;
+    frame->color = FRAME_COLOR;
 
     arrayInit(&frame->views, sizeof(view_t));
     arrayInit(&frame->status, sizeof(char));
@@ -342,13 +339,14 @@ void drawStringSelection(int x, int y, char *s, int len)
     }
 }
 
-#define preprocColor 0x00ffffff
-#define literalColor 0xff00ffff
-#define commentColor 0xffff00ff
-#define unknownColor 0xff0000ff
-#define uidentColor  0x0000ffff
-#define lidentColor  0xffffffff
-#define symbolColor  0x00ff00ff
+#define preprocColor BRMAGENTA
+#define literalColor BRRED
+#define commentColor BRGREEN
+#define unknownColor MAGENTA
+#define uidentColor  CYAN
+#define lidentColor  BRCYAN
+#define symbolColor  YELLOW
+#define specialColor BLUE
 
 typedef enum { TOKBEGIN, IN_LIDENT, IN_UIDENT, IN_NUMBER, IN_PREPROC, IN_SLCOMMENT, IN_MLCOMMENT, IN_MLCOMMENT_END, IN_STRING, IN_STRING_ESC, IN_CHAR, IN_CHAR_ESC } tokSt_t;
 
@@ -367,6 +365,10 @@ bool isNumChar(char c)
 bool isIdentChar(char c)
 {
   return isLidentChar(c) || isUidentChar(c) || isNumChar(c);
+}
+bool isSpecialChar(char c)
+{
+  return (c == '{' || c == '}' || c == '(' || c == ')' || c == '[' || c == ']' || c == ';' || c == ':' || c == ',');
 }
 char peekChar(char *p, char *q)
 {
@@ -467,6 +469,10 @@ color_t getCharColor(char c, tokSt_t *accp, char *p, char *q)
     if (isNumChar(c)) {
       *accp = IN_NUMBER;
       return literalColor;
+    }
+    if (isSpecialChar(c)) {
+      *accp = TOKBEGIN;
+      return specialColor;
     }
     if (c >= ' ' && c <= '~') {
       *accp = TOKBEGIN;
@@ -1022,7 +1028,7 @@ void contextReinit()
 {
   context.x = 0;
   context.y = 0;
-  context.color = 0xffffffff;
+  context.color = BRWHITE;
   context.font = &st.font;
   context.w = st.window.width;
   context.h = st.window.height;
@@ -1038,7 +1044,7 @@ void contextReinit()
 }
 void stDraw(void)
 {
-  setDrawColor(0x00ff00ff);
+  setDrawColor(WHITE);
   rendererClear();
   contextReinit();
   widgetDraw(gui);
@@ -1197,6 +1203,8 @@ void stInit(int argc, char **argv)
     message("hello from the beyond");
 
     helpBufInit();
+
+    setFocusFrame(MAIN_FRAME);
 
     stResize();
 

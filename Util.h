@@ -48,15 +48,33 @@ extern char *editorModeDescr[NUM_MODES];
 
 typedef unsigned char uchar;
 typedef enum { NOT_DIRTY = 0b0, DOC_DIRTY = 0b1, FOCUS_DIRTY = 0b10, WINDOW_DIRTY = 0b100 } windowDirty_t;
-extern color_t viewColors[];
 extern char *macro[256];
 void setTextureColorMod(SDL_Texture *t, color_t c);
-#define FOCUS_VIEW_COLOR 0x000000ff
-#define VIEW_COLOR 0x303030ff
+
+// "solarized" colors
+#define BRBLACK 0x002b36ff
+#define BLACK 0x073642ff
+#define BRGREEN 0x586e75ff
+#define BRYELLOW 0x657b83ff
+#define BRBLUE 0x839496ff
+#define BRCYAN 0x93a1a1ff
+#define WHITE 0xeee8d5ff
+#define BRWHITE 0xfdf6e3ff
+#define YELLOW 0xb58900ff
+#define BRRED 0xcb4b16ff
+#define RED 0xdc322fff
+#define MAGENTA 0xd33682ff
+#define BRMAGENTA 0x6c71c4ff
+#define BLUE 0x268bd2ff
+#define CYAN 0x2aa198ff
+#define GREEN 0x859900ff
+
+#define FOCUS_FRAME_COLOR 0x222222ff
+#define FRAME_COLOR 0x292929ff
 #define CURSOR_COLOR 0xffff00ff
-#define CURSOR_BACKGROUND_COLOR 0xffff40a0
+#define CURSOR_BACKGROUND_COLOR (CURSOR_COLOR & 0xffffff30)
 #define SELECTION_COLOR CURSOR_BACKGROUND_COLOR
-#define SEARCH_COLOR 0xffff4080
+#define SEARCH_COLOR GREEN
 #define INIT_WINDOW_WIDTH 2488
 #define INIT_WINDOW_HEIGHT 1300
 #define INIT_FONT_SIZE 24
@@ -64,11 +82,8 @@ void setTextureColorMod(SDL_Texture *t, color_t c);
 #define SELECTION_RECT_GAP 8
 #define AUTO_SCROLL_HEIGHT 4
 
-extern color_t viewColors[];
-
 #define CURSOR_WIDTH 3
 #define BORDER_WIDTH 4
-#define BACKGROUND_COLOR 0xa0a0a0ff
 #define DISPLAY_NEWLINES false
 #define DISPLAY_EOF false
 #define DEMO_MODE true
