@@ -1947,7 +1947,6 @@ void insertOpenCloseChars(uchar c)
 insertCString("{}");
 forwardChar();
 setInsert
-
 }
 
 int main(int argc, char **argv) {
