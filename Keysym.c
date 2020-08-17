@@ -231,6 +231,8 @@ void keysymInit(void) {
   keyHandlerHelp[NAVIGATE_MODE]['{'] = "insert open/close braces";
   keyHandler[NAVIGATE_MODE]['{'] = insertOpenCloseChars;
   keyHandlerHelp[NAVIGATE_MODE]['{'] = "insert open/close braces";
+  keyHandler[NAVIGATE_MODE]['{'] = insertOpenCloseChars;
+  keyHandlerHelp[NAVIGATE_MODE]['{'] = "insert open/close braces";
 
   // BAL: 'h' or '?' goto help buffer?
   //    keyHandler[NAVIGATE_MODE]['-'] = decreaseFont;
