@@ -12,18 +12,22 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <assert.h>
+#include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <sys/stat.h>
-#include <limits.h>
-#include <stdbool.h>
 
 #define min(x, y) ((x) <= (y) ? (x) : (y))
 #define max(x, y) ((x) >= (y) ? (x) : (y))
-#define swap(ty, x, y) { ty tmp = x; x = y; y = tmp; }
-#define clamp(a,b,c) min(max((a), (b)), (c))
+#define swap(ty, x, y)                                                         \
+  {                                                                            \
+    ty tmp = x;                                                                \
+    x = y;                                                                     \
+    y = tmp;                                                                   \
+  }
+#define clamp(a, b, c) min(max((a), (b)), (c))
 
 struct state_s;
 typedef struct state_s state_t;
@@ -43,11 +47,21 @@ char *getClipboardText(void);
 void setClipboardText(const char *text);
 int numLinesString(char *s, int len);
 
-typedef enum { NAVIGATE_MODE, INSERT_MODE, SEARCH_MODE, NUM_MODES } editorMode_t; // BAL: remove search_mode?
+typedef enum {
+  NAVIGATE_MODE,
+  INSERT_MODE,
+  SEARCH_MODE,
+  NUM_MODES
+} editorMode_t; // BAL: remove search_mode?
 extern char *editorModeDescr[NUM_MODES];
 
 typedef unsigned char uchar;
-typedef enum { NOT_DIRTY = 0b0, DOC_DIRTY = 0b1, FOCUS_DIRTY = 0b10, WINDOW_DIRTY = 0b100 } windowDirty_t;
+typedef enum {
+  NOT_DIRTY = 0b0,
+  DOC_DIRTY = 0b1,
+  FOCUS_DIRTY = 0b10,
+  WINDOW_DIRTY = 0b100
+} windowDirty_t;
 extern char *macro[256];
 void setTextureColorMod(SDL_Texture *t, color_t c);
 
@@ -90,7 +104,16 @@ void setTextureColorMod(SDL_Texture *t, color_t c);
 #define NO_GIT false
 #define NO_COMPILE false
 
-enum { HELP_BUF, MESSAGE_BUF, BUFFERS_BUF, MACRO_BUF, COPY_BUF, SEARCH_BUF, CONFIG_BUF, NUM_BUILTIN_BUFFERS };  // BAL: DIRECTORY_BUF for loading files?  or just put in config?
+enum {
+  HELP_BUF,
+  MESSAGE_BUF,
+  BUFFERS_BUF,
+  MACRO_BUF,
+  COPY_BUF,
+  SEARCH_BUF,
+  CONFIG_BUF,
+  NUM_BUILTIN_BUFFERS
+}; // BAL: DIRECTORY_BUF for loading files?  or just put in config?
 
 extern char *builtinBufferTitle[NUM_BUILTIN_BUFFERS];
 extern bool builtinBufferReadOnly[NUM_BUILTIN_BUFFERS];
@@ -105,8 +128,8 @@ struct font_s {
   int lineSkip;
   int charSkip;
   SDL_Texture *charTexture[256]; // BAL: ['~' + 1];
-  SDL_Rect charRect; // BAL: remove
-  SDL_Rect cursorRect; // BAL: remove
+  SDL_Rect charRect;             // BAL: remove
+  SDL_Rect cursorRect;           // BAL: remove
   const char *filepath;
   unsigned int size;
 };
@@ -134,7 +157,7 @@ struct command_s {
 };
 
 typedef struct command_s command_t;
-typedef dynamicArray_t undoStack_t; // contains commands
+typedef dynamicArray_t undoStack_t;    // contains commands
 typedef dynamicArray_t searchBuffer_t; // contains result offsets
 
 struct doc_s {
@@ -158,7 +181,12 @@ struct cursor_s {
 
 typedef struct cursor_s cursor_t;
 
-typedef enum { NO_SELECT, CHAR_SELECT, LINE_SELECT, NUM_SELECT_MODES } selectMode_t;
+typedef enum {
+  NO_SELECT,
+  CHAR_SELECT,
+  LINE_SELECT,
+  NUM_SELECT_MODES
+} selectMode_t;
 
 struct view_s // BAL: this needs to be renamed
 {
@@ -175,8 +203,7 @@ typedef struct view_s view_t;
 typedef dynamicArray_t docsBuffer_t;
 typedef dynamicArray_t viewsBuffer_t;
 
-struct frame_s
-{
+struct frame_s {
   viewsBuffer_t views;
   color_t color;
   int height;
@@ -186,8 +213,7 @@ struct frame_s
 
 typedef struct frame_s frame_t;
 
-struct window_s
-{
+struct window_s {
   SDL_Window *window;
   int width;
   int height;
@@ -197,8 +223,7 @@ typedef struct window_s window_t;
 
 typedef dynamicArray_t frameBuffer_t;
 
-struct state_s
-{
+struct state_s {
   docsBuffer_t docs;
   frameBuffer_t frames;
   window_t window;

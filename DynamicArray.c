@@ -8,31 +8,28 @@
 
 #include "DynamicArray.h"
 
-void arrayGrow(dynamicArray_t *arr, int maxElems)
-{
+void arrayGrow(dynamicArray_t *arr, int maxElems) {
   assert(arr);
   assert(maxElems >= 1);
-  if (maxElems <= arr->maxElems) return;
+  if (maxElems <= arr->maxElems)
+    return;
   printf("growing array...\n");
   arr->maxElems = maxElems;
   arr->start = dieIfNull(realloc(arr->start, arr->elemSize * maxElems));
 }
 
-void arrayReinit(dynamicArray_t *arr)
-{
+void arrayReinit(dynamicArray_t *arr) {
   assert(arr);
   arr->offset = 0;
   arr->numElems = 0;
 }
 
-void arrayInit(dynamicArray_t *arr, int elemSize)
-{
+void arrayInit(dynamicArray_t *arr, int elemSize) {
   memset(arr, 0, sizeof(dynamicArray_t));
   arr->elemSize = elemSize;
 }
 
-void *arrayElemAt(dynamicArray_t *arr, int i)
-{
+void *arrayElemAt(dynamicArray_t *arr, int i) {
   assert(arr);
   assert(arr->start);
   // BAL: assert(i >= 0);
@@ -41,37 +38,29 @@ void *arrayElemAt(dynamicArray_t *arr, int i)
   return arr->start + i * arr->elemSize;
 }
 
-void *arrayFocus(dynamicArray_t *arr)
-{
-  return arrayElemAt(arr, arr->offset);
-}
+void *arrayFocus(dynamicArray_t *arr) { return arrayElemAt(arr, arr->offset); }
 
-void *arrayTop(dynamicArray_t *arr)
-{
+void *arrayTop(dynamicArray_t *arr) {
   return arr->start + arr->numElems * arr->elemSize;
 }
 
-bool arrayAtTop(dynamicArray_t *arr)
-{
-  return arr->offset >= arr->numElems;
-}
+bool arrayAtTop(dynamicArray_t *arr) { return arr->offset >= arr->numElems; }
 
-void arrayDelete(dynamicArray_t *arr, int offset, int len)
-{
+void arrayDelete(dynamicArray_t *arr, int offset, int len) {
   assert(arr);
   void *p = arrayElemAt(arr, offset);
-  void *q = p + len*arr->elemSize;
+  void *q = p + len * arr->elemSize;
   memmove(p, q, arrayTop(arr) - q);
   arr->numElems -= len;
 }
 
-void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len)
-{
+void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len) {
   assert(arr);
   int n = arr->numElems + len;
-  if (n > arr->maxElems) arrayGrow(arr, n);
+  if (n > arr->maxElems)
+    arrayGrow(arr, n);
 
-  int sz = len*arr->elemSize;
+  int sz = len * arr->elemSize;
 
   void *p = arrayElemAt(arr, offset);
 
@@ -81,28 +70,24 @@ void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len)
   arr->numElems = n;
 }
 
-void *arrayPushUninit(dynamicArray_t *arr)
-{
+void *arrayPushUninit(dynamicArray_t *arr) {
   assert(arr);
-  if (arr->numElems == arr->maxElems)
-    {
-      arrayGrow(arr, 1 + arr->maxElems * 2);
-    }
+  if (arr->numElems == arr->maxElems) {
+    arrayGrow(arr, 1 + arr->maxElems * 2);
+  }
   assert(arr->start);
   void *p = arrayTop(arr);
   arr->numElems++;
   return p;
 }
 
-void arrayPush(dynamicArray_t *arr, void *elem)
-{
+void arrayPush(dynamicArray_t *arr, void *elem) {
   assert(arr);
   assert(elem);
   memcpy(arrayPushUninit(arr), elem, sizeof(arr->elemSize));
 }
 
-void *arrayPop(dynamicArray_t *arr)
-{
+void *arrayPop(dynamicArray_t *arr) {
   assert(arr);
   assert(arr->start);
   assert(arr->numElems > 0);
@@ -110,22 +95,19 @@ void *arrayPop(dynamicArray_t *arr)
   return arrayTop(arr);
 }
 
-void *arrayPeek(dynamicArray_t *arr)
-{
+void *arrayPeek(dynamicArray_t *arr) {
   assert(arr);
   return arrayElemAt(arr, arr->numElems - 1);
 }
 
-void arraySetFocus(dynamicArray_t *arr, int i)
-{
+void arraySetFocus(dynamicArray_t *arr, int i) {
   assert(arr);
   assert(i >= 0);
   assert(i < arr->numElems);
   arr->offset = i;
 }
 
-void arrayFree(dynamicArray_t *arr)
-{
+void arrayFree(dynamicArray_t *arr) {
   printf("freeing array...\n");
   free(arr->start);
 }

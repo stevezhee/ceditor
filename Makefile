@@ -15,5 +15,8 @@ ceditor: $(OFILES)
 %.o: %.c $(HFILES)
 	clang -c $(CFLAGS) $<
 
+pretty:
+	clang-format -i *.[ch]
+
 clean:
 	rm -rf ceditor $(OFILES)
