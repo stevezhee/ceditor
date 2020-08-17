@@ -155,7 +155,7 @@ void keysymInit(void) {
     keyHandler[INSERT_MODE][i] = setNavigateModeAndDoKeyPress;
   }
 
-  keyHandler[INSERT_MODE][KEY_ESC] = (keyHandler_t)setNavigateMode();
+  keyHandler[INSERT_MODE][KEY_ESC] = (keyHandler_t)setNavigateMode;
   keyHandlerHelp[INSERT_MODE][KEY_ESC] = "set navigate mode";
 
   keyHandler[NAVIGATE_MODE]['\t'] = (keyHandler_t)indent;
