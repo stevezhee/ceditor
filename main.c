@@ -1107,12 +1107,6 @@ void stInit(int argc, char **argv) {
 
   // BAL: buffersBufInit();
 
-  /* setFocusFrame(SECONDARY_FRAME); */
-  /* stSetViewFocus(MESSAGE_BUF); */
-  /* setFocusFrame(BUILTINS_FRAME); */
-  /* stSetViewFocus(BUFFERS_BUF); */
-  /* setFocusFrame(MAIN_FRAME); */
-  /* stSetViewFocus(NUM_BUILTIN_BUFFERS); */
 }
 
 void quitEvent() {
