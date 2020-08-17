@@ -27,7 +27,7 @@ uchar getKeyChar(SDL_Keycode c);
 
 char *keysymName(uchar key);
 void doNothing(uchar c);
-void setNavigateModeAndDoKeyPress(uchar c);
+void doKeyPressInNavigateMode(uchar c);
 void forwardEOF();
 void backwardSOF();
 void newSearch();

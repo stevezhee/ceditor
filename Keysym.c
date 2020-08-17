@@ -152,11 +152,11 @@ void keysymInit(void) {
 
   for (int i = 0; i < NUM_KEYS; ++i) {
     keyHandler[NAVIGATE_MODE][i] = doNothing;
-    keyHandler[INSERT_MODE][i] = setNavigateModeAndDoKeyPress;
+    keyHandler[INSERT_MODE][i] = doKeyPressInNavigateMode;
   }
 
-  keyHandler[INSERT_MODE][KEY_ESC] = (keyHandler_t)setNavigateMode;
-  keyHandlerHelp[INSERT_MODE][KEY_ESC] = "set navigate mode";
+  keyHandler[INSERT_MODE][KEY_ESCAPE] = (keyHandler_t)setNavigateMode;
+  keyHandlerHelp[INSERT_MODE][KEY_ESCAPE] = "set navigate mode";
 
   keyHandler[NAVIGATE_MODE]['\t'] = (keyHandler_t)indent;
   keyHandlerHelp[NAVIGATE_MODE]['\t'] = "indent region";

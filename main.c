@@ -1375,7 +1375,7 @@ void setMode(editorMode_t mode)
     }
 }
 
-void setNavigateModeAndDoKeyPress(uchar c) {
+void doKeyPressInNavigateMode(uchar c) {
   int mode = focusView()->mode;
   setNavigateMode();
   doKeyPress(c);
