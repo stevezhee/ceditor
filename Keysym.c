@@ -234,7 +234,7 @@ void keysymInit(void) {
   keyHandlerHelp[NAVIGATE_MODE]['('] = "insert open/close parens";
   keyHandler[NAVIGATE_MODE]['['] = insertOpenCloseChars;
   keyHandlerHelp[NAVIGATE_MODE]['['] = "insert open/close brackets";
-  keyHandler[NAVIGATE_MODE]['\''] = insertOpenCloseChars;
+  keyHandler[NAVIGATE_MODE]['\\\''] = insertOpenCloseChars;
   keyHandlerHelp[NAVIGATE_MODE]['\''] = "insert open/close single quotes";
   keyHandler[NAVIGATE_MODE]['"'] = insertOpenCloseChars;
   keyHandlerHelp[NAVIGATE_MODE]['"'] = "insert open/close double quotes";
