@@ -1361,9 +1361,25 @@ void setInsertMode() {
   focusView()->mode = INSERT_MODE;
 }
 
+void setMode(editorMode_t mode)
+{
+  switch(mode)
+    {
+    case INSERT_MODE:
+      setInsertMode();
+      return;
+    default:
+      assert(mode == NAVIGATE_MODE);
+      setNavigateMode();
+      return;
+    }
+}
+
 void setNavigateModeAndDoKeyPress(uchar c) {
+  int mode = focusView()->mode;
   setNavigateMode();
   doKeyPress(c);
+  setMode(mode);
 }
 
 void moveLines(int dRow) {
@@ -2044,6 +2060,7 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
+    restore the mode on delete (and other similar functions)
     periodically save all (modified) files
     reload file when changed outside of editor
     remember your place in the file on close
