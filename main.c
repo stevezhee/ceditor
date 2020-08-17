@@ -1104,11 +1104,9 @@ void stInit(int argc, char **argv) {
 
   setFocusBuiltinsView(HELP_BUF);
   setFocusFrame(MAIN_FRAME);
-
 }
 
-void saveAll()
-{
+void saveAll() {
   bool changes = false;
 
   for (int i = NUM_BUILTIN_BUFFERS; i < st.docs.numElems; ++i) {
@@ -1117,7 +1115,8 @@ void saveAll()
     changes |= doc->modified;
     docWrite(doc);
   }
-  if(changes) system("make&");
+  if (changes)
+    system("make&");
 }
 
 void quitEvent() {
@@ -1945,9 +1944,8 @@ void outdent() {
 /*   return(interval); */
 /* } */
 
-uchar lookupCloseChar(uchar c)
-{
-  switch(c) {
+uchar lookupCloseChar(uchar c) {
+  switch (c) {
   case '(':
     return ')';
   case '[':
@@ -1962,30 +1960,28 @@ uchar lookupCloseChar(uchar c)
   }
 }
 
-void insertOpenCloseChars(uchar c)
-{
+void insertOpenCloseChars(uchar c) {
   uchar c1 = lookupCloseChar(c);
 
   int col;
   int row;
   int off;
   int len;
-view_t *view = focusView();
+  view_t *view = focusView();
 
-  if(selectionActive(view))
-{
-  getSelectionCoords(view, &col, &row, &off, &len);
-stMoveCursorOffset(off);
-insertChar(c);
-stMoveCursorOffset(off + len + 1);
-insertChar(c1);
-selectionCancel();
-return;
-}
-// if selection is on
-// insert begin/end punctuation around selection
-// otherwise
-//   insert begin/end punctuation and then go to insert mode in the middle
+  if (selectionActive(view)) {
+    getSelectionCoords(view, &col, &row, &off, &len);
+    stMoveCursorOffset(off);
+    insertChar(c);
+    stMoveCursorOffset(off + len + 1);
+    insertChar(c1);
+    selectionCancel();
+    return;
+  }
+  // if selection is on
+  // insert begin/end punctuation around selection
+  // otherwise
+  //   insert begin/end punctuation and then go to insert mode in the middle
   insertChar(c);
   insertChar(c1);
   backwardChar();

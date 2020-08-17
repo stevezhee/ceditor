@@ -26,8 +26,10 @@ void docInsert(doc_t *doc, int offset, char *s, int len) {
 char systemBuf[1024]; // BAL: use string_t
 
 void docWrite(doc_t *doc) {
-  if (DEMO_MODE) return;
-  if (!doc->modified) return;
+  if (DEMO_MODE)
+    return;
+  if (!doc->modified)
+    return;
   FILE *fp = fopen(doc->filepath, "w");
   if (fp == NULL)
     die("unable to open file for write");
