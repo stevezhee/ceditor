@@ -29,8 +29,6 @@
   }
 #define clamp(a, b, c) min(max((a), (b)), (c))
 
-struct state_s;
-typedef struct state_s state_t;
 typedef int color_t;
 
 void die(const char *msg);
@@ -223,7 +221,7 @@ typedef struct window_s window_t;
 
 typedef dynamicArray_t frameBuffer_t;
 
-struct state_s {
+typedef struct state_s {
   docsBuffer_t docs;
   frameBuffer_t frames;
   window_t window;
@@ -236,9 +234,7 @@ struct state_s {
   int downCxtX;
   int downCxtY;
   bool mouseSelectionInProgress;
-};
-
-typedef struct state_s state_t;
+} state_t;
 
 #define KEY_UNKNOWN 0
 #define KEY_SHIFT_RETURN 1

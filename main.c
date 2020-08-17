@@ -2060,13 +2060,12 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
-    restore the mode on delete (and other similar functions)
     periodically save all (modified) files
     reload file when changed outside of editor
-    remember your place in the file on close
-    add save/pretty-print/build hotkey
+    add pretty-print hotkey
+    remember your place in the file on close (restore all settings/state?)
     modify frame widths based on columns (e.g. focus doc frame is 80/120 chars)
-    pretty print doc in-place (automatic?)
+    make font smaller in non-focused frames
     Search and replace
     Goto line
     Scroll when mouse selection goes off screen command line
@@ -2111,6 +2110,7 @@ MACRO:
     select all
 
 DONE:
+add save/build hotkey
 insert both open/close characters (e.g. "" or {}).  If selection is on, use
 that for contents.
 syntax highlighting
