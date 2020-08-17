@@ -1944,6 +1944,8 @@ uchar lookupClosChar(uchar c)
 {
 case '{':
 return '}';
+case '{':
+return '}';
 }
 }
 
