@@ -82,6 +82,7 @@ void keyNameInit(void) {
   memset(keyName, 0, sizeof(keyName));
   keyName['\n'] = "\\n";
   keyName['\t'] = "\\t";
+  keyName['\''] = "\\'";
   keyName[KEY_UNKNOWN] = "UNKNOWN";
   keyName[KEY_SHIFT_RETURN] = "SHIFT_RETURN";
   keyName[KEY_SHIFT_SPACE] = "SHIFT_SPACE";
@@ -234,7 +235,7 @@ void keysymInit(void) {
   keyHandlerHelp[NAVIGATE_MODE]['('] = "insert open/close parens";
   keyHandler[NAVIGATE_MODE]['['] = insertOpenCloseChars;
   keyHandlerHelp[NAVIGATE_MODE]['['] = "insert open/close brackets";
-  keyHandler[NAVIGATE_MODE]['\\\''] = insertOpenCloseChars;
+  keyHandler[NAVIGATE_MODE]['\''] = insertOpenCloseChars;
   keyHandlerHelp[NAVIGATE_MODE]['\''] = "insert open/close single quotes";
   keyHandler[NAVIGATE_MODE]['"'] = insertOpenCloseChars;
   keyHandlerHelp[NAVIGATE_MODE]['"'] = "insert open/close double quotes";
