@@ -1940,20 +1940,19 @@ void outdent() {
 
 uchar lookupClosChar(uchar c)
 {
-  switch(c)
-{
-case '(':
-return ')';
-case '[':
-return ']';
-case '{':
-return '}';
-case '\'':
-return '\'';
-default:
-assert(c == '"');
-return '"';
-}
+  switch(c)  {
+  case '(':
+    return ')';
+  case '[':
+    return ']';
+  case '{':
+    return '}';
+  case '\'':
+    return '\'';
+  default:
+    assert(c == '"');
+    return '"';
+  }
 }
 
 void insertOpenCloseChars(uchar c)
