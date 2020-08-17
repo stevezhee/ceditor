@@ -19,7 +19,7 @@ pretty:
 	clang-format -i *.[ch]
 
 checkpoint:
-	git commit -am"cp"
+	-git commit -am"cp"
 
 clean:
 	rm -rf ceditor $(OFILES)
