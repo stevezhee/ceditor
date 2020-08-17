@@ -1941,7 +1941,8 @@ void outdent() {
 uchar lookupClosChar(uchar c)
 {
   switch(c)
-
+{
+}
 }
 
 void insertOpenCloseChars(uchar c)
