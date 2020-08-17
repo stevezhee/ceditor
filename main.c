@@ -1946,6 +1946,7 @@ void insertOpenCloseChars(char c)
 //   insert begin/end punctuation and then go to insert mode in the middle
 insertCString("{}");
 
+
 }
 
 int main(int argc, char **argv) {
