@@ -1938,7 +1938,7 @@ void outdent() {
 /*   return(interval); */
 /* } */
 
-void insert(char c)
+void insertOpenCloseChars(char c)
 {
 // if selection is on
 // insert begin/end punctuation around selection
