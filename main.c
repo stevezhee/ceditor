@@ -2235,9 +2235,11 @@ int main(int argc, char **argv)
 /*
 TODO:
 CORE:
+    reload file when changed outside of editor
+    pretty print doc in-place (automatic?)
+    Search and replace
     Goto line
     insert both open/close characters (e.g. "" or {}).  If selection is on, use that for contents.
-    Search and replace
     Scroll when mouse selection goes off screen
     command line args/config to set config items (e.g. demo mode)
     status bar that has modified, etc.
@@ -2255,7 +2257,6 @@ CORE:
     jump to prev/next placeholders
     jump to prev/next change
     collapse/expand selection (code folding)
-    reload file when changed outside of editor
     (tons of) optimizations
     make builtin buffers readonly (except config and search?)
 
