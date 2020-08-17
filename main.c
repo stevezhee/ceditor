@@ -2041,15 +2041,13 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
+    reload file when changed outside of editor
     remember your place in the file on close
     add save/pretty-print/build hotkey
     modify frame widths based on columns (e.g. focus doc frame is 80/120 chars)
-    reload file when changed outside of editor
     pretty print doc in-place (automatic?)
     Search and replace
     Goto line
-    insert both open/close characters (e.g. "" or {}).  If selection is on, use
-that for contents.
     Scroll when mouse selection goes off screen command line
     args/config to set config items (e.g. demo mode)
     status bar that has modified,etc.
@@ -2092,6 +2090,8 @@ MACRO:
     select all
 
 DONE:
+insert both open/close characters (e.g. "" or {}).  If selection is on, use
+that for contents.
 syntax highlighting
 continual compile (on exiting insert or delete)
 help screen
