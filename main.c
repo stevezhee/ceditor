@@ -1,5 +1,9 @@
 #include "Cursor.h"
-#include "Doc.h"
+skdj f f dfdsds
+sdfjs df  fas
+df
+sdassdfd   fs
+d#include "Doc.h"
 #include "DynamicArray.h"
 #include "Font.h"
 #include "Keysym.h"
