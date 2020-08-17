@@ -1958,13 +1958,14 @@ uchar lookupCloseChar(uchar c)
 void insertOpenCloseChars(uchar c)
 {
   uchar c1 = lookupCloseChar(c);
+
 // if selection is on
 // insert begin/end punctuation around selection
 // otherwise
 //   insert begin/end punctuation and then go to insert mode in the middle
   insertChar(c);
   insertChar(c1);
-  forwardChar();
+  backwardChar();
   setInsertMode();
 }
 
@@ -2024,6 +2025,7 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
+    add save/pretty-print/build hotkey
     modify frame widths based on columns (e.g. focus doc frame is 80/120 chars)
     reload file when changed outside of editor
     pretty print doc in-place (automatic?)
