@@ -1208,6 +1208,7 @@ void stInit(int argc, char **argv)
         setFrameView(i, 0);
     }
 
+    setFocusBuiltinsView(HELP_BUF);
     setFocusFrame(MAIN_FRAME);
 
     gui = hcat(frame(0), hcat(frame(1), frame(2)));
@@ -1693,8 +1694,7 @@ void helpBufInit()
 
   for(int i = 0; i < NUM_BUILTIN_MACROS; ++i)
     {
-      uchar c = builtinMacros[i][0];
-      sprintf(s, "'%s': %s\n", keysymName(c), builtinMacrosHelp[i]);
+      sprintf(s, "'%s': %s\n", keysymName(builtinMacros[i][0]), builtinMacrosHelp[i]);
       builtinAppendCString(s);
     }
 
