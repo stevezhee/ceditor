@@ -1968,7 +1968,8 @@ view_t *view = focusView();
   if(selectionActive(view))
 {
   getSelectionCoords(view, &col, &row, &off, &len);
-stM
+stMoveCursorOffset(off);
+
 return;
 }
 // if selection is on
