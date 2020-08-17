@@ -447,19 +447,6 @@ tok_begin:
   *accp = TOKBEGIN;
   return unknownColor;
 }
-/* void match(char c) */
-/* { */
-/*   if (c == ' ' || c == '\n') return SPACE; */
-/*   if (c >= 'a' && c <= 'z' || c == '_') return LOWER; */
-/*   if (c >= 'A' && c <= 'Z') return UPPER; */
-/*   if (c == '/') return FSLASH; */
-/*   if (c == '\\') return BSLASH; */
-/*   if (c == '*') return STAR; */
-/*   if (c == '\'') return SQUOTE; */
-/*   if (c == '\"') return DQUOTE; */
-/*   if (c == '#') return HASH; */
-/*   return SYMBOL; */
-/* } */
 
 void drawString(string_t *s) {
   if (!s)
