@@ -1963,6 +1963,7 @@ void insertOpenCloseChars(uchar c)
 // otherwise
 //   insert begin/end punctuation and then go to insert mode in the middle
   insertChar(c);
+  insertChar(c);
   forwardChar();
   setInsertMode();
 }
