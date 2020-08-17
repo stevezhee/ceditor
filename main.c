@@ -1938,6 +1938,7 @@ void outdent() {
 /*   return(interval); */
 /* } */
 
+
 void insertOpenCloseChars(uchar c)
 {
 // if selection is on
