@@ -1938,14 +1938,15 @@ void outdent() {
 /*   return(interval); */
 /* } */
 
-void insertOpenCloseChars(char c)
+void insertOpenCloseChars(uchar c)
 {
 // if selection is on
 // insert begin/end punctuation around selection
 // otherwise
 //   insert begin/end punctuation and then go to insert mode in the middle
 insertCString("{}");
-backwardChar();
+forwardChar();
+
 }
 
 int main(int argc, char **argv) {
