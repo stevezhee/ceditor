@@ -1938,12 +1938,13 @@ void outdent() {
 /*   return(interval); */
 /* } */
 
-void foo(char c)
+
+void insert(char c)
 {
 // if selection is on
-// insert begin/end punction
+// insert begin/end punctuation around selection
 // otherwise
-
+//   insert begin/end punctuation and then go to insert mode in the middle
 }
 
 int main(int argc, char **argv) {
