@@ -1964,6 +1964,7 @@ void insertOpenCloseChars(uchar c)
   int off;
   int len;
 
+
   getSelectionCoords(focusView(), &col, &row, &off, &len);
 
 // if selection is on
