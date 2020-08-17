@@ -1294,9 +1294,7 @@ void focusScrollY(int dR)
   view_t *view = focusView();
 
   view->scrollY += dR * st.font.lineSkip;
-  printf("%d %d ", docHeight(doc), view->scrollY);
   view->scrollY = clamp(frame->height - docHeight(doc) - st.font.lineSkip, view->scrollY, 0);
-  printf("%d\n", view->scrollY);
 }
 
 // BAL: do this on mouse clicks...
