@@ -1988,7 +1988,6 @@ int main(int argc, char **argv) {
     /*     stRender(&st); */
     /* } */
   }
-"ksfjskdf
   return 0;
 }
 
