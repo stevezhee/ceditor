@@ -1950,6 +1950,7 @@ case '{':
 return '}';
 case '\'':
 return '\'';
+default:
 
 case '{':
 return '}';
