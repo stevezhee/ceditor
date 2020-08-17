@@ -1091,9 +1091,10 @@ void stResize(void)
       {
         frameResize(i);
       }
-   char s[1024];
-   sprintf(s, "resize %dx%d", w, h);
-   message(s);
+    // BAL: show the window size somewhere (or update config?)
+    // char s[1024];
+    // sprintf(s, "resize %dx%d", w, h);
+   // message(s);
 
 }
 
@@ -1208,16 +1209,14 @@ void stInit(int argc, char **argv)
         setFrameView(i, 0);
     }
 
-    setFocusBuiltinsView(HELP_BUF);
-    setFocusFrame(MAIN_FRAME);
-
     gui = hcat(frame(0), hcat(frame(1), frame(2)));
 
     helpBufInit();
 
-    setFocusFrame(MAIN_FRAME);
-
     stResize();
+
+    setFocusBuiltinsView(HELP_BUF);
+    setFocusFrame(MAIN_FRAME);
 
     // BAL: buffersBufInit();
 
@@ -1689,8 +1688,6 @@ void helpBufInit()
           builtinAppendCString(s);
         }
     }
-
-  builtinAppendCString("\nBuiltin Macros:\n");
 
   for(int i = 0; i < NUM_BUILTIN_MACROS; ++i)
     {
