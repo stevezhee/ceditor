@@ -1995,6 +1995,7 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
+
     reload file when changed outside of editor
     pretty print doc in-place (automatic?)
     Search and replace
