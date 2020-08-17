@@ -1941,6 +1941,7 @@ void outdent() {
 void foo(char c)
 {
 // if selection is on
+// insert begin/end punction
 
 }
 
