@@ -1955,7 +1955,6 @@ uchar lookupCloseChar(uchar c)
   }
 }
 
-
 void insertOpenCloseChars(uchar c)
 {
   uchar c1 = lookupCloseChar(c);
