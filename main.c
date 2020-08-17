@@ -1951,6 +1951,7 @@ return '}';
 case '\'':
 return '\'';
 default:
+assert(c == '"');
 
 case '{':
 return '}';
