@@ -1939,6 +1939,7 @@ void outdent() {
 /* } */
 
 uchar lookupClosChar(uchar c)
+{
 
 void insertOpenCloseChars(uchar c)
 {
