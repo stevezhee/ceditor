@@ -63,6 +63,6 @@ void undo();
 void redo();
 void insertChar(uchar c);
 void cut();
-void insertOpenCloseChars(char c);
+void insertOpenCloseChars(uchar c);
 
 #endif /* Keysym_h */
