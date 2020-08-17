@@ -8,12 +8,13 @@
 
 #include "DynamicArray.h"
 
+// BAL: we seem to call this function way too much ... probably undo causing problems(?)
 void arrayGrow(dynamicArray_t *arr, int maxElems) {
   assert(arr);
   assert(maxElems >= 1);
   if (maxElems <= arr->maxElems) return;
   int n = max(maxElems, arr->maxElems * 2);
-  printf("growing array (%d)\n", n);
+  // printf("growing array (%d)\n", n);
   arr->maxElems = n;
   int sz = arr->elemSize * n;
   assert(sz > 0);
@@ -110,6 +111,6 @@ void arraySetFocus(dynamicArray_t *arr, int i) {
 }
 
 void arrayFree(dynamicArray_t *arr) {
-  printf("freeing array...\n");
+  // BAL: printf("freeing array...\n");
   free(arr->start);
 }
