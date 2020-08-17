@@ -1939,6 +1939,7 @@ void outdent() {
 /* } */
 
 
+id
 void insert(char c)
 {
 // if selection is on
