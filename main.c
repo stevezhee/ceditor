@@ -1942,7 +1942,6 @@ uchar lookupClosChar(uchar c)
 {
   switch(c)
 {
-printf("
 case '{':
 return '}'
 }
