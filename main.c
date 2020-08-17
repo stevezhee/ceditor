@@ -1116,7 +1116,7 @@ void saveAll() {
     docWrite(doc);
   }
   if (changes)
-    system("make&");
+    system("make");
 }
 
 void quitEvent() {
