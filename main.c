@@ -1969,7 +1969,6 @@ view_t *view = focusView();
 {
   getSelectionCoords(view, &col, &row, &off, &len);
 stM
-
 return;
 }
 // if selection is on
