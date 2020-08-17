@@ -82,6 +82,7 @@ void fillRectAt(int x, int y, int w, int h)
   r.h = h;
   if (SDL_RenderFillRect(renderer, &r) != 0) die(SDL_GetError());
 }
+
 void fillRect(int w, int h)
 {
   fillRectAt(0, 0, w, h);
@@ -110,14 +111,3 @@ void setClipboardText(const char *text)
 {
   if (SDL_SetClipboardText(text) != 0) die(SDL_GetError());
 }
-/* // BAL: these don't belong here */
-/* int frameWidth(frame_t *frame) */
-/* { */
-/*   return frame->rect.w; */
-/* } */
-
-/* int frameColumns(frame_t *frame, state_t *st) */
-/* { */
-/*   return frameWidth(frame) / st->font.charSkip; */
-/* } */
-

@@ -84,42 +84,6 @@ void cursorSetRowCol(cursor_t *cursor, int row, int col, doc_t *doc)
     cursorSetRowColString(cursor, row, col, doc->contents.start, doc->contents.numElems);
 }
 
-void fillSelectionRect(state_t *st, frame_t *frame, uint row, uint col, uint h, uint w)
-{
-    /* SDL_Rect rect; */
-    /* rect.x = col * st->font.charSkip + frame->scrollX; */
-    /* rect.y = row * st->font.lineSkip + SELECTION_RECT_GAP + frame->scrollY; */
-    /* rect.h = h * st->font.lineSkip - SELECTION_RECT_GAP; */
-    /* rect.w = w * st->font.charSkip; */
-    /* // BAL: fillRect(st->renderer, &rect); */
-}
-
-void selectionRender(int aRow, int aCol, int bRow, int bCol, frame_t *frame, state_t *st)
-{
-    /* assert(frame); */
-    /* assert(st); */
-
-    /* int n = bRow - aRow; */
-    /* int vCols = frameColumns(frame, st); */
-
-    /* if (n == 0) // single, partial line */
-    /* { */
-    /*     fillSelectionRect(st, frame, aRow, aCol, 1, 1 + bCol - aCol); */
-    /*     return; */
-    /* } */
-
-    /* // partial line, full lines, partial line */
-    /* fillSelectionRect(st, frame, aRow, aCol, 1, vCols - aCol); // 1st partial line */
-
-    /* n += aRow - 1; */
-    /* while (aRow < n) { */
-    /*     aRow++; */
-    /*     fillSelectionRect(st, frame, aRow, 0, 1, vCols); // full lines */
-    /* } */
-
-    /* fillSelectionRect(st, frame, aRow + 1, 0, 1, bCol + 1); // partial line */
-}
-
 void cursorTest()
 {
     cursor_t cursor;

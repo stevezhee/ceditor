@@ -96,20 +96,6 @@ view_t *focusView()
   return viewOf(focusFrame());
 }
 
-void setFocusFrame(int i)
-{
-  assert(i >= 0);
-  assert(i < numFrames());
-  int j = focusFrameRef();
-  if (i == j) return;
-
-  frame_t *frame = frameOf(j);
-  frame->color = FRAME_COLOR;
-  arraySetFocus(&st.frames, i);
-  frame = frameOf(i);
-  frame->color = FOCUS_FRAME_COLOR;
-}
-
 int numViews()
 {
   return focusFrame()->views.numElems;
@@ -138,6 +124,40 @@ cursor_t *focusSelection()
 bool selectionActive(view_t *view)
 {
   return (view->selectMode != NO_SELECT);
+}
+
+void frameResize(int frameRef)
+{
+  frame_t *frame = frameOf(frameRef);
+  int focusRef = focusFrameRef();
+  int w = st.window.width / 3;
+
+  if (frameRef == focusRef && frameRef != BUILTINS_FRAME)
+    w += w / 2;
+  else if (frameRef != focusRef && frameRef == BUILTINS_FRAME)
+    w /= 2;
+
+  frame->width = w;
+  frame->height = st.window.height - st.font.lineSkip;
+}
+
+void setFocusFrame(int i)
+{
+  assert(i >= 0);
+  assert(i < numFrames());
+  int j = focusFrameRef();
+  if (i == j) return;
+
+  frame_t *frame = frameOf(j);
+  frame->color = FRAME_COLOR;
+  arraySetFocus(&st.frames, i);
+  frame = frameOf(i);
+  frame->color = FOCUS_FRAME_COLOR;
+
+  for(int i = 0; i < numFrames(); ++i)
+    {
+      frameResize(i);
+    }
 }
 
 void frameUpdate(frame_t *frame)
@@ -1059,11 +1079,6 @@ void windowInit(window_t *win, int width, int height)
     win->height = height;
 }
 
-void frameResize(frame_t *frame)
-{
-  frame->width = st.window.width / 3;
-  frame->height = st.window.height - st.font.lineSkip;
-}
 void message(char *s);
 
 void stResize(void)
@@ -1076,7 +1091,7 @@ void stResize(void)
     st.window.height = h;
     for(int i = 0; i < numFrames(); ++i)
       {
-        frameResize(frameOf(i));
+        frameResize(i);
       }
    char s[1024];
    sprintf(s, "resize %dx%d", w, h);
@@ -2289,6 +2304,9 @@ CORE:
     make builtin buffers readonly (except config and search?)
 
 VIS:
+    italics, underline and bold in syntax highlighting
+    reserved words syntax highlighting
+    context sensitive syntax highlighting (parser)
     Put border on frames
     Make the active frame the biggest (both in width and font size)
     Make builtin frame very thin when not in use
