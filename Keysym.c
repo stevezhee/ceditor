@@ -83,6 +83,7 @@ void keyNameInit(void) {
   keyName['\n'] = "\\n";
   keyName['\t'] = "\\t";
   keyName['\''] = "\\'";
+  keyName['"'] = "\\\"";
   keyName[KEY_UNKNOWN] = "UNKNOWN";
   keyName[KEY_SHIFT_RETURN] = "SHIFT_RETURN";
   keyName[KEY_SHIFT_SPACE] = "SHIFT_SPACE";
