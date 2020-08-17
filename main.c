@@ -1109,12 +1109,15 @@ void stInit(int argc, char **argv) {
 
 void saveAll()
 {
+  bool changes = false;
+
   for (int i = NUM_BUILTIN_BUFFERS; i < st.docs.numElems; ++i) {
     doc_t *doc = arrayElemAt(&st.docs, i);
     assert(doc);
+    changes |= doc->modified;
     docWrite(doc);
   }
-  system("make&");
+  if(changes) system("make&");
 }
 
 void quitEvent() {
