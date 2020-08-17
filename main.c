@@ -1944,6 +1944,7 @@ void insertOpenCloseChars(char c)
 // insert begin/end punctuation around selection
 // otherwise
 //   insert begin/end punctuation and then go to insert mode in the middle
+insertCString("{}");
 
 }
 
