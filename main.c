@@ -1970,8 +1970,6 @@ view_t *view = focusView();
   getSelectionCoords(view, &col, &row, &off, &len);
 stMoveCursorOffset(off + len);
 insertChar(c1);
-stMoveCursorOffset(off);
-insertChar(c);
 return;
 }
 // if selection is on
@@ -2040,7 +2038,7 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
-
+    remember your place in the file on close
     add save/pretty-print/build hotkey
     modify frame widths based on columns (e.g. focus doc frame is 80/120 chars)
     reload file when changed outside of editor
