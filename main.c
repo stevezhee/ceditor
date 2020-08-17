@@ -1945,8 +1945,7 @@ void insertOpenCloseChars(char c)
 // otherwise
 //   insert begin/end punctuation and then go to insert mode in the middle
 insertCString("{}");
-
-
+backwardChar();
 }
 
 int main(int argc, char **argv) {
