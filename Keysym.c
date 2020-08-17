@@ -236,7 +236,6 @@ void keysymInit(void) {
   keyHandler[NAVIGATE_MODE]['"'] = insertOpenCloseChars;
   keyHandlerHelp[NAVIGATE_MODE]['"'] = "insert open/close double quotes";
 
-
   // BAL: 'h' or '?' goto help buffer?
   //    keyHandler[NAVIGATE_MODE]['-'] = decreaseFont;
   //    keyHandler[NAVIGATE_MODE]['+'] = increaseFont;
