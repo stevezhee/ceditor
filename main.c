@@ -1969,6 +1969,12 @@ view_t *view = focusView();
 {
   getSelectionCoords(view, &col, &row, &off, &len);
 stMoveCursorOffset(off);
+insertChar(  int col;
+  int row;
+  int off;
+  int len;
+
+  getSelectionCoords(focusView(), &col, &row, &off, &len);
 
 return;
 }
