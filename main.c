@@ -152,11 +152,6 @@ void frameInit(frame_t *frame) {
   arrayInit(&frame->views, sizeof(view_t));
   arrayInit(&frame->status, sizeof(char));
   arrayGrow(&frame->status, 1024);
-  // printf("frame init: %d\n", (int)frame->status.start);
-  // printf("frame init status: %p %p %d %d\n", frame->status,
-  // frame->status.start, frame->status->numElems, frame->status->maxElems);
-  //    printf("status size buf=%p start=%p\n", frame->status,
-  //    frame->status.start);
 }
 
 void viewInit(view_t *view, uint i) {
