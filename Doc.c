@@ -12,7 +12,7 @@
 void docDelete(doc_t *doc, int offset, int len)
 {
   int n = numLinesString(arrayElemAt(&doc->contents, offset), len);
-  doc->numLines -= n;
+  docIncNumLines(doc, -n);
   arrayDelete(&doc->contents, offset, len);
   if (doc->isUserDoc && n > 0)
     {
@@ -23,7 +23,7 @@ void docDelete(doc_t *doc, int offset, int len)
 void docInsert(doc_t *doc, int offset, char *s, int len)
 {
   int n = numLinesString(s, len);
-  doc->numLines += n;
+  docIncNumLines(doc, n);
 
   arrayInsert(&doc->contents, offset, s, len);
 
@@ -92,6 +92,7 @@ void docWriteAndMake(doc_t *doc)
 
 void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly)
 {
+  memset(doc, 0, sizeof(doc_t));
   doc->filepath = filepath;
   doc->isUserDoc = isUserDoc;
   doc->isReadOnly = isReadOnly;
@@ -118,5 +119,15 @@ void docRead(doc_t *doc)
 
   if (fclose(fp) != 0) die("unable to close file");
 
-  doc->numLines = numLinesString(doc->contents.start, doc->contents.numElems);
+  docIncNumLines(doc, numLinesString(doc->contents.start, doc->contents.numElems));
+}
+int docNumLines(doc_t *doc)
+{
+  assert(doc->numLines >= 0);
+  return doc->numLines;
+}
+void docIncNumLines(doc_t *doc, int n)
+{
+  doc->numLines += n;
+  assert(doc->numLines >= 0);
 }

@@ -141,9 +141,9 @@ struct doc_s {
   char *filepath;
   bool isUserDoc;
   bool isReadOnly;
+  int numLines;
   string_t contents;
   undoStack_t undoStack;
-  int numLines;
   searchBuffer_t searchResults;
 };
 

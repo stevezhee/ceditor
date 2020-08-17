@@ -1071,10 +1071,11 @@ void stDraw(void)
 
 void windowInit(window_t *win, int width, int height)
 {
-    win->window = dieIfNull(SDL_CreateWindow("Editor", 0, 0, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI));
+  memset(win, 0, sizeof(window_t));
+  win->window = dieIfNull(SDL_CreateWindow("Editor", 0, 0, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI));
 
-    win->width = width;
-    win->height = height;
+  win->width = width;
+  win->height = height;
 }
 
 void message(char *s);
@@ -1155,6 +1156,7 @@ void helpBufInit(void);
 
 void stInit(int argc, char **argv)
 {
+  memset(&st, 0, sizeof(state_t));
   argc--;
   argv++;
   if (argc == 0)
@@ -1162,7 +1164,6 @@ void stInit(int argc, char **argv)
       printf("no input files\n");
       exit(0);
     }
-  memset(&st, 0, sizeof(state_t));
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) die(SDL_GetError());
 
@@ -1283,7 +1284,7 @@ void selectionCancel()
 
 int docHeight(doc_t *doc)
 {
-  return doc->numLines * st.font.lineSkip;
+  return docNumLines(doc) * st.font.lineSkip;
 }
 
 void focusScrollY(int dR)
@@ -1293,8 +1294,9 @@ void focusScrollY(int dR)
   view_t *view = focusView();
 
   view->scrollY += dR * st.font.lineSkip;
-
+  printf("%d %d ", docHeight(doc), view->scrollY);
   view->scrollY = clamp(frame->height - docHeight(doc) - st.font.lineSkip, view->scrollY, 0);
+  printf("%d\n", view->scrollY);
 }
 
 // BAL: do this on mouse clicks...
@@ -2032,7 +2034,7 @@ void backwardView()
   setFocusView((focusViewRef() + numViews() - 1) % numViews());
 }
 
-#define INDENT_LENGTH 3
+#define INDENT_LENGTH 2
 
 int numLinesSelected(char *s, int len)
 {

@@ -20,7 +20,7 @@ char builtinMacros[NUM_BUILTIN_MACROS][MAX_BUILTIN_MACRO_LEN];
 
 extern char *builtinMacrosHelp[NUM_BUILTIN_MACROS];
 
-void initMacros(void);
+void macrosInit(void);
 
 void keysymInit(void);
 uchar getKeyChar(SDL_Keycode c);

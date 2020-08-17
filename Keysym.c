@@ -57,7 +57,7 @@ char *builtinMacrosHelp[NUM_BUILTIN_MACROS] = {
   "backward word",
 };
 
-void initMacros(void)
+void macrosInit(void)
 {
     memset(macro, 0, sizeof(macro));
     for(int i = 0; i < NUM_BUILTIN_MACROS; ++i)
@@ -150,8 +150,8 @@ void keyNameInit(void)
 
 void keysymInit(void)
 {
-  keyNameInit();
   memset(keyHandlerHelp, 0, sizeof(keyHandlerHelp));
+  keyNameInit();
 
     for(int i = 0; i < NUM_KEYS; ++i)
     {
