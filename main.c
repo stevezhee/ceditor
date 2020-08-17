@@ -1173,7 +1173,7 @@ void stInit(int argc, char **argv)
 
   initFont(&st.font, INIT_FONT_FILE, INIT_FONT_SIZE);
 
-  initMacros();
+  macrosInit();
 
 
     arrayInit(&st.docs, sizeof(doc_t));
