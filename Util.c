@@ -16,7 +16,7 @@ char *builtinBufferTitle[NUM_BUILTIN_BUFFERS] = {
 bool builtinBufferReadOnly[NUM_BUILTIN_BUFFERS] = {true, true,  true, true,
                                                    true, false, false};
 
-char *editorModeDescr[NUM_MODES] = {"NAV", "INS", "FND"};
+char *editorModeDescr[NUM_MODES] = {"NAV", "INS"};
 
 void die(const char *msg) {
   fprintf(stdout, "error: %s\n", msg);
