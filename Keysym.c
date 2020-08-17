@@ -223,8 +223,6 @@ void keysymInit(void) {
   keyHandlerHelp[NAVIGATE_MODE]['N'] = "search backward";
   keyHandler[NAVIGATE_MODE][','] = (keyHandler_t)stopRecordingOrPlayMacro;
   keyHandlerHelp[NAVIGATE_MODE][','] = "play/stop recording macro";
-  keyHandler[NAVIGATE_MODE]['m'] = (keyHandler_t)startOrStopRecording;
-  keyHandlerHelp[NAVIGATE_MODE]['m'] = "start/stop recording macro";
 
   // BAL: 'h' or '?' goto help buffer?
   //    keyHandler[NAVIGATE_MODE]['-'] = decreaseFont;
