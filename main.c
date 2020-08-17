@@ -2006,8 +2006,7 @@ that for contents.
     status bar that has modified,etc.
     cut/copy/paste with mouse
     create new file
-input screen (for search, paste,
-load, tab completion, etc.)
+    input screen (for search, paste,load, tab completion, etc.)
     Hook Cut/Copy/Paste into system Cut/Copy/Paste
     support editor API
     Name macro
