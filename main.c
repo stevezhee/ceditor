@@ -1938,9 +1938,9 @@ void outdent() {
 /*   return(interval); */
 /* } */
 
-uchar lookupClosChar(uchar c)
+uchar lookupCloseChar(uchar c)
 {
-  switch(c)  {
+  switch(c) {
   case '(':
     return ')';
   case '[':
@@ -1957,6 +1957,7 @@ uchar lookupClosChar(uchar c)
 
 void insertOpenCloseChars(uchar c)
 {
+
 // if selection is on
 // insert begin/end punctuation around selection
 // otherwise
