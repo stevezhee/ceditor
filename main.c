@@ -1969,6 +1969,7 @@ view_t *view = focusView();
 {
   getSelectionCoords(view, &col, &row, &off, &len);
 
+return;
 }
 // if selection is on
 // insert begin/end punctuation around selection
