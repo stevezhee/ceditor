@@ -1957,12 +1957,14 @@ uchar lookupCloseChar(uchar c)
 
 void insertOpenCloseChars(uchar c)
 {
-
+  uchar c1 = lookupCloseChar(c);
 // if selection is on
 // insert begin/end punctuation around selection
 // otherwise
 //   insert begin/end punctuation and then go to insert mode in the middle
-  insertCString("{}");
+  insertChar(c);case '{':
+return '}';
+
   forwardChar();
   setInsertMode();
 }
