@@ -1938,8 +1938,6 @@ void outdent() {
 /*   return(interval); */
 /* } */
 
-
-id
 void insert(char c)
 {
 // if selection is on
