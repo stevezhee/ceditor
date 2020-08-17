@@ -1671,12 +1671,16 @@ void builtinAppendCString(char *s)
   builtinInsertCString(s);
 }
 
+void helpAppendKeysym(uchar c, char *s)
+{
+  char buf[1024];
+  sprintf(buf, "'%s': %s\n", keysymName(c), s);
+  builtinAppendCString(buf);
+}
+
 void helpBufInit()
 {
-
   setFocusBuiltinsView(HELP_BUF);
-
-  char s[1024];
 
   builtinAppendCString("Builtin Keys:\n");
   for(int i = 0; i < NUM_MODES; ++i)
@@ -1684,15 +1688,13 @@ void helpBufInit()
       for(int c = 0; c < NUM_KEYS; ++c)
         {
           if (!keyHandlerHelp[i][c]) continue;
-          sprintf(s, "'%s': %s\n", keysymName(c), keyHandlerHelp[i][c]);
-          builtinAppendCString(s);
+          helpAppendKeysym(c, keyHandlerHelp[i][c]);
         }
     }
 
   for(int i = 0; i < NUM_BUILTIN_MACROS; ++i)
     {
-      sprintf(s, "'%s': %s\n", keysymName(builtinMacros[i][0]), builtinMacrosHelp[i]);
-      builtinAppendCString(s);
+      helpAppendKeysym(i, builtinMacrosHelp[i]);
     }
 
 }
