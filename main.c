@@ -1964,6 +1964,7 @@ void insertOpenCloseChars(uchar c)
   int off;
   int len;
 
+  if(selectionActive(view))
 
   getSelectionCoords(focusView(), &col, &row, &off, &len);
 
