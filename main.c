@@ -1963,6 +1963,7 @@ void insertOpenCloseChars(uchar c)
   int row;
   int off;
   int len;
+view_t *view = focusView();
 
   if(selectionActive(view))
 
