@@ -1107,14 +1107,17 @@ void stInit(int argc, char **argv) {
 
 }
 
-void quitEvent() {
+void saveAll()
+{
   for (int i = NUM_BUILTIN_BUFFERS; i < st.docs.numElems; ++i) {
     doc_t *doc = arrayElemAt(&st.docs, i);
     assert(doc);
     docWrite(doc);
   }
-  docGitCommitAll();
-  docMakeAll();
+}
+
+void quitEvent() {
+  saveAll();
   TTF_Quit();
   SDL_Quit();
   exit(0);
@@ -2041,6 +2044,7 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
+    periodically save all (modified) files
     reload file when changed outside of editor
     remember your place in the file on close
     add save/pretty-print/build hotkey
@@ -2114,8 +2118,7 @@ Record/play macro
 Scroll
 Move cursor on mouse click
 File automatically loads on startup
-File automatically saves (on return)
-File automatically checkpoints into git (on return)
+File automatically saves on exit
 Select region
 Cut/Copy/Paste
 Move cursor to the start/end of a line

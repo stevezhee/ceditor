@@ -4,7 +4,7 @@ CFILES=$(shell ls *.c)
 OFILES=$(CFILES:.c=.o)
 HFILES=$(shell ls *.h)
 
-all: ceditor
+all: checkpoint ceditor
 
 run: ceditor
 	./ceditor *.txt *.[ch]
@@ -17,6 +17,9 @@ ceditor: $(OFILES)
 
 pretty:
 	clang-format -i *.[ch]
+
+checkpoint:
+	git commit -am"cp"
 
 clean:
 	rm -rf ceditor $(OFILES)

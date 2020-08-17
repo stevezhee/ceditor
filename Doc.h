@@ -20,8 +20,6 @@ char *docCString(doc_t *doc);
 void docPushInsert(doc_t *doc, int offset, char *s, int len);
 void docPushDelete(doc_t *doc, int offset, int len);
 void docMakeAll(void);
-void docGitCommitAll(void);
-void docWriteAndMake(doc_t *doc);
 int docNumLines(doc_t *doc);
 void docIncNumLines(doc_t *doc, int n);
 

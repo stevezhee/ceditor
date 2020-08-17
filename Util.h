@@ -100,7 +100,7 @@ void setTextureColorMod(SDL_Texture *t, color_t c);
 #define BORDER_WIDTH 4
 #define DISPLAY_NEWLINES false
 #define DISPLAY_EOF false
-#define DEMO_MODE false
+#define DEMO_MODE true
 #define NO_GIT false
 #define NO_COMPILE false
 
@@ -164,6 +164,7 @@ struct doc_s {
   char *filepath;
   bool isUserDoc;
   bool isReadOnly;
+  bool modified;
   int numLines;
   string_t contents;
   undoStack_t undoStack;

@@ -235,6 +235,8 @@ void keysymInit(void) {
   keyHandlerHelp[NAVIGATE_MODE]['\''] = "insert open/close single quotes";
   keyHandler[NAVIGATE_MODE]['"'] = insertOpenCloseChars;
   keyHandlerHelp[NAVIGATE_MODE]['"'] = "insert open/close double quotes";
+  keyHandler[NAVIGATE_MODE]['S'] = (keyHandler_t)saveAll;
+  keyHandlerHelp[NAVIGATE_MODE]['S'] = "save all and run make";
 
   // BAL: 'h' or '?' goto help buffer?
   //    keyHandler[NAVIGATE_MODE]['-'] = decreaseFont;

@@ -12,65 +12,22 @@
 void docDelete(doc_t *doc, int offset, int len) {
   int n = numLinesString(arrayElemAt(&doc->contents, offset), len);
   docIncNumLines(doc, -n);
+  doc->modified = true;
   arrayDelete(&doc->contents, offset, len);
-  if (doc->isUserDoc && n > 0) {
-    docWriteAndMake(
-        doc); // BAL: this shouldn't be here, just mark it as dirty or something
-  }
 }
 
 void docInsert(doc_t *doc, int offset, char *s, int len) {
   int n = numLinesString(s, len);
   docIncNumLines(doc, n);
-
+  doc->modified = true;
   arrayInsert(&doc->contents, offset, s, len);
-
-  if (doc->isUserDoc && n > 0) {
-    docWriteAndMake(
-        doc); // BAL: this shouldn't be here, just mark it as dirty or something
-  }
 }
 
 char systemBuf[1024]; // BAL: use string_t
 
-void gitInit(void) {
-  if (DEMO_MODE || NO_GIT)
-    return;
-  if (system("git init") != 0)
-    die("git init failed");
-}
-
-void docGitAdd(doc_t *doc) {
-  if (DEMO_MODE || NO_GIT)
-    return;
-  sprintf(systemBuf, "git add %s", doc->filepath);
-  system(systemBuf);
-}
-
-void docGitCommit(doc_t *doc) {
-  if (DEMO_MODE || NO_GIT)
-    return;
-  docGitAdd(doc);
-  sprintf(systemBuf, "git commit -m\"cp\" %s", doc->filepath);
-  system(systemBuf);
-}
-
-void docGitCommitAll(void) {
-  if (DEMO_MODE || NO_GIT)
-    return;
-  sprintf(systemBuf, "git commit -am\"cp\"");
-  system(systemBuf);
-}
-void docMakeAll(void) {
-
-  if (DEMO_MODE || NO_COMPILE)
-    return;
-  system("make&");
-}
-
 void docWrite(doc_t *doc) {
-  if (DEMO_MODE)
-    return;
+  if (DEMO_MODE) return;
+  if (!doc->modified) return;
   FILE *fp = fopen(doc->filepath, "w");
   if (fp == NULL)
     die("unable to open file for write");
@@ -82,12 +39,7 @@ void docWrite(doc_t *doc) {
   if (fclose(fp) != 0)
     die("unable to close file");
 
-  docGitCommit(doc);
-}
-
-void docWriteAndMake(doc_t *doc) {
-  docWrite(doc);
-  docMakeAll();
+  doc->modified = false;
 }
 
 void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly) {
