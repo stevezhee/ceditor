@@ -1157,6 +1157,11 @@ void stInit(int argc, char **argv)
 {
   argc--;
   argv++;
+  if (argc == 0)
+    {
+      printf("no input files\n");
+      exit(0);
+    }
   memset(&st, 0, sizeof(state_t));
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) die(SDL_GetError());
@@ -1760,6 +1765,7 @@ void docPushCommand(commandTag_t tag, doc_t *doc, int offset, char *s, int len)
 
 void docPushDelete(doc_t *doc, int offset, int len)
 {
+  if (len <= 0) return;
   if (doc->isReadOnly) return;
   if (doc->isUserDoc)
     {
@@ -1771,6 +1777,7 @@ void docPushDelete(doc_t *doc, int offset, int len)
 
 void docPushInsert(doc_t *doc, int offset, char *s, int len)
 {
+  if (len <= 0) return;
   if (doc->isReadOnly) return;
   if (doc->isUserDoc)
     {
@@ -2228,6 +2235,8 @@ int main(int argc, char **argv)
 /*
 TODO:
 CORE:
+    Goto line
+    insert both open/close characters (e.g. "" or {}).  If selection is on, use that for contents.
     Search and replace
     Scroll when mouse selection goes off screen
     command line args/config to set config items (e.g. demo mode)
