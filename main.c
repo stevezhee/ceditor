@@ -1955,6 +1955,7 @@ uchar lookupCloseChar(uchar c)
   }
 }
 
+
 void insertOpenCloseChars(uchar c)
 {
   uchar c1 = lookupCloseChar(c);
@@ -1963,7 +1964,7 @@ void insertOpenCloseChars(uchar c)
 // otherwise
 //   insert begin/end punctuation and then go to insert mode in the middle
   insertChar(c);
-  insertChar(c);
+  insertChar(c1);
   forwardChar();
   setInsertMode();
 }
