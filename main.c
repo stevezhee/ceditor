@@ -1940,7 +1940,8 @@ void outdent() {
 
 void foo(char c)
 {
-// if sle}
+// if sleid
+}
 
 int main(int argc, char **argv) {
   assert(sizeof(char) == 1);
