@@ -1940,7 +1940,8 @@ void outdent() {
 
 void foo(char c)
 {
-// if sleid
+// if selection is on
+
 }
 
 int main(int argc, char **argv) {
