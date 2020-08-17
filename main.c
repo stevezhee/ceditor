@@ -1962,9 +1962,7 @@ void insertOpenCloseChars(uchar c)
 // insert begin/end punctuation around selection
 // otherwise
 //   insert begin/end punctuation and then go to insert mode in the middle
-  insertChar(c);case '{':
-return '}';
-
+  insertChar(c);
   forwardChar();
   setInsertMode();
 }
