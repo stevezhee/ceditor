@@ -1114,6 +1114,7 @@ void saveAll()
     assert(doc);
     docWrite(doc);
   }
+  system("make&");
 }
 
 void quitEvent() {
