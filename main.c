@@ -1972,6 +1972,8 @@ stMoveCursorOffset(off);
 insertChar(c);
 stMoveCursorOffset(off + len + 1);
 insertChar(c1);
+stMoveCursorOffset(off);
+insertChar(c);
 return;
 }
 // if selection is on
