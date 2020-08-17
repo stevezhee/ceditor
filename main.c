@@ -1988,14 +1988,13 @@ int main(int argc, char **argv) {
     /*     stRender(&st); */
     /* } */
   }
-
-  return 0;
+"ksfjskdf  return 0;
 }
 
 /*
 TODO:
 CORE:
-    modify frame widths based on columns (e.g. 
+    modify frame widths based on columns (e.g. focus doc frame is 80/120 chars)
     reload file when changed outside of editor
     pretty print doc in-place (automatic?)
     Search and replace
