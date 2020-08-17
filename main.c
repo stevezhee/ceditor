@@ -1694,7 +1694,7 @@ void helpBufInit()
 
   for(int i = 0; i < NUM_BUILTIN_MACROS; ++i)
     {
-      helpAppendKeysym(i, builtinMacrosHelp[i]);
+      helpAppendKeysym(builtinMacros[i][0], builtinMacrosHelp[i]);
     }
 
 }
