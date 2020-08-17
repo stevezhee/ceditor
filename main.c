@@ -2040,6 +2040,7 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
+
     add save/pretty-print/build hotkey
     modify frame widths based on columns (e.g. focus doc frame is 80/120 chars)
     reload file when changed outside of editor
