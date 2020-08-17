@@ -1966,9 +1966,10 @@ void insertOpenCloseChars(uchar c)
 view_t *view = focusView();
 
   if(selectionActive(view))
+{
+  getSelectionCoords(view, &col, &row, &off, &len);
 
-  getSelectionCoords(focusView(), &col, &row, &off, &len);
-
+}
 // if selection is on
 // insert begin/end punctuation around selection
 // otherwise
