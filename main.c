@@ -1970,8 +1970,9 @@ view_t *view = focusView();
   getSelectionCoords(view, &col, &row, &off, &len);
 stMoveCursorOffset(off);
 insertChar(c);
-stMoveCursorOffset(off + len);
+stMoveCursorOffset(off + len + 1);
 insertChar(c1);
+
 return;
 }
 // if selection is on
