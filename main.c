@@ -2003,7 +2003,8 @@ CORE:
 that for contents.
     Scroll when mouse selection goes off screen command line
     args/config to set config items (e.g. demo mode)
-    status bar that has modified,etc.    cut/copy/paste with mouse
+    status bar that has modified,etc.
+    cut/copy/paste with mouse
     create new file
     input screen (for search, paste,load, tab completion, etc.)
     Hook Cut/Copy/Paste into system Cut/Copy/Paste
