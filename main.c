@@ -1939,6 +1939,7 @@ void outdent() {
 /* } */
 
 void foo(char c)
+{
 
 int main(int argc, char **argv) {
   assert(sizeof(char) == 1);
