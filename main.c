@@ -1943,6 +1943,7 @@ uchar lookupClosChar(uchar c)
   switch(c)
 {
 case '{':
+return '}'
 }
 }
 
