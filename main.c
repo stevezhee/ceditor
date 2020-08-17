@@ -1942,14 +1942,15 @@ uchar lookupClosChar(uchar c)
 {
   switch(c)
 {
+case '(':
+return ')';
+case '[':
+return ']';
 case '{':
 return '}';
-case '{':
-return '}';
-case '{':
-return '}';
-case '{':
-return '}';
+case '\'':
+return '\'';
+
 case '{':
 return '}';
 }
