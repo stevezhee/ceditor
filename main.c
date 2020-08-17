@@ -184,13 +184,11 @@ void setFocusView(int refView)
   setFrameView(focusFrameRef(), refView);
 }
 
-/* void stSetViewFocus(uint i) */
-/* { */
-/*     i = clamp(0, i, st.views.numElems - 1); */
-/*     frame_t *frame = focusFrame(); */
-/*     frame->refView = i; */
-/*     printf("file:%s\n", focusDoc()->filepath); */
-/* } */
+void setFocusBuiltinsView(int ref)
+{
+  setFocusFrame(BUILTINS_FRAME);
+  setFocusView(ref);
+}
 
 void frameInit(frame_t *frame)
 {
@@ -1146,8 +1144,7 @@ widget_t *frame(int i)
 void message(char *s)
 {
   int refFrame = focusFrameRef();
-  setFocusFrame(BUILTINS_FRAME);
-  setFocusView(MESSAGE_BUF);
+  setFocusBuiltinsView(MESSAGE_BUF);
   insertNewElem();
   builtinInsertCString(s);
   setFocusFrame(refFrame);
@@ -1214,8 +1211,6 @@ void stInit(int argc, char **argv)
     setFocusFrame(MAIN_FRAME);
 
     gui = hcat(frame(0), hcat(frame(1), frame(2)));
-
-    message("hello from the beyond");
 
     helpBufInit();
 
@@ -1398,8 +1393,7 @@ void recordKeyPress(uchar c)
 {
   int refFrame = focusFrameRef();
   if (refFrame == BUILTINS_FRAME) return;
-  setFocusFrame(BUILTINS_FRAME);
-  setFocusView(MACRO_BUF);
+  setFocusBuiltinsView(MACRO_BUF);
   builtinInsertChar(c);
   setFocusFrame(refFrame);
 }
@@ -1671,79 +1665,38 @@ void builtinInsertChar(uchar c)
     forwardChar();
 }
 
+void builtinAppendCString(char *s)
+{
+  forwardEOF();
+  builtinInsertCString(s);
+}
+
 void helpBufInit()
 {
-  setFocusFrame(BUILTINS_FRAME);
-  setFocusView(HELP_BUF);
+
+  setFocusBuiltinsView(HELP_BUF);
 
   char s[1024];
 
-  for(int i = 0; i < NUM_BUILTIN_MACROS; ++i)
-    {
-      char c = builtinMacros[i][0];
-      if (c == '\n')
-        {
-          sprintf(s, "'\\n': %s\n", builtinMacrosHelp[i]);
-        }
-      else
-        {
-          sprintf(s, "'%c': %s\n", c, builtinMacrosHelp[i]);
-        }
-      builtinInsertCString(s);
-    }
-
-  builtinInsertCString("\nBuiltin Macros:\n");
-
+  builtinAppendCString("Builtin Keys:\n");
   for(int i = 0; i < NUM_MODES; ++i)
     {
       for(int c = 0; c < NUM_KEYS; ++c)
         {
           if (!keyHandlerHelp[i][c]) continue;
-          switch (c) {
-          case '\0':
-            continue;
-          case '\t':
-            sprintf(s, "'\t': %s\n", keyHandlerHelp[i][c]);
-            break;
-          case KEY_END:
-            sprintf(s, "'END': %s\n", keyHandlerHelp[i][c]);
-            break;
-          case KEY_HOME:
-            sprintf(s, "'HOME': %s\n", keyHandlerHelp[i][c]);
-            break;
-          case KEY_PAGEUP:
-            sprintf(s, "'PAGEUP': %s\n", keyHandlerHelp[i][c]);
-            break;
-          case KEY_PAGEDOWN:
-            sprintf(s, "'PAGEDOWN': %s\n", keyHandlerHelp[i][c]);
-            break;
-          case KEY_DELETE:
-            sprintf(s, "'DEL': %s\n", keyHandlerHelp[i][c]);
-            break;
-          case KEY_SHIFT_UP:
-            sprintf(s, "'SHIFT_UP': %s\n", keyHandlerHelp[i][c]);
-            break;
-          case KEY_SHIFT_DOWN:
-            sprintf(s, "'SHIFT_DOWN': %s\n", keyHandlerHelp[i][c]);
-            break;
-          case KEY_SHIFT_LEFT:
-            sprintf(s, "'SHIFT_LEFT': %s\n", keyHandlerHelp[i][c]);
-            break;
-          case KEY_SHIFT_RIGHT:
-            sprintf(s, "'SHIFT_RIGHT': %s\n", keyHandlerHelp[i][c]);
-            break;
-          case KEY_SHIFT_TAB:
-            sprintf(s, "'SHIFT_TAB': %s\n", keyHandlerHelp[i][c]);
-            break;
-          default:
-            sprintf(s, "'%c': %s\n", c, keyHandlerHelp[i][c]);
-            break;
-          }
-          builtinInsertCString(s);
+          sprintf(s, "'%s': %s\n", keysymName(c), keyHandlerHelp[i][c]);
+          builtinAppendCString(s);
         }
     }
 
-  builtinInsertCString("Builtin Keys:\n");
+  builtinAppendCString("\nBuiltin Macros:\n");
+
+  for(int i = 0; i < NUM_BUILTIN_MACROS; ++i)
+    {
+      uchar c = builtinMacros[i][0];
+      sprintf(s, "'%s': %s\n", keysymName(c), builtinMacrosHelp[i]);
+      builtinAppendCString(s);
+    }
 
 }
 
@@ -1782,8 +1735,7 @@ void copy(char *s, uint len)
     }
 
   int refFrame = focusFrameRef();
-  setFocusFrame(BUILTINS_FRAME);
-  setFocusView(COPY_BUF);
+  setFocusBuiltinsView(COPY_BUF);
   insertNewElem();
   builtinInsertString(s, len);
   setClipboardText(focusDoc()->contents.start);
@@ -1917,8 +1869,7 @@ void stopRecording()
 {
   int refFrame = focusFrameRef();
   st.isRecording = false;
-  setFocusFrame(BUILTINS_FRAME);
-  setFocusView(MACRO_BUF);
+  setFocusBuiltinsView(MACRO_BUF);
   backwardStartOfElem();
   setFocusFrame(refFrame);
 }
@@ -1934,8 +1885,7 @@ void startOrStopRecording()
 
   // start recording
   st.isRecording = true;
-  setFocusFrame(BUILTINS_FRAME);
-  setFocusView(MACRO_BUF);
+  setFocusBuiltinsView(MACRO_BUF);
   insertNewElem();
   // BAL: if 1st line in macro buf is empty delete it (or reuse it)
   setFocusFrame(refFrame);
@@ -1951,8 +1901,7 @@ void stopRecordingOrPlayMacro()
   }
 
   // play macro
-  setFocusFrame(BUILTINS_FRAME);
-  setFocusView(MACRO_BUF);
+  setFocusBuiltinsView(MACRO_BUF);
   backwardStartOfElem();
   doc_t *doc = focusDoc();
   view_t *view = focusView();
@@ -2001,7 +1950,7 @@ void backwardSearch()
 /*     doc_t *doc = docOf(view); */
 
 /*     int refView = focusViewRef(); */
-/*     setFocusView(SEARCH_BUF); */
+/*     setFocusBuiltinsView(SEARCH_BUF); */
 
 /*     view_t *viewFind = focusView(); */
 /*     doc_t *find = focusDoc(); */
@@ -2032,13 +1981,12 @@ void backwardSearch()
 /* done: */
 /*     free(needle); */
 /* nofree: */
-/*     setFocusView(refView); */
+/*     setFocusBuiltinsView(refView); */
 /* } */
 
 void newSearch()
 {
-  setFocusFrame(BUILTINS_FRAME);
-  setFocusView(SEARCH_BUF);
+  setFocusBuiltinsView(SEARCH_BUF);
   setInsertMode();
   insertNewElem();
 }

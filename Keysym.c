@@ -66,8 +66,91 @@ void initMacros(void)
     }
 }
 
+extern char *keyName[256];
+char *keyName[256];
+
+char keyNameBuf[2];
+
+char *keysymName(uchar key)
+{
+  char *s = keyName[key];
+  if (s) return s;
+  keyNameBuf[0] = key;
+  return keyNameBuf;
+}
+
+void keyNameInit(void)
+{
+  memset(keyName, 0, sizeof(keyName));
+  keyName['\n'] = "\\n";
+  keyName['\t'] = "\\t";
+  keyName[KEY_UNKNOWN] = "UNKNOWN";
+  keyName[KEY_SHIFT_RETURN] = "SHIFT_RETURN";
+  keyName[KEY_SHIFT_SPACE] = "SHIFT_SPACE";
+  keyName[KEY_SHIFT_BACKSPACE] = "SHIFT_BACKSPACE";
+  keyName[KEY_SHIFT_DELETE] = "SHIFT_DELETE";
+  keyName[KEY_BACKSPACE] = "BACKSPACE";
+  keyName[KEY_CTRL] = "CTRL";
+  keyName[KEY_ALT] = "ALT";
+  keyName[KEY_SHIFT_TAB] = "SHIFT_TAB";
+  keyName[KEY_SHIFT_ESCAPE] = "SHIFT_ESCAPE";
+  keyName[KEY_ESCAPE] = "ESCAPE";
+  keyName[KEY_DELETE] = "DELETE";
+  keyName[KEY_F1] = "F1";
+  keyName[KEY_F2] = "F2";
+  keyName[KEY_F3] = "F3";
+  keyName[KEY_F4] = "F4";
+  keyName[KEY_F5] = "F5";
+  keyName[KEY_F6] = "F6";
+  keyName[KEY_F7] = "F7";
+  keyName[KEY_F8] = "F8";
+  keyName[KEY_F9] = "F9";
+  keyName[KEY_F10] = "F10";
+  keyName[KEY_F11] = "F11";
+  keyName[KEY_F12] = "F12";
+  keyName[KEY_PRINTSCREEN] = "PRINTSCREEN";
+  keyName[KEY_SCROLLLOCK] = "SCROLLLOCK";
+  keyName[KEY_PAUSE] = "PAUSE";
+  keyName[KEY_INSERT] = "INSERT";
+  keyName[KEY_HOME] = "HOME";
+  keyName[KEY_PAGEUP] = "PAGEUP";
+  keyName[KEY_UNUSED_DELETE] = "UNUSED_DELETE";
+  keyName[KEY_END] = "END";
+  keyName[KEY_PAGEDOWN] = "PAGEDOWN";
+  keyName[KEY_RIGHT] = "RIGHT";
+  keyName[KEY_LEFT] = "LEFT";
+  keyName[KEY_DOWN] = "DOWN";
+  keyName[KEY_UP] = "UP";
+  keyName[KEY_SHIFT_F1] = "SHIFT_F1";
+  keyName[KEY_SHIFT_F2] = "SHIFT_F2";
+  keyName[KEY_SHIFT_F3] = "SHIFT_F3";
+  keyName[KEY_SHIFT_F4] = "SHIFT_F4";
+  keyName[KEY_SHIFT_F5] = "SHIFT_F5";
+  keyName[KEY_SHIFT_F6] = "SHIFT_F6";
+  keyName[KEY_SHIFT_F7] = "SHIFT_F7";
+  keyName[KEY_SHIFT_F8] = "SHIFT_F8";
+  keyName[KEY_SHIFT_F9] = "SHIFT_F9";
+  keyName[KEY_SHIFT_F10] = "SHIFT_F10";
+  keyName[KEY_SHIFT_F11] = "SHIFT_F11";
+  keyName[KEY_SHIFT_F12] = "SHIFT_F12";
+  keyName[KEY_SHIFT_PRINTSCREEN] = "SHIFT_PRINTSCREEN";
+  keyName[KEY_SHIFT_SCROLLLOCK] = "SHIFT_SCROLLLOCK";
+  keyName[KEY_SHIFT_PAUSE] = "SHIFT_PAUSE";
+  keyName[KEY_SHIFT_INSERT] = "SHIFT_INSERT";
+  keyName[KEY_SHIFT_HOME] = "SHIFT_HOME";
+  keyName[KEY_SHIFT_PAGEUP] = "SHIFT_PAGEUP";
+  keyName[KEY_SHIFT_UNUSED_DELETE] = "SHIFT_UNUSED_DELETE";
+  keyName[KEY_SHIFT_END] = "SHIFT_END";
+  keyName[KEY_SHIFT_PAGEDOWN] = "SHIFT_PAGEDOWN";
+  keyName[KEY_SHIFT_RIGHT] = "SHIFT_RIGHT";
+  keyName[KEY_SHIFT_LEFT] = "SHIFT_LEFT";
+  keyName[KEY_SHIFT_DOWN] = "SHIFT_DOWN";
+  keyName[KEY_SHIFT_UP] = "SHIFT_UP";
+}
+
 void keysymInit(void)
 {
+  keyNameInit();
   memset(keyHandlerHelp, 0, sizeof(keyHandlerHelp));
 
     for(int i = 0; i < NUM_KEYS; ++i)

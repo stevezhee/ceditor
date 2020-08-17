@@ -25,6 +25,7 @@ void initMacros(void);
 void keysymInit(void);
 uchar getKeyChar(SDL_Keycode c);
 
+char *keysymName(uchar key);
 void doNothing(uchar c);
 void setNavigateModeAndDoKeyPress(uchar c);
 void forwardEOF();
@@ -60,10 +61,6 @@ void indent();
 void outdent();
 void undo();
 void redo();
-// void appendLine();
-// void prependLine();
-// void setInsertModeAndInsertChar(uchar c);
 void insertChar(uchar c);
 void cut();
-// void backspace();
 #endif /* Keysym_h */

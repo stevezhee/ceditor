@@ -69,15 +69,15 @@ void setTextureColorMod(SDL_Texture *t, color_t c);
 #define CYAN 0x2aa198ff
 #define GREEN 0x859900ff
 
-#define FOCUS_FRAME_COLOR BLACK
-#define FRAME_COLOR BRBLACK
+#define FOCUS_FRAME_COLOR BRBLACK
+#define FRAME_COLOR BLACK
 #define CURSOR_COLOR 0xffff00ff
 #define CURSOR_BACKGROUND_COLOR (CURSOR_COLOR & 0xffffff30)
 #define SELECTION_COLOR CURSOR_BACKGROUND_COLOR
 #define SEARCH_COLOR (BRRED & 0xffffff60)
 #define INIT_WINDOW_WIDTH 2488
 #define INIT_WINDOW_HEIGHT 1300
-#define INIT_FONT_SIZE 18
+#define INIT_FONT_SIZE 20
 #define INIT_FONT_FILE "./assets/SourceCodePro-Semibold.ttf"
 #define SELECTION_RECT_GAP 8
 #define AUTO_SCROLL_HEIGHT 4
@@ -214,10 +214,6 @@ struct state_s
 };
 
 typedef struct state_s state_t;
-
-/* // BAL: these don't belong here */
-/* int frameWidth(frame_t *frame); */
-/* int frameColumns(frame_t *frame); */
 
 #define KEY_UNKNOWN 0
 #define KEY_SHIFT_RETURN 1
