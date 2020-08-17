@@ -11,11 +11,12 @@
 void arrayGrow(dynamicArray_t *arr, int maxElems) {
   assert(arr);
   assert(maxElems >= 1);
-  if (maxElems <= arr->maxElems)
-    return;
+  if (maxElems <= arr->maxElems) return;
   printf("growing array...\n");
-  arr->maxElems = maxElems;
-  arr->start = dieIfNull(realloc(arr->start, arr->elemSize * maxElems));
+  int n = arr->maxElems * 2;
+  assert(n > 0);
+  arr->maxElems = n;
+  arr->start = dieIfNull(realloc(arr->start, arr->elemSize * n));
 }
 
 void arrayReinit(dynamicArray_t *arr) {
