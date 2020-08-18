@@ -1739,6 +1739,8 @@ void stopRecordingOrPlayMacro() {
 /* } */
 
 void forwardSearch() {
+cursor_t *cursor = focusCursor();
+
   /*     st.searchResults.offset++; */
   /*     st.searchResults.offset %= st.searchResults.numElems; */
   /*     setCursorToSearch(); */
