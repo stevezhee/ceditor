@@ -45,11 +45,7 @@ char *getClipboardText(void);
 void setClipboardText(const char *text);
 int numLinesString(char *s, int len);
 
-typedef enum {
-  NAVIGATE_MODE,
-  INSERT_MODE,
-  NUM_MODES
-} editorMode_t; // BAL: remove search_mode?
+typedef enum { NAVIGATE_MODE, INSERT_MODE, NUM_MODES } editorMode_t;
 extern char *editorModeDescr[NUM_MODES];
 
 typedef unsigned char uchar;

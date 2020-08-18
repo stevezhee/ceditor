@@ -1,4 +1,4 @@
-        #include "Cursor.h"
+#include "Cursor.h"
 #include "Doc.h"
 #include "DynamicArray.h"
 #include "Font.h"
@@ -1318,10 +1318,19 @@ char *focusElem() {
   return p;
 }
 
-void doSearchIfNeeded() {
-  if (focusViewRef() != SEARCH_BUF) return;
+void updateSearchState(bool isModify) {
+  if (focusViewRef() != SEARCH_BUF) {
+    if (isModify) {
+      arrayReinit(&focusDoc()->searchResults);
+      st.searchLen = 0;
+    }
+    return;
+  }
+
+  // in search buffer - recompute search
   char *search = focusElem();
-  if (!search) return;
+  if (!search)
+    return;
 
   // search main frame doc
   frame_t *frame = frameOf(MAIN_FRAME);
@@ -1331,20 +1340,21 @@ void doSearchIfNeeded() {
   // search secondary frame doc (if different)
   frame = frameOf(SECONDARY_FRAME);
   doc_t *doc1 = docOf(viewOf(frame));
-  if (doc1 == doc) return;
+  if (doc1 == doc)
+    return;
   doSearch(doc1, search);
 }
 
 void stMoveCursorOffset(int offset) {
   cursorSetOffset(focusCursor(), offset, focusDoc());
   focusTrackCursor(AUTO_SCROLL_HEIGHT);
-  doSearchIfNeeded();
+  updateSearchState(false);
 }
 
 void stMoveCursorRowCol(int row, int col) {
   cursorSetRowCol(focusCursor(), row, col, focusDoc());
   focusTrackCursor(AUTO_SCROLL_HEIGHT);
-  doSearchIfNeeded();
+  updateSearchState(false);
 }
 
 void backwardChar() { stMoveCursorOffset(focusCursor()->offset - 1); }
@@ -1360,18 +1370,16 @@ void setInsertMode() {
   focusView()->mode = INSERT_MODE;
 }
 
-void setMode(editorMode_t mode)
-{
-  switch(mode)
-    {
-    case INSERT_MODE:
-      setInsertMode();
-      return;
-    default:
-      assert(mode == NAVIGATE_MODE);
-      setNavigateMode();
-      return;
-    }
+void setMode(editorMode_t mode) {
+  switch (mode) {
+  case INSERT_MODE:
+    setInsertMode();
+    return;
+  default:
+    assert(mode == NAVIGATE_MODE);
+    setNavigateMode();
+    return;
+  }
 }
 
 void doKeyPressInNavigateMode(uchar c) {
@@ -1586,7 +1594,7 @@ void docPushDelete(doc_t *doc, int offset, int len) {
     docPushCommand(DELETE, doc, offset, doc->contents.start + offset, len);
   }
   docDelete(doc, offset, len);
-  doSearchIfNeeded();
+  updateSearchState(true);
 }
 
 void docPushInsert(doc_t *doc, int offset, char *s, int len) {
@@ -1598,7 +1606,7 @@ void docPushInsert(doc_t *doc, int offset, char *s, int len) {
     docPushCommand(INSERT, doc, offset, s, len);
   }
   docInsert(doc, offset, s, len);
-  doSearchIfNeeded();
+  updateSearchState(true);
 }
 
 void docDoCommand(doc_t *doc, commandTag_t tag, int offset, string_t *string) {
@@ -1738,48 +1746,45 @@ void stopRecordingOrPlayMacro() {
 /* } */
 
 void forwardSearch() {
-doc_t *doc = focusDoc();
-searchBuffer_t *results = &doc->searchResults;
-if (results->numElems == 0) return;
-cursor_t *cursor = focusCursor();
-
-
-for(int i = 0; i < results->numElems; ++i)
-{
-  int *offset = arrayElemAt(results, i);
-  if (*offset > cursor->offset)
-  {
-    stMoveCursorOffset(*offset);
-    //  cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
+  doc_t *doc = focusDoc();
+  searchBuffer_t *results = &doc->searchResults;
+  if (results->numElems == 0)
     return;
+  cursor_t *cursor = focusCursor();
+
+  for (int i = 0; i < results->numElems; ++i) {
+    int *offset = arrayElemAt(results, i);
+    if (*offset > cursor->offset) {
+      stMoveCursorOffset(*offset);
+      //  cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
+      return;
+    }
   }
-}
   int *offset = arrayElemAt(results, 0);
-stMoveCursorOffset(*offset);
+  stMoveCursorOffset(*offset);
   /*     st.searchResults.offset++; */
   /*     st.searchResults.offset %= st.searchResults.numElems; */
   /*     setCursorToSearch(); */
 }
 
 void backwardSearch() {
-doc_t *doc = focusDoc();
-searchBuffer_t *results = &doc->searchResults;
-if (results->numElems == 0) return;
-cursor_t *cursor = focusCursor();
-
-int last = results->numElems - 1;
-for(int i = last; i >= 0; --i)
-{
-  int *offset = arrayElemAt(results, i);
-  if (*offset < cursor->offset)
-  {
-    stMoveCursorOffset(*offset);
-    //  cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
+  doc_t *doc = focusDoc();
+  searchBuffer_t *results = &doc->searchResults;
+  if (results->numElems == 0)
     return;
+  cursor_t *cursor = focusCursor();
+
+  int last = results->numElems - 1;
+  for (int i = last; i >= 0; --i) {
+    int *offset = arrayElemAt(results, i);
+    if (*offset < cursor->offset) {
+      stMoveCursorOffset(*offset);
+      //  cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
+      return;
+    }
   }
-}
   int *offset = arrayElemAt(results, last);
-stMoveCursorOffset(*offset);
+  stMoveCursorOffset(*offset);
   /*     st.searchResults.offset += st.searchResults.numElems - 1; */
   /*     st.searchResults.offset %= st.searchResults.numElems; */
   /*     setCursorToSearch(); */
@@ -2039,13 +2044,11 @@ void insertOpenCloseChars(uchar c) {
   backwardChar();
   setInsertMode();
 }
-void doEscape()
-{
+void doEscape() {
   setNavigateMode();
-  if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF)
-    {
-      setFocusFrame(st.searchFrameRef);
-    }
+  if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF) {
+    setFocusFrame(st.searchFrameRef);
+  }
 }
 int main(int argc, char **argv) {
   assert(sizeof(char) == 1);
