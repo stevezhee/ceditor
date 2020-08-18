@@ -2059,10 +2059,12 @@ int main(int argc, char **argv) {
 
 /*
   search:
+  - do search interactive when in search buffer
   - do search on current line from search buffer
   - move forward/back among search items
   - clear search
-
+  - do replace
+  /
  */
 /*
 TODO:
