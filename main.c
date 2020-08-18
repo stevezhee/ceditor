@@ -1322,16 +1322,16 @@ void doSearchIfNeeded() {
   if (focusViewRef() != SEARCH_BUF) return;
   char *search = focusElem();
   if (!search) return;
+
   // search main frame doc
-printf("searching...\n");
   frame_t *frame = frameOf(MAIN_FRAME);
   doc_t *doc = docOf(viewOf(frame));
   doSearch(doc, search);
+
   // search secondary frame doc (if different)
   frame = frameOf(SECONDARY_FRAME);
   doc_t *doc1 = docOf(viewOf(frame));
-  if (doc1 == doc)
-    return;
+  if (doc1 == doc) return;
   doSearch(doc1, search);
 }
 
@@ -1829,7 +1829,7 @@ stMoveCursorOffset(*offset);
 /* } */
 
 void newSearch() {
-  st.searchFrameRef = focusFrameRef();
+  st.searchFrameRef = focusFrameRef(); // BAL: last user frame ref
   setFocusBuiltinsView(SEARCH_BUF);
   setInsertMode();
   insertNewElem();
