@@ -1768,8 +1768,8 @@ searchBuffer_t *results = &doc->searchResults;
 if (results->numElems == 0) return;
 cursor_t *cursor = focusCursor();
 
-
-for(int i = results->numElems - 1; i >= 0; --i)
+int last = results->numElems - 1;
+for(int i = last; i >= 0; --i)
 {
   int *offset = arrayElemAt(results, i);
   if (*offset < cursor->offset)
@@ -1779,7 +1779,7 @@ for(int i = results->numElems - 1; i >= 0; --i)
     return;
   }
 }
-  int *offset = arrayTop(results);
+  int *offset = arrayElemAt(results, last);
 cursorSetOffset(cursor, *offset, doc);
   /*     st.searchResults.offset += st.searchResults.numElems - 1; */
   /*     st.searchResults.offset %= st.searchResults.numElems; */
