@@ -1755,7 +1755,8 @@ for(int i = 0; i < results->numElems; ++i)
     return;
   }
 }
-cursorSetOffset(cursor, *arrayElemAt(results, 0), doc);
+  int *offset = arrayElemAt(results, 0);
+cursorSetOffset(cursor, *offset, doc);
   /*     st.searchResults.offset++; */
   /*     st.searchResults.offset %= st.searchResults.numElems; */
   /*     setCursorToSearch(); */
