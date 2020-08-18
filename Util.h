@@ -229,6 +229,7 @@ typedef struct state_s {
   SDL_Event event;
   bool isRecording;
   int searchLen;
+  int searchFrameRef;
   bool isReplace;
   string_t replace;
   int downCxtX;

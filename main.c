@@ -1829,6 +1829,7 @@ stMoveCursorOffset(*offset);
 /* } */
 
 void newSearch() {
+  st.searchFrameRef = focusFrameRef();
   setFocusBuiltinsView(SEARCH_BUF);
   setInsertMode();
   insertNewElem();
@@ -2038,7 +2039,14 @@ void insertOpenCloseChars(uchar c) {
   backwardChar();
   setInsertMode();
 }
-
+void doEscape()
+{
+  setNavigateMode();
+  if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCHBUF)
+    {
+      setFocusFrame(st.searchFrameRef);
+    }
+}
 int main(int argc, char **argv) {
   assert(sizeof(char) == 1);
   assert(sizeof(int) == 4);
