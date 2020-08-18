@@ -2048,8 +2048,6 @@ void insertOpenCloseChars(uchar c) {
   setInsertMode();
 }
 void doEscape() {
-  if (focusView()->mode == NAVIGATE_MODE) resetSearch();
-
   setNavigateMode();
   if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF) {
     setFocusFrame(st.searchFrameRef);
