@@ -32,6 +32,7 @@ void doEscape();
 void forwardEOF();
 void backwardSOF();
 void newSearch();
+void resetSearch();
 void gotoView();
 void backwardChar();
 void forwardChar();
