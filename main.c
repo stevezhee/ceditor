@@ -1739,8 +1739,23 @@ void stopRecordingOrPlayMacro() {
 /* } */
 
 void forwardSearch() {
+doc_t *doc = focusDoc();
+searchBuffer_t *results = &doc->searchResults;
 cursor_t *cursor = focusCursor();
 
+if (results->numElems == 0) return;
+
+for(int i = 0; i < results->numElems; ++i)
+{
+  int *offset = arrayElemAt(results, i);
+  if (*offset > cursor->offset)
+  {
+    cursorSetOffset(cursor, *offset, doc);
+    //  cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
+    return;
+  }
+}
+cursorSetOffset(cursor, *arrayElemAt(results, 0), doc);
   /*     st.searchResults.offset++; */
   /*     st.searchResults.offset %= st.searchResults.numElems; */
   /*     setCursorToSearch(); */
@@ -2071,6 +2086,7 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
+    do brace insertion on different lines
     reload file when changed outside of editor (inotify?  polling?)
     periodically save all (modified) files
     add pretty-print hotkey
