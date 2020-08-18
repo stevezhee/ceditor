@@ -1741,9 +1741,9 @@ void stopRecordingOrPlayMacro() {
 void forwardSearch() {
 doc_t *doc = focusDoc();
 searchBuffer_t *results = &doc->searchResults;
+if (results->numElems == 0) return;
 cursor_t *cursor = focusCursor();
 
-if (results->numElems == 0) return;
 
 for(int i = 0; i < results->numElems; ++i)
 {
@@ -1763,6 +1763,24 @@ cursorSetOffset(cursor, *offset, doc);
 }
 
 void backwardSearch() {
+doc_t *doc = focusDoc();
+searchBuffer_t *results = &doc->searchResults;
+if (results->numElems == 0) return;
+cursor_t *cursor = focusCursor();
+
+
+for(int i = results->numElems - 1; i >= 0; --i)
+{
+  int *offset = arrayElemAt(results, i);
+  if (*offset < cursor->offset)
+  {
+    cursorSetOffset(cursor, *offset, doc);
+    //  cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
+    return;
+  }
+}
+  int *offset = arrayTop(results);
+cursorSetOffset(cursor, *offset, doc);
   /*     st.searchResults.offset += st.searchResults.numElems - 1; */
   /*     st.searchResults.offset %= st.searchResults.numElems; */
   /*     setCursorToSearch(); */
