@@ -2058,14 +2058,20 @@ int main(int argc, char **argv) {
 }
 
 /*
+  search:
+  - do search on current line from search buffer
+  - move forward/back among search items
+  - clear search
+
+ */
+/*
 TODO:
 CORE:
+    reload file when changed outside of editor (inotify?  polling?)
     periodically save all (modified) files
-    reload file when changed outside of editor
     add pretty-print hotkey
     remember your place in the file on close (restore all settings/state?)
     modify frame widths based on columns (e.g. focus doc frame is 80/120 chars)
-    make font smaller in non-focused frames
     Search and replace
     Goto line
     Scroll when mouse selection goes off screen command line
@@ -2089,6 +2095,7 @@ CORE:
     make builtin buffers readonly (except config and search?)
 
 VIS:
+    make font smaller in non-focused frames
     italics, underline and bold in syntax highlighting
     reserved words syntax highlighting
     context sensitive syntax highlighting (parser)
