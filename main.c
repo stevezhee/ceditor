@@ -1318,12 +1318,15 @@ char *focusElem() {
   return p;
 }
 
+void resetSearch()
+{
+  arrayReinit(&focusDoc()->searchResults);
+  st.searchLen = 0;
+}
+
 void updateSearchState(bool isModify) {
   if (focusViewRef() != SEARCH_BUF) {
-    if (isModify) {
-      arrayReinit(&focusDoc()->searchResults);
-      st.searchLen = 0;
-    }
+    if (isModify) resetSearch();
     return;
   }
 
