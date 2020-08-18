@@ -2042,7 +2042,7 @@ void insertOpenCloseChars(uchar c) {
 void doEscape()
 {
   setNavigateMode();
-  if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCHBUF)
+  if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF)
     {
       setFocusFrame(st.searchFrameRef);
     }
