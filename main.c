@@ -728,7 +728,7 @@ bool cursorEq(cursor_t *a, cursor_t *b) {
 }
 
 bool searchActive(frame_t *frame) {
-  // if the doc in the builtins frame is searches
+  // if the doc in the builtins frame is searche
   // and this isn't the searches view
   return frameOf(BUILTINS_FRAME)->views.offset == SEARCH_BUF &&
          frame->views.offset != SEARCH_BUF;
@@ -2048,6 +2048,8 @@ void insertOpenCloseChars(uchar c) {
   setInsertMode();
 }
 void doEscape() {
+  if (focusView()->mode == NAVIGATE_MODE) resetSearch();
+
   setNavigateMode();
   if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF) {
     setFocusFrame(st.searchFrameRef);
