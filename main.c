@@ -1750,13 +1750,13 @@ for(int i = 0; i < results->numElems; ++i)
   int *offset = arrayElemAt(results, i);
   if (*offset > cursor->offset)
   {
-    cursorSetOffset(cursor, *offset, doc);
+    stMoveCursorOffset(*offset);
     //  cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
     return;
   }
 }
   int *offset = arrayElemAt(results, 0);
-cursorSetOffset(cursor, *offset, doc);
+stMoveCursorOffset(*offset);
   /*     st.searchResults.offset++; */
   /*     st.searchResults.offset %= st.searchResults.numElems; */
   /*     setCursorToSearch(); */
@@ -1774,13 +1774,13 @@ for(int i = last; i >= 0; --i)
   int *offset = arrayElemAt(results, i);
   if (*offset < cursor->offset)
   {
-    cursorSetOffset(cursor, *offset, doc);
+    stMoveCursorOffset(*offset);
     //  cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
     return;
   }
 }
   int *offset = arrayElemAt(results, last);
-cursorSetOffset(cursor, *offset, doc);
+stMoveCursorOffset(*offset);
   /*     st.searchResults.offset += st.searchResults.numElems - 1; */
   /*     st.searchResults.offset %= st.searchResults.numElems; */
   /*     setCursorToSearch(); */
