@@ -1319,12 +1319,11 @@ char *focusElem() {
 }
 
 void doSearchIfNeeded() {
-  if (focusViewRef() != SEARCH_BUF)
-    return;
+  if (focusViewRef() != SEARCH_BUF) return;
   char *search = focusElem();
-  if (!search)
-    return;
+  if (!search) return;
   // search main frame doc
+printf("searching...\n");
   frame_t *frame = frameOf(MAIN_FRAME);
   doc_t *doc = docOf(viewOf(frame));
   doSearch(doc, search);
