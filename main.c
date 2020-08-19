@@ -1776,7 +1776,10 @@ void forwardSearch() {
   doc_t *doc = focusDoc();
   searchBuffer_t *results = &doc->searchResults;
   if (results->numElems == 0)
-    return;
+    {
+      updateSearchState(false);
+      return;
+    }
   cursor_t *cursor = focusCursor();
 
   for (int i = 0; i < results->numElems; ++i) {
@@ -1798,7 +1801,9 @@ void backwardSearch() {
   doc_t *doc = focusDoc();
   searchBuffer_t *results = &doc->searchResults;
   if (results->numElems == 0)
-    return;
+    {
+      return;
+    }
   cursor_t *cursor = focusCursor();
 
   int last = results->numElems - 1;
