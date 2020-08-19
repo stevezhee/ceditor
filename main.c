@@ -1333,17 +1333,6 @@ void doSearch(frame_t *frame, char *search) {
   }
 
   // track search
-
-  /* for(int i; i<results->numElems; ++i) */
-  /*   { */
-  /*     off = arrayElemAt(results, i); */
-  /*     if (*off > cursor->offset) { */
-  /*       // BAL: TODO break out when past cursor */
-  /*       break; */
-  /*     } */
-  /*     dist = min(dist, *off - cursor->offset); */
-  /*   } */
-
   cursor_t cur;
   cursorInit(&cur);
   cursorSetOffset(&cur, cursor->offset + dist, doc);
@@ -1384,11 +1373,9 @@ void updateSearchState(bool isModify) {
   doc_t *doc = docOf(viewOf(frame));
   doSearch(frame, search);
 
-  // search secondary frame doc (if different)
+  // search secondary frame doc
   frame = frameOf(SECONDARY_FRAME);
   doc_t *doc1 = docOf(viewOf(frame));
-  if (doc1 == doc)
-    return;
   doSearch(frame, search);
 }
 
