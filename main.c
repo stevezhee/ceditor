@@ -1285,8 +1285,11 @@ void stringAppendNull(string_t *s) {
   arrayPop(s);
 }
 
-void doSearch(doc_t *doc, char *search, cursor_t *cursor) {
+void doSearch(view_t *view, char *search) {
   assert(search);
+  doc_t *doc = docOf(view);
+  cursor_t *cursor = &view->cursor;
+
   stringAppendNull(&doc->contents);
   char *haystack = doc->contents.start;
   char *replace = dieIfNull(strdup(search));
@@ -1366,7 +1369,7 @@ void updateSearchState(bool isModify) {
   frame_t *frame = frameOf(MAIN_FRAME);
   view_t *view = viewOf(frame);
   doc_t *doc = docOf(view);
-  doSearch(doc, search, &view->cursor);
+  doSearch(view, search);
 
   // search secondary frame doc (if different)
   frame = frameOf(SECONDARY_FRAME);
@@ -1374,7 +1377,7 @@ void updateSearchState(bool isModify) {
   doc_t *doc1 = docOf(view);
   if (doc1 == doc)
     return;
-  doSearch(doc1, search, &view->cursor);
+  doSearch(view, search);
 }
 
 void stMoveCursorOffset(int offset) {
