@@ -1286,6 +1286,7 @@ void stringAppendNull(string_t *s) {
 }
 
 void doSearch(view_t *view, char *search) {
+  assert(view);
   assert(search);
   doc_t *doc = docOf(view);
   cursor_t *cursor = &view->cursor;
@@ -1317,23 +1318,23 @@ void doSearch(view_t *view, char *search) {
   }
 
   // track search
-  int dist = INT_MAX;
+  /* int dist = INT_MAX; */
 
-  for(int i; i<results->numElems; ++i)
-    {
-      off = arrayElemAt(results, i);
-      if (*off > cursor->offset) {
-        // BAL: TODO break out when past cursor
-        break;
-      }
-      dist = min(dist, *off - cursor->offset);
-    }
+  /* for(int i; i<results->numElems; ++i) */
+  /*   { */
+  /*     off = arrayElemAt(results, i); */
+  /*     if (*off > cursor->offset) { */
+  /*       // BAL: TODO break out when past cursor */
+  /*       break; */
+  /*     } */
+  /*     dist = min(dist, *off - cursor->offset); */
+  /*   } */
 
-  cursor_t cur;
-  cursorInit(&cur);
+  /* cursor_t cur; */
+  /* cursorInit(&cur); */
 
-  cursorSetOffset(&cur, cursor->offset + dist, doc);
-  focusTrackRow(cur.row);
+  /* cursorSetOffset(&cur, cursor->offset + dist, doc); */
+  /* focusTrackRow(cur.row); */
 
 done:
   free(temp);
