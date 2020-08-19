@@ -1155,33 +1155,41 @@ void selectionCancel() {
 
 int docHeight(doc_t *doc) { return docNumLines(doc) * st.font.lineSkip; }
 
-void focusScrollY(int dR) {
-  frame_t *frame = focusFrame();
-  doc_t *doc = focusDoc();
-  view_t *view = focusView();
+void frameScrollY(frame_t *frame, dR)
+{
+  view_t *view = viewOf(frame);
+  doc_t *doc = docOf(view);
 
-  printf("scrolling = %d\n", dR);
   view->scrollY += dR * st.font.lineSkip;
   view->scrollY = clamp(frame->height - docHeight(doc) - st.font.lineSkip,
                         view->scrollY, 0);
 }
 
-void focusTrackRow(int row)
+void focusScrollY(int dR) {
+  frameScrollY(focusFrame());
+}
+
+void frameTrackRow(frame_t *frame, int row)
 {
+  view_t *view = viewOf(frame);
   int height = AUTO_SCROLL_HEIGHT;
-  view_t *view = focusView();
   int scrollR = view->scrollY / st.font.lineSkip;
 
   int dR = scrollR + row;
 
   if (dR < height) {
-    focusScrollY(height - dR);
+    frameScrollY(height - dR);
   } else {
-    int lastRow = frameRows(focusFrame()) - height;
+    int lastRow = frameRows(frame) - height;
     if (dR > lastRow) {
-      focusScrollY(lastRow - dR);
+      frameScrollY(lastRow - dR);
     }
   }
+}
+
+void focusTrackRow(int row)
+{
+  viewTrackRow(focusView());
 }
 
 // BAL: do this on mouse clicks...
@@ -1341,9 +1349,7 @@ void doSearch(view_t *view, char *search) {
   cursorInit(&cur);
   cursorSetOffset(&cur, cursor->offset - dist, doc);
   printf("dist = %d row = %d\n", dist, cur.row);
-  //  focusTrackRow(cur.row);
-  view->scrollY = -100;
-  // focusTrackRow(-1000);
+  // frameTrackRow(cur.row);
 
 done:
   free(temp);
