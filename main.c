@@ -1285,7 +1285,7 @@ void stringAppendNull(string_t *s) {
   arrayPop(s);
 }
 
-void doSearch(doc_t *doc, char *search) {
+void doSearch(doc_t *doc, char *search, cursor_t *cursor) {
   assert(search);
   stringAppendNull(&doc->contents);
   char *haystack = doc->contents.start;
@@ -1314,8 +1314,6 @@ void doSearch(doc_t *doc, char *search) {
 
   // track search
   int offset = INT_MAX;
-
-  cursor_t *cursor = &viewOf(doc)->cursor;
 
   for(int i; i<st->results.numElems; ++i)
     {
