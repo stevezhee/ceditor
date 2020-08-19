@@ -1676,21 +1676,22 @@ void cut() {
   int length;
 
   view_t *view = focusView();
+  doc_t *doc = focusDoc();
 
   getSelectionCoords(view, &column, &row, &offset, &length);
 
   selectionCancel();
 
+  length = min(length, doc->contents.numElems - offset);
+
+  assert(length > 0);
+
   if (length <= 0)
     return;
 
-  doc_t *doc = focusDoc();
-
-  int n = docPushDelete(doc, offset, length);
-
-  if (n > 1)
-    copy(doc->contents.start + offset, n);
-
+  if (length > 1)
+    copy(doc->contents.start + offset, length);
+  docPushDelete(doc, offset, n);
   cursorSetRowCol(&view->cursor, row, column, focusDoc());
 }
 
