@@ -18,7 +18,7 @@ void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly);
 void docRead(doc_t *doc);
 char *docCString(doc_t *doc);
 void docPushInsert(doc_t *doc, int offset, char *s, int len);
-void docPushDelete(doc_t *doc, int offset, int len);
+int docPushDelete(doc_t *doc, int offset, int len);
 void docMakeAll(void);
 int docNumLines(doc_t *doc);
 void docIncNumLines(doc_t *doc, int n);
