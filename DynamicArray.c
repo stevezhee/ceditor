@@ -51,7 +51,7 @@ void *arrayTop(dynamicArray_t *arr) {
 
 bool arrayAtTop(dynamicArray_t *arr) { return arr->offset >= arr->numElems; }
 
-void arrayDelete(dynamicArray_t *arr, int offset, int len0) {
+int arrayDelete(dynamicArray_t *arr, int offset, int len0) {
   assert(arr);
   int len = min(len0, arr->numElems - offset);
 
@@ -61,6 +61,7 @@ void arrayDelete(dynamicArray_t *arr, int offset, int len0) {
   assert(arrayTop(arr) >= q);
   memmove(p, q, arrayTop(arr) - q);
   arr->numElems -= len;
+  return len;
 }
 
 void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len) {

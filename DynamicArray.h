@@ -23,7 +23,7 @@ void *arrayFocus(dynamicArray_t *arr);
 void arraySetFocus(dynamicArray_t *arr, int i);
 void *arrayBoundary(dynamicArray_t *arr);
 void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len);
-void arrayDelete(dynamicArray_t *arr, int offset, int len);
+int arrayDelete(dynamicArray_t *arr, int offset, int len);
 void *arrayTop(dynamicArray_t *arr);
 void arrayFree(dynamicArray_t *arr);
 bool arrayAtTop(dynamicArray_t *arr);
