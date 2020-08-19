@@ -1297,7 +1297,7 @@ void stringAppendNull(string_t *s) {
 void doSearch(frame_t *frame, char *search) {
   assert(frame);
   assert(search);
-  frame_t *view = viewOf(frame);
+  view_t *view = viewOf(frame);
   doc_t *doc = docOf(view);
   cursor_t *cursor = &view->cursor;
 
