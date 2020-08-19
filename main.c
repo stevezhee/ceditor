@@ -1305,19 +1305,33 @@ void doSearch(doc_t *doc, char *search) {
   if (st.searchLen == 0)
     goto done;
 
-  cursor_t cur;
-  int offset;
-  
-  cursorInit(&cur);
-  cursorSetOffset(&cur, offset, doc);
-  focusTrackRow(cur.row);
-
   char *p = haystack;
   while ((p = strcasestr(p, needle))) {
     int *off = arrayPushUninit(results);
     *off = p - haystack;
     p++;
   }
+
+  // track search
+  int offset = INT_MAX;
+
+  cursor_t *cursor = cursorOf(viewOf(doc));
+
+  for(int i; i<st->results.numElems; ++i)
+    {
+      int off = arrayElemAt(results, i);
+      if (off > cursor->offset) {
+        offset = min(offset, off - cursor->offset);
+        break;
+      }
+      offset = min(offset, cursor->offset - off);
+    }
+
+  cursor_t cur;
+  cursorInit(&cur);
+
+  cursorSetOffset(&cur, offset, doc);
+  focusTrackRow(cur.row);
 
 done:
   free(temp);
