@@ -1600,9 +1600,9 @@ void docPushCommand(commandTag_t tag, doc_t *doc, int offset, char *s,
 
 int docPushDelete(doc_t *doc, int offset, int len) {
   if (len <= 0)
-    return;
+    return 0;
   if (doc->isReadOnly)
-    return;
+    return 0;
   int n = docDelete(doc, offset, len);
   if (doc->isUserDoc && n > 0) {
     docPushCommand(DELETE, doc, offset, doc->contents.start + offset, n);
