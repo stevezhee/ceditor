@@ -1165,13 +1165,13 @@ void focusScrollY(int dR) {
                         view->scrollY, 0);
 }
 
-// BAL: do this on mouse clicks...
-void focusTrackCursor(int height) {
+void focusTrackRow(int row)
+{
+  int height = AUTO_SCROLL_HEIGHT;
   view_t *view = focusView();
   int scrollR = view->scrollY / st.font.lineSkip;
 
-  int dR = scrollR + (st.mouseSelectionInProgress ? view->selection.row
-                                                  : view->cursor.row);
+  int dR = scrollR + row;
 
   if (dR < height) {
     focusScrollY(height - dR);
@@ -1181,6 +1181,13 @@ void focusTrackCursor(int height) {
       focusScrollY(lastRow - dR);
     }
   }
+
+}
+// BAL: do this on mouse clicks...
+void focusTrackCursor() {
+  view_t *view = focusView();
+  focusTrackRow(st.mouseSelectionInProgress ? view->selection.row
+                 : view->cursor.row);
 }
 
 void selectionSetRowCol() {
@@ -1350,13 +1357,13 @@ void updateSearchState(bool isModify) {
 
 void stMoveCursorOffset(int offset) {
   cursorSetOffset(focusCursor(), offset, focusDoc());
-  focusTrackCursor(AUTO_SCROLL_HEIGHT);
+  focusTrackCursor();
   updateSearchState(false);
 }
 
 void stMoveCursorRowCol(int row, int col) {
   cursorSetRowCol(focusCursor(), row, col, focusDoc());
-  focusTrackCursor(AUTO_SCROLL_HEIGHT);
+  focusTrackCursor();
   updateSearchState(false);
 }
 
