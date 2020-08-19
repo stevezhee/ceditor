@@ -9,11 +9,11 @@
 #include "Doc.h"
 #include "DynamicArray.h"
 
-void docDelete(doc_t *doc, int offset, int len) {
+int docDelete(doc_t *doc, int offset, int len) {
   int n = numLinesString(arrayElemAt(&doc->contents, offset), len);
   docIncNumLines(doc, -n);
   doc->modified = true;
-  arrayDelete(&doc->contents, offset, len);
+  return arrayDelete(&doc->contents, offset, len);
 }
 
 void docInsert(doc_t *doc, int offset, char *s, int len) {

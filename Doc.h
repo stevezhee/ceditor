@@ -11,7 +11,7 @@
 
 #include "Util.h"
 
-void docDelete(doc_t *doc, int offset, int len); // BAL: update cursors?
+int docDelete(doc_t *doc, int offset, int len); // BAL: update cursors?
 void docInsert(doc_t *doc, int offset, char *s, int len);
 void docWrite(doc_t *doc);
 void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly);

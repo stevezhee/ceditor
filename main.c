@@ -1598,17 +1598,17 @@ void docPushCommand(commandTag_t tag, doc_t *doc, int offset, char *s,
   assert(doc->undoStack.offset == doc->undoStack.numElems);
 }
 
-void docPushDelete(doc_t *doc, int offset, int len) {
+int docPushDelete(doc_t *doc, int offset, int len) {
   if (len <= 0)
     return;
   if (doc->isReadOnly)
     return;
-  if (doc->isUserDoc) {
-    docPushCommand(DELETE, doc, offset, doc->contents.start + offset, len);
+  int n = docDelete(doc, offset, len);
+  if (doc->isUserDoc && n > 0) {
+    docPushCommand(DELETE, doc, offset, doc->contents.start + offset, n);
   }
-
-  docDelete(doc, offset, len);
   updateSearchState(true);
+  return n;
 }
 
 void docPushInsert(doc_t *doc, int offset, char *s, int len) {
@@ -1686,10 +1686,10 @@ void cut() {
 
   doc_t *doc = focusDoc();
 
-  if (length > 1)
-    copy(doc->contents.start + offset, length);
+  int n = docPushDelete(doc, offset, length);
 
-  docPushDelete(doc, offset, length);
+  if (n > 1)
+    copy(doc->contents.start + offset, n);
 
   cursorSetRowCol(&view->cursor, row, column, focusDoc());
 }
@@ -1930,8 +1930,7 @@ int outdentLine() {
   int offset = focusCursor()->offset;
   int x = distanceToIndent(s->start + offset, arrayTop(s));
   int n = x == 0 ? 0 : (x - (((x - 1) / INDENT_LENGTH) * INDENT_LENGTH));
-  docPushDelete(doc, offset, n);
-  return n;
+  return docPushDelete(doc, offset, n);
 }
 
 void indent() {
