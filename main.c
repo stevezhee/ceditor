@@ -1314,22 +1314,22 @@ void doSearch(doc_t *doc, char *search, cursor_t *cursor) {
   }
 
   // track search
-  int offset = INT_MAX;
+  int dist = INT_MAX;
 
   for(int i; i<results->numElems; ++i)
     {
       off = arrayElemAt(results, i);
       if (*off > cursor->offset) {
-        offset = min(offset, *off - cursor->offset);
+        // BAL: TODO break out when past cursor
         break;
       }
-      offset = min(offset, cursor->offset - *off);
+      dist = min(dist, *off - cursor->offset);
     }
 
   cursor_t cur;
   cursorInit(&cur);
 
-  cursorSetOffset(&cur, offset, doc);
+  cursorSetOffset(&cur, cursor->offset + dist, doc);
   focusTrackRow(cur.row);
 
 done:
