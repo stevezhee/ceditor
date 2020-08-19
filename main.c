@@ -1320,16 +1320,7 @@ void doSearch(frame_t *frame, char *search) {
 
   char *p = haystack;
   int *off;
-  int dist = MAX_INT;
-  /*
-    -10 -8 -3 2 7 15  => 2
-    |
-    -10 -8 -1 2 7 15  => -1
-    |
-
-    if (abs(dist1) < abs(nearest))
-    nearest = dist1;
-  */
+  int dist = INT_MAX;
 
   while ((p = strcasestr(p, needle))) {
     off = arrayPushUninit(results);
