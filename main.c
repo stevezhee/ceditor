@@ -1167,7 +1167,7 @@ void focusScrollY(int dR) {
 
 void focusTrackRow(int row)
 {
-  printf("row = %d\n");
+  printf("row = %d\n", row);
   int height = AUTO_SCROLL_HEIGHT;
   view_t *view = focusView();
   int scrollR = view->scrollY / st.font.lineSkip;
