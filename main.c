@@ -1320,10 +1320,10 @@ void doSearch(doc_t *doc, char *search, cursor_t *cursor) {
     {
       off = arrayElemAt(results, i);
       if (*off > cursor->offset) {
-        offset = min(offset, off - cursor->offset);
+        offset = min(offset, *off - cursor->offset);
         break;
       }
-      offset = min(offset, cursor->offset - off);
+      offset = min(offset, cursor->offset - *off);
     }
 
   cursor_t cur;
