@@ -1312,14 +1312,17 @@ void doSearch(view_t *view, char *search) {
 
   char *p = haystack;
   int *off;
-  int dist = INT_MAX;
+  int dist = 0;
   while ((p = strcasestr(p, needle))) {
     off = arrayPushUninit(results);
     *off = p - haystack;
     p++;
 
     // keep closest offset
-    dist = min(dist, abs(cursor->offset - *off));
+    if (*off > cursor->offset)
+      {
+        dist = min(dist, cursor->offset - *off);
+      }
   }
 
   // track search
@@ -1337,7 +1340,7 @@ void doSearch(view_t *view, char *search) {
   cursor_t cur;
   cursorInit(&cur);
   printf("dist = %d\n", dist);
-  cursorSetOffset(&cur, cursor->offset + dist, doc);
+  cursorSetOffset(&cur, cursor->offset - dist, doc);
   focusTrackRow(cur.row);
 
 done:
