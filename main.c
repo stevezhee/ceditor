@@ -1306,6 +1306,8 @@ void doSearch(doc_t *doc, char *search) {
     goto done;
 
   cursor_t cur;
+  int offset;
+  
   cursorInit(&cur);
   cursorSetOffset(&cur, offset, doc);
   focusTrackRow(cur.row);
