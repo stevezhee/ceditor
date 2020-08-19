@@ -1187,10 +1187,10 @@ void frameTrackRow(frame_t *frame, int row)
   }
 }
 
-void focusTrackRow(int row)
-{
-  viewTrackRow(focusView());
-}
+/* void focusTrackRow(int row) */
+/* { */
+/*   viewTrackRow(focusView()); */
+/* } */
 
 // BAL: do this on mouse clicks...
 void focusTrackCursor() {
