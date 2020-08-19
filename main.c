@@ -1166,7 +1166,7 @@ void frameScrollY(frame_t *frame, int dR)
 }
 
 void focusScrollY(int dR) {
-  frameScrollY(focusFrame());
+  frameScrollY(focusFrame(), dR);
 }
 
 void frameTrackRow(frame_t *frame, int row)
@@ -1178,11 +1178,11 @@ void frameTrackRow(frame_t *frame, int row)
   int dR = scrollR + row;
 
   if (dR < height) {
-    frameScrollY(height - dR);
+    frameScrollY(frame, height - dR);
   } else {
     int lastRow = frameRows(frame) - height;
     if (dR > lastRow) {
-      frameScrollY(lastRow - dR);
+      frameScrollY(frame, lastRow - dR);
     }
   }
 }
