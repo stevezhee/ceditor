@@ -1318,8 +1318,7 @@ void doSearch(view_t *view, char *search) {
     p++;
 
     // keep closest offset
-    if (cursor->offset < *off)
-      dist = min(dist, cursor->offset - *off);
+    dist = min(dist, abs(cursor->offset - *off));
   }
 
   // track search
