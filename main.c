@@ -1655,6 +1655,20 @@ void redo() {
   doc->undoStack.offset++;
 }
 
+void copy(char *s, uint len) {
+  if (focusViewRef() == COPY_BUF) {
+    copyElemToClipboard();
+    return;
+  }
+
+  int refFrame = focusFrameRef();
+  setFocusBuiltinsView(COPY_BUF);
+  insertNewElem();
+  builtinInsertString(s, len);
+  setClipboardText(focusDoc()->contents.start);
+  setFocusFrame(refFrame);
+}
+
 void cut() {
   int column;
   int row;
