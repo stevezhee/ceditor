@@ -1350,7 +1350,7 @@ void doSearch(frame_t *frame, char *search) {
   cursorInit(&cur);
   cursorSetOffset(&cur, cursor->offset - dist, doc);
   printf("dist = %d row = %d\n", dist, cur.row);
-  // frameTrackRow(cur.row);
+  frameTrackRow(frame, cur.row);
 
 done:
   free(temp);
