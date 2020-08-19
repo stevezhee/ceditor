@@ -1155,8 +1155,7 @@ void selectionCancel() {
 
 int docHeight(doc_t *doc) { return docNumLines(doc) * st.font.lineSkip; }
 
-void setFrameScrollY(frame_t *frame, int dR)
-{
+void setFrameScrollY(frame_t *frame, int dR) {
   view_t *view = viewOf(frame);
   doc_t *doc = docOf(view);
 
@@ -1165,12 +1164,9 @@ void setFrameScrollY(frame_t *frame, int dR)
                         view->scrollY, 0);
 }
 
-void setFocusScrollY(int dR) {
-  setFrameScrollY(focusFrame(), dR);
-}
+void setFocusScrollY(int dR) { setFrameScrollY(focusFrame(), dR); }
 
-void frameTrackRow(frame_t *frame, int row)
-{
+void frameTrackRow(frame_t *frame, int row) {
   view_t *view = viewOf(frame);
   int height = AUTO_SCROLL_HEIGHT;
   int scrollR = view->scrollY / st.font.lineSkip;
@@ -1187,16 +1183,13 @@ void frameTrackRow(frame_t *frame, int row)
   }
 }
 
-void focusTrackRow(int row)
-{
-  frameTrackRow(focusFrame(), row);
-}
+void focusTrackRow(int row) { frameTrackRow(focusFrame(), row); }
 
 // BAL: do this on mouse clicks...
 void focusTrackCursor() {
   view_t *view = focusView();
   focusTrackRow(st.mouseSelectionInProgress ? view->selection.row
-                 : view->cursor.row);
+                                            : view->cursor.row);
 }
 
 void selectionSetRowCol() {
@@ -1351,15 +1344,15 @@ char *focusElem() {
   return p;
 }
 
-void resetSearch()
-{
+void resetSearch() {
   arrayReinit(&focusDoc()->searchResults);
   st.searchLen = 0;
 }
 
 void updateSearchState(bool isModify) {
   if (focusViewRef() != SEARCH_BUF) {
-    if (isModify) resetSearch();
+    if (isModify)
+      resetSearch();
     return;
   }
 
