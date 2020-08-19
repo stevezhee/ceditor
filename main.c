@@ -1364,15 +1364,16 @@ void updateSearchState(bool isModify) {
 
   // search main frame doc
   frame_t *frame = frameOf(MAIN_FRAME);
-  doc_t *doc = docOf(viewOf(frame));
-  doSearch(doc, search);
+  view_t *view = viewOf(frame);
+  doc_t *doc = docOf(view);
+  doSearch(doc, search, view);
 
   // search secondary frame doc (if different)
   frame = frameOf(SECONDARY_FRAME);
   doc_t *doc1 = docOf(viewOf(frame));
   if (doc1 == doc)
     return;
-  doSearch(doc1, search);
+  doSearch(doc1, search, viewOf(frame));
 }
 
 void stMoveCursorOffset(int offset) {
