@@ -1181,8 +1181,8 @@ void focusTrackRow(int row)
       focusScrollY(lastRow - dR);
     }
   }
-
 }
+
 // BAL: do this on mouse clicks...
 void focusTrackCursor() {
   view_t *view = focusView();
@@ -1304,6 +1304,11 @@ void doSearch(doc_t *doc, char *search) {
   }
   if (st.searchLen == 0)
     goto done;
+
+  cursor_t cur;
+  cursorInit(&cur);
+  cursorSetOffset(&cur, offset, doc);
+  focusTrackRow(cur.row);
 
   char *p = haystack;
   while ((p = strcasestr(p, needle))) {
