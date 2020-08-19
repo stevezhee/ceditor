@@ -1306,8 +1306,9 @@ void doSearch(doc_t *doc, char *search, cursor_t *cursor) {
     goto done;
 
   char *p = haystack;
+  int *off;
   while ((p = strcasestr(p, needle))) {
-    int *off = arrayPushUninit(results);
+    off = arrayPushUninit(results);
     *off = p - haystack;
     p++;
   }
@@ -1317,8 +1318,8 @@ void doSearch(doc_t *doc, char *search, cursor_t *cursor) {
 
   for(int i; i<results->numElems; ++i)
     {
-      int off = arrayElemAt(results, i);
-      if (off > cursor->offset) {
+      off = arrayElemAt(results, i);
+      if (*off > cursor->offset) {
         offset = min(offset, off - cursor->offset);
         break;
       }
