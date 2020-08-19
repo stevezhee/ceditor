@@ -55,6 +55,7 @@ void arrayDelete(dynamicArray_t *arr, int offset, int len) {
   assert(arr);
   void *p = arrayElemAt(arr, offset);
   void *q = p + len * arr->elemSize;
+  assert(arrayTop(arr) >= q);
   memmove(p, q, arrayTop(arr) - q);
   arr->numElems -= len;
 }

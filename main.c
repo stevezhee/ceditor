@@ -1620,6 +1620,7 @@ void docPushDelete(doc_t *doc, int offset, int len) {
   if (doc->isUserDoc) {
     docPushCommand(DELETE, doc, offset, doc->contents.start + offset, len);
   }
+
   docDelete(doc, offset, len);
   updateSearchState(true);
 }
