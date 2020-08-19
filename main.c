@@ -1802,6 +1802,7 @@ void backwardSearch() {
   searchBuffer_t *results = &doc->searchResults;
   if (results->numElems == 0)
     {
+      updateSearchState(false);
       return;
     }
   cursor_t *cursor = focusCursor();
