@@ -1160,6 +1160,7 @@ void focusScrollY(int dR) {
   doc_t *doc = focusDoc();
   view_t *view = focusView();
 
+  printf("scrolling = %d\n", dR);
   view->scrollY += dR * st.font.lineSkip;
   view->scrollY = clamp(frame->height - docHeight(doc) - st.font.lineSkip,
                         view->scrollY, 0);
@@ -1340,7 +1341,7 @@ void doSearch(view_t *view, char *search) {
   cursorInit(&cur);
   cursorSetOffset(&cur, cursor->offset - dist, doc);
   printf("dist = %d row = %d\n", dist, cur.row);
-  focusTrackRow(cur.row);
+  //  focusTrackRow(cur.row);
   focusTrackRow(20);
 
 done:
