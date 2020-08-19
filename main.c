@@ -1155,7 +1155,7 @@ void selectionCancel() {
 
 int docHeight(doc_t *doc) { return docNumLines(doc) * st.font.lineSkip; }
 
-void frameScrollY(frame_t *frame, int dR)
+void setFrameScrollY(frame_t *frame, int dR)
 {
   view_t *view = viewOf(frame);
   doc_t *doc = docOf(view);
@@ -1165,8 +1165,8 @@ void frameScrollY(frame_t *frame, int dR)
                         view->scrollY, 0);
 }
 
-void focusScrollY(int dR) {
-  frameScrollY(focusFrame(), dR);
+void setFocusScrollY(int dR) {
+  setFrameScrollY(focusFrame(), dR);
 }
 
 void frameTrackRow(frame_t *frame, int row)
@@ -1178,11 +1178,11 @@ void frameTrackRow(frame_t *frame, int row)
   int dR = scrollR + row;
 
   if (dR < height) {
-    frameScrollY(frame, height - dR);
+    setFrameScrollY(frame, height - dR);
   } else {
     int lastRow = frameRows(frame) - height;
     if (dR > lastRow) {
-      frameScrollY(frame, lastRow - dR);
+      setFrameScrollY(frame, lastRow - dR);
     }
   }
 }
