@@ -1691,7 +1691,7 @@ void cut() {
 
   if (length > 1)
     copy(doc->contents.start + offset, length);
-  docPushDelete(doc, offset, n);
+  docPushDelete(doc, offset, length);
   cursorSetRowCol(&view->cursor, row, column, focusDoc());
 }
 
