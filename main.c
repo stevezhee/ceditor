@@ -1293,7 +1293,6 @@ void stringAppendNull(string_t *s) {
   *c = '\0';
   arrayPop(s);
 }
-
 void doSearch(frame_t *frame, char *search) {
   assert(frame);
   assert(search);
@@ -1321,17 +1320,25 @@ void doSearch(frame_t *frame, char *search) {
 
   char *p = haystack;
   int *off;
-  int dist = 0;
+  int dist = MAX_INT;
+  /*
+    -10 -8 -3 2 7 15  => 2
+    |
+    -10 -8 -1 2 7 15  => -1
+    |
+
+    if (abs(dist1) < abs(nearest))
+    nearest = dist1;
+  */
+
   while ((p = strcasestr(p, needle))) {
     off = arrayPushUninit(results);
     *off = p - haystack;
     p++;
 
     // keep closest offset
-    if (*off > cursor->offset)
-      {
-        dist = min(dist, cursor->offset - *off);
-      }
+    int dist1 = *off - cursor->offset;
+    dist = abs(dist1) < abs(dist) ? dist1 : dist;
   }
 
   // track search
@@ -1348,8 +1355,7 @@ void doSearch(frame_t *frame, char *search) {
 
   cursor_t cur;
   cursorInit(&cur);
-  cursorSetOffset(&cur, cursor->offset - dist, doc);
-  printf("dist = %d row = %d\n", dist, cur.row);
+  cursorSetOffset(&cur, cursor->offset + dist, doc);
   frameTrackRow(frame, cur.row);
 
 done:
