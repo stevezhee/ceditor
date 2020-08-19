@@ -1155,7 +1155,7 @@ void selectionCancel() {
 
 int docHeight(doc_t *doc) { return docNumLines(doc) * st.font.lineSkip; }
 
-void frameScrollY(frame_t *frame, dR)
+void frameScrollY(frame_t *frame, int dR)
 {
   view_t *view = viewOf(frame);
   doc_t *doc = docOf(view);
