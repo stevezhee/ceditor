@@ -1251,19 +1251,19 @@ void mouseMotionEvent() {
     /* int dR = scrollR + view->selection.row; */
     /* if (dR < height) */
     /*   { */
-    /*     focusScrollY(height - dR); */
+    /*     setFocusScrollY(height - dR); */
     /*     SDL_PushEvent(&st.event); */
     /*   } else { */
     /*   int lastRow = frameRows(focusFrame()) - height; */
     /*   if (dR > lastRow) { */
-    /*     focusScrollY(lastRow - dR); */
+    /*     setFocusScrollY(lastRow - dR); */
     /*     SDL_PushEvent(&st.event); */
     /*   } */
     /* } */
   }
 }
 
-void mouseWheelEvent() { focusScrollY(st.event.wheel.y); }
+void mouseWheelEvent() { setFocusScrollY(st.event.wheel.y); }
 
 void doKeyPress(uchar c) { keyHandler[focusView()->mode][c](c); }
 
