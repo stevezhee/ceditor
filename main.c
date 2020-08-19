@@ -1336,6 +1336,7 @@ void doSearch(view_t *view, char *search) {
 
   cursor_t cur;
   cursorInit(&cur);
+  printf("dist = %d\n", dist);
   cursorSetOffset(&cur, cursor->offset - dist, doc);
   focusTrackRow(cur.row);
 
