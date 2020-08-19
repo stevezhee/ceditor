@@ -1315,7 +1315,7 @@ void doSearch(doc_t *doc, char *search, cursor_t *cursor) {
   // track search
   int offset = INT_MAX;
 
-  for(int i; i<st.results.numElems; ++i)
+  for(int i; i<results->numElems; ++i)
     {
       int off = arrayElemAt(results, i);
       if (off > cursor->offset) {
