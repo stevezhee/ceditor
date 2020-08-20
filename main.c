@@ -1057,6 +1057,7 @@ void helpBufInit(void);
 
 void pushView(int frameRef, int docRef)
 {
+  printf("pushView\n");
   frame_t *frame = frameOf(frameRef);
   assert(frame);
   view_t *view = arrayPushUninit(&frame->views);
