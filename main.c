@@ -160,7 +160,7 @@ void frameInit(frame_t *frame) {
 
   arrayInit(&frame->views, sizeof(view_t));
   arrayInit(&frame->status, sizeof(char));
-  arrayGrow(&frame->status, 1024);
+  // BAL:  arrayGrow(&frame->status, 1024);
 }
 
 void viewInit(view_t *view, uint refDoc) {
