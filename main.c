@@ -74,7 +74,11 @@ int focusViewRef() { return focusFrame()->views.offset; }
 
 view_t *viewOf(frame_t *frame) { return arrayFocus(&frame->views); }
 
-view_t *focusView() { return viewOf(focusFrame()); }
+view_t *focusView() {
+  frame_t *frame = focusFrame();
+  assert(frame);
+  return viewOf(frame);
+}
 
 int numViews() { return focusFrame()->views.numElems; }
 
