@@ -16,11 +16,13 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
   if (maxElems <= arr->maxElems)
     return;
   int n = max(maxElems, arr->maxElems * 2);
-  // printf("growing array (%d)\n", n);
+  printf("growing array %d (%d)\n", n, maxElems);
   arr->maxElems = n;
   int sz = arr->elemSize * n;
   assert(sz > 0);
+  printf("attempting to realloc %d bytes\n", sz);
   arr->start = dieIfNull(realloc(arr->start, sz));
+  assert(arr->start);
 }
 
 void arrayReinit(dynamicArray_t *arr) {
