@@ -17,11 +17,13 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
     return;
   int n = maxElems; //BAL: max(maxElems, arr->maxElems * 2);
   printf("growing array %d elements (%d)\n", n, maxElems);
+  int sz0 = arr->elemSize * arr->maxElems;
   arr->maxElems = n;
   int sz = arr->elemSize * n;
   assert(sz > 0);
   printf("attempting to allocate %d bytes (elem size = %d)\n", sz, arr->elemSize);
   arr->start = dieIfNull(realloc(arr->start, sz));
+  memset(arr->start + sz0, 0, sz - sz0); // BAL: zeroing memory - remove
   printf("allocate complete\n");
 }
 
