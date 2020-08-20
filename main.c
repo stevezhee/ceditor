@@ -165,7 +165,7 @@ void frameInit(frame_t *frame) {
 
 void viewInit(view_t *view, uint refDoc) {
   assert(view);
-  printf("%p\n", view);
+  printf("viewInit %p\n", view);
   memset(view, 0, sizeof(view_t));
   view->refDoc = refDoc;
 }
@@ -1063,7 +1063,7 @@ void pushViewInit(int frameRef, int docRef)
   assert(frame);
   view_t *view = arrayPushUninit(&frame->views);
   assert(view);
-  printf("%p %p\n", frame, view);
+  printf("pushViewInit view = %p\n", view);
   viewInit(view, docRef);
   printf("done with view init\n");
 }
