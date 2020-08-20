@@ -1072,23 +1072,11 @@ void stInit(int argc, char **argv) {
     exit(0);
   }
 
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
-    die(SDL_GetError());
-
-  windowInit(&st.window, INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT);
-
-  rendererInit(st.window.window);
-
-  initFont(&st.font, INIT_FONT_FILE, INIT_FONT_SIZE);
-
-  macrosInit();
-
   arrayInit(&st.docs, sizeof(doc_t));
   arrayInit(&st.frames, sizeof(frame_t));
   arrayInit(&st.replace, sizeof(char));
 
-  keysymInit();
-
+  
   for (int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) {
     doc_t *doc = arrayPushUninit(&st.docs);
     docInit(doc, builtinBufferTitle[i], false, builtinBufferReadOnly[i]);
@@ -1126,9 +1114,22 @@ void stInit(int argc, char **argv) {
   /* assert(docOf(viewOf(frame))); */
   /* frameUpdate(frame); */
 
-  gui = hcat(frameWidget(0), hcat(frameWidget(1), frameWidget(2)));
+  keysymInit();
+
+  macrosInit();
 
   helpBufInit();
+
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
+    die(SDL_GetError());
+
+  windowInit(&st.window, INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT);
+
+  rendererInit(st.window.window);
+
+  initFont(&st.font, INIT_FONT_FILE, INIT_FONT_SIZE);
+
+  gui = hcat(frameWidget(0), hcat(frameWidget(1), frameWidget(2)));
 
   stResize();
 
