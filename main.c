@@ -1149,7 +1149,7 @@ void selectLines() {
   view->selectMode = LINE_SELECT;
 }
 
-void selectionCancel() {
+void cancelSelection() {
   view_t *view = focusView();
   view->selectMode = NO_SELECT;
 }
@@ -1647,7 +1647,7 @@ void docPushInsert(doc_t *doc, int offset, char *s, int len) {
 }
 
 void docDoCommand(doc_t *doc, commandTag_t tag, int offset, string_t *string) {
-  selectionCancel();
+  cancelSelection();
   stMoveCursorOffset(offset);
   switch (tag) {
   case DELETE:
@@ -1698,7 +1698,7 @@ void cut() {
 
   getSelectionCoords(view, &column, &row, &offset, &length);
 
-  selectionCancel();
+  cancelSelection();
 
   length = min(length, doc->contents.numElems - offset);
 
@@ -2082,7 +2082,7 @@ void insertOpenCloseChars(uchar c) {
     insertChar(c);
     stMoveCursorOffset(off + len + 1);
     insertChar(c1);
-    selectionCancel();
+    cancelSelection();
     return;
   }
   // if selection is on
@@ -2103,6 +2103,7 @@ void doEscapeNavigate() {
     return;
   }
   resetSearch();
+  cancelSelection();
 }
 int main(int argc, char **argv) {
   assert(sizeof(char) == 1);
