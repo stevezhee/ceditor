@@ -90,7 +90,7 @@ void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len) {
 void *arrayPushUninit(dynamicArray_t *arr) {
   assert(arr);
   assert(arr->numElems >= 0);
-  assert(arr->numElems <= maxElems);
+  assert(arr->numElems <= arr->maxElems);
   if (arr->numElems == arr->maxElems) {
     arrayGrow(arr, 1 + arr->maxElems);
   }
