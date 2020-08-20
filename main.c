@@ -1055,15 +1055,17 @@ void message(char *s) {
 
 void helpBufInit(void);
 
-void pushView(int frameRef, int docRef)
+void pushViewInit(int frameRef, int docRef)
 {
-  printf("pushView\n");
+  printf("pushView %d\n", frameRef);
   frame_t *frame = frameOf(frameRef);
+  printf("pushView frame %p\n", frame);
   assert(frame);
   view_t *view = arrayPushUninit(&frame->views);
   assert(view);
-  printf("%p %p\n", view, frame);
+  printf("%p %p\n", frame, view);
   viewInit(view, docRef);
+  printf("done with view init\n");
 }
 
 void stInit(int argc, char **argv) {
