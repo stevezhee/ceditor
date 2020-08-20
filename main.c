@@ -1346,7 +1346,7 @@ char *viewElem(view_t *view) {
 char *focusElem() {
   if (focusFrameRef() != BUILTINS_FRAME)
     return NULL;
-  return viewElem(focusFrame());
+  return viewElem(focusView());
 }
 
 void resetSearch() {
