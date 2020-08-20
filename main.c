@@ -1104,13 +1104,13 @@ void stInit(int argc, char **argv) {
 
   for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
     {
-      pushView(BUILTINS_FRAME, i);
+      pushViewInit(BUILTINS_FRAME, i);
     }
 
   for(int i = NUM_BUILTIN_BUFFERS; i < NUM_BUILTIN_BUFFERS + argc; ++i)
     {
-      pushView(MAIN_FRAME, i);
-      pushView(SECONDARY_FRAME, i);
+      pushViewInit(MAIN_FRAME, i);
+      pushViewInit(SECONDARY_FRAME, i);
     }
   /* bool isBuiltinsFrame = i == BUILTINS_FRAME; */
   /* int docStart = isBuiltinsFrame ? 0 : NUM_BUILTIN_BUFFERS; */
