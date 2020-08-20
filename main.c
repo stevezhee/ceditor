@@ -1029,7 +1029,7 @@ int frameScrollY(frame_t *frame) {
 
 widget_t *frame(int frameRef) {
   frame_t *frame = frameOf(frameRef);
-  widget_t *textarea = wid(i, scrollY(frameScrollY, frame,
+  widget_t *textarea = wid(frameRef, scrollY(frameScrollY, frame,
                                       over(draw(drawFrameDoc, frame),
                                            draw(drawFrameCursor, frame))));
   widget_t *status =
