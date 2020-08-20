@@ -1093,6 +1093,7 @@ void stInit(int argc, char **argv) {
   printf("docInit done\n");
 
   for (int i = 0; i < NUM_FRAMES; ++i) {
+    printf("here\n");
     frame_t *frame = arrayPushUninit(&st.frames);
     printf("frame = %p\n", frame);
     frameInit(frame);
