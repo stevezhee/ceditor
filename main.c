@@ -1641,9 +1641,7 @@ void docPushInsert(doc_t *doc, int offset, char *s, int len) {
     return;
   if (doc->isReadOnly)
     return;
-  if (doc->isUserDoc) {
-    docPushCommand(INSERT, doc, offset, s, len);
-  }
+  docPushCommand(INSERT, doc, offset, s, len);
   docInsert(doc, offset, s, len);
   updateBuiltinsState(true);
 }
