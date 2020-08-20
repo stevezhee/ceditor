@@ -34,8 +34,6 @@ void arrayInit(dynamicArray_t *arr, int elemSize) {
   arr->elemSize = elemSize;
 }
 
-void *arrayElemAt_unsafe(dynamicArray_t *arr, int i) {
-
 #define elemAt(arr, i) ((arr)->start + (i) + (arr)->elemSize)
 
 void *arrayElemAt(dynamicArray_t *arr, int i) {
