@@ -1107,11 +1107,12 @@ void stInit(int argc, char **argv) {
       pushViewInit(BUILTINS_FRAME, i);
     }
 
-  for(int i = NUM_BUILTIN_BUFFERS; i < NUM_BUILTIN_BUFFERS + argc; ++i)
-    {
-      pushViewInit(MAIN_FRAME, i);
-      pushViewInit(SECONDARY_FRAME, i);
-    }
+  /* for(int i = NUM_BUILTIN_BUFFERS; i < NUM_BUILTIN_BUFFERS + argc; ++i) */
+  /*   { */
+  /*     pushViewInit(MAIN_FRAME, i); */
+  /*     pushViewInit(SECONDARY_FRAME, i); */
+  /*   } */
+
   /* bool isBuiltinsFrame = i == BUILTINS_FRAME; */
   /* int docStart = isBuiltinsFrame ? 0 : NUM_BUILTIN_BUFFERS; */
   /* int docEnd = isBuiltinsFrame ? NUM_BUILTIN_BUFFERS : (NUM_BUILTIN_BUFFERS + argc); */
@@ -1125,27 +1126,28 @@ void stInit(int argc, char **argv) {
   /* assert(docOf(viewOf(frame))); */
   /* frameUpdate(frame); */
 
-  keysymInit();
+  exit(0);
+  /* keysymInit(); */
 
-  macrosInit();
+  /* macrosInit(); */
 
-  helpBufInit();
+  /* helpBufInit(); */
 
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
-    die(SDL_GetError());
+  /* if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) */
+  /*   die(SDL_GetError()); */
 
-  windowInit(&st.window, INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT);
+  /* windowInit(&st.window, INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT); */
 
-  rendererInit(st.window.window);
+  /* rendererInit(st.window.window); */
 
-  initFont(&st.font, INIT_FONT_FILE, INIT_FONT_SIZE);
+  /* initFont(&st.font, INIT_FONT_FILE, INIT_FONT_SIZE); */
 
-  gui = hcat(frameWidget(0), hcat(frameWidget(1), frameWidget(2)));
+  /* gui = hcat(frameWidget(0), hcat(frameWidget(1), frameWidget(2))); */
 
-  stResize();
+  /* stResize(); */
 
-  setFocusBuiltinsView(HELP_BUF);
-  setFocusFrame(MAIN_FRAME);
+  /* setFocusBuiltinsView(HELP_BUF); */
+  /* setFocusFrame(MAIN_FRAME); */
 }
 
 void saveAll() {
