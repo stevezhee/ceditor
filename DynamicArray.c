@@ -34,19 +34,23 @@ void arrayInit(dynamicArray_t *arr, int elemSize) {
   arr->elemSize = elemSize;
 }
 
-void *arrayElemAt(dynamicArray_t *arr, int i) {
+void *arrayElemAt_unsafe(dynamicArray_t *arr, int i) {
   assert(arr);
   assert(arr->start);
-  // BAL: assert(i >= 0);
-  // BAL: assert(i < arr->numElems);
+  assert(i >= 0);
 
   return arr->start + i * arr->elemSize;
+}
+
+void *arrayElemAt(dynamicArray_t *arr, int i) {
+  assert(i < arr->numElems);
+  return arrayElemAt_unsafe(arr, i);
 }
 
 void *arrayFocus(dynamicArray_t *arr) { return arrayElemAt(arr, arr->offset); }
 
 void *arrayTop(dynamicArray_t *arr) {
-  return arr->start + arr->numElems * arr->elemSize;
+  return arrayElemAt_unsafe(arr, arr->numElems);
 }
 
 bool arrayAtTop(dynamicArray_t *arr) { return arr->offset >= arr->numElems; }
@@ -71,11 +75,12 @@ void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len) {
     arrayGrow(arr, n);
 
   int sz = len * arr->elemSize;
+  int top = arrayTop(arr);
 
   arr->numElems = n; // needs to be before call to arrayElemAt
   void *p = arrayElemAt(arr, offset);
 
-  memmove(p + sz, p, arrayTop(arr) - p);
+  memmove(p + sz, p, top - p);
   memcpy(p, s, sz);
 }
 
