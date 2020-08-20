@@ -1089,7 +1089,7 @@ void stInit(int argc, char **argv) {
   for (int i = 0; i < NUM_FRAMES; ++i) {
     frame_t *frame = arrayPushUninit(&st.frames);
     frameInit(frame);
-    bool isBuiltinsFrame = i == BUILTINS_FRAME
+    bool isBuiltinsFrame = i == BUILTINS_FRAME;
     int docStart = isBuiltinsFrame ? 0 : NUM_BUILTIN_BUFFERS;
     int docEnd = isBuiltinsFrame ? NUM_BUILTIN_BUFFERS : (NUM_BUILTIN_BUFFERS + argc);
     for(int j = docStart; j < docEnd; ++j)
