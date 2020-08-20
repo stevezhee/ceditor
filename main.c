@@ -141,6 +141,7 @@ void setFrameView(int refFrame, int refView) {
   frame_t *frame = frameOf(refFrame);
   assert(frame);
   assert(refView < frame->views.numElems);
+
   arraySetFocus(&frame->views, refView);
 
   frameUpdate(frame);
@@ -1097,9 +1098,12 @@ void stInit(int argc, char **argv) {
     int docEnd = isBuiltinsFrame ? NUM_BUILTIN_BUFFERS : (NUM_BUILTIN_BUFFERS + argc);
     for(int j = docStart; j < docEnd; ++j)
       {
-        viewInit(arrayPushUninit(&frame->views), j);
+        view_t *view = arrayPushUninit(&frame->views);
+        viewInit(view, j);
       }
-
+    printf("here\n");
+    assert(viewOf(frame));
+    assert(docOf(viewOf(frame)));
     frameUpdate(frame);
   }
 
