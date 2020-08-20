@@ -18,7 +18,6 @@ void *arrayPushUninit(dynamicArray_t *arr);
 void arrayPush(dynamicArray_t *arr, void *elem);
 void *arrayPop(dynamicArray_t *arr);
 void *arrayElemAt(dynamicArray_t *arr, int i);
-void *arrayPeek(dynamicArray_t *arr);
 void *arrayFocus(dynamicArray_t *arr);
 void arraySetFocus(dynamicArray_t *arr, int i);
 void *arrayBoundary(dynamicArray_t *arr);

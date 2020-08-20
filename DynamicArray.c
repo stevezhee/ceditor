@@ -112,11 +112,6 @@ void *arrayPop(dynamicArray_t *arr) {
   return arrayTop(arr);
 }
 
-void *arrayPeek(dynamicArray_t *arr) {
-  assert(arr);
-  return arrayElemAt(arr, arr->numElems - 1);
-}
-
 void arraySetFocus(dynamicArray_t *arr, int i) {
   assert(arr);
   assert(i >= 0);
