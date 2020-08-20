@@ -136,6 +136,7 @@ void frameUpdate(frame_t *frame) {
 
 void setFrameView(int refFrame, int refView) {
   frame_t *frame = frameOf(refFrame);
+  assert(frame);
   assert(refView < frame->views.numElems);
   arraySetFocus(&frame->views, refView);
 
@@ -1097,7 +1098,7 @@ void stInit(int argc, char **argv) {
         viewInit(arrayPushUninit(&v->views), NUM_BUILTIN_BUFFERS + j);
       }
     }
-    setFrameView(i, 0);
+    // setFrameView(i, 0);
   }
 
   gui = hcat(frame(0), hcat(frame(1), frame(2)));
