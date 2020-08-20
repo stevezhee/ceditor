@@ -1355,15 +1355,18 @@ void resetSearch() {
   st.searchLen = 0;
 }
 
-void updateSearchState(bool isModify) {
-  if (focusViewRef() != SEARCH_BUF) {
-    if (isModify)
-      resetSearch();
-    return;
-  }
+view_t *builtinsViewOf(int viewRef)
+{
+  assert(viewRef >= 0);
+  frame_t *frame = frameOf(BUILTINS_FRAME);
+  assert(viewRef < frame->views.numElems);
+  return arrayElemAt(frame->views, viewRef);
+}
 
-  // in search buffer - recompute search
-  char *search = focusElem();
+void recomputeSearch() {
+  // get search elem
+  char *search = viewElem(builtinsViewOf(SEARCH_BUF));
+
   if (!search)
     return;
 
@@ -1378,16 +1381,32 @@ void updateSearchState(bool isModify) {
   doSearch(frame, search);
 }
 
+void updateBuiltinsState(bool isModify) {
+  if (focusViewRef() != SEARCH_BUF) {
+    if (isModify)
+      resetSearch();
+    return;
+  }
+  switch() {
+  case SEARCH_BUF:
+    recomputeSearch();
+    break;
+  default:
+    // do nothing
+    break;
+  }
+}
+
 void stMoveCursorOffset(int offset) {
   cursorSetOffset(focusCursor(), offset, focusDoc());
   focusTrackCursor();
-  updateSearchState(false);
+  updateBuiltinsState(false);
 }
 
 void stMoveCursorRowCol(int row, int col) {
   cursorSetRowCol(focusCursor(), row, col, focusDoc());
   focusTrackCursor();
-  updateSearchState(false);
+  updateBuiltinsState(false);
 }
 
 void backwardChar() { stMoveCursorOffset(focusCursor()->offset - 1); }
@@ -1608,7 +1627,7 @@ int docPushDelete(doc_t *doc, int offset, int len) {
   if (doc->isUserDoc && n > 0) {
     docPushCommand(DELETE, doc, offset, doc->contents.start + offset, n);
   }
-  updateSearchState(true);
+  updateBuiltinsState(true);
   return n;
 }
 
@@ -1621,7 +1640,7 @@ void docPushInsert(doc_t *doc, int offset, char *s, int len) {
     docPushCommand(INSERT, doc, offset, s, len);
   }
   docInsert(doc, offset, s, len);
-  updateSearchState(true);
+  updateBuiltinsState(true);
 }
 
 void docDoCommand(doc_t *doc, commandTag_t tag, int offset, string_t *string) {
@@ -1773,7 +1792,7 @@ void forwardSearch() {
   searchBuffer_t *results = &doc->searchResults;
   if (results->numElems == 0)
     {
-      updateSearchState(false);
+      recomputeSearch();
       return;
     }
   cursor_t *cursor = focusCursor();
@@ -1798,7 +1817,7 @@ void backwardSearch() {
   searchBuffer_t *results = &doc->searchResults;
   if (results->numElems == 0)
     {
-      updateSearchState(false);
+      recomputeSearch();
       return;
     }
   cursor_t *cursor = focusCursor();

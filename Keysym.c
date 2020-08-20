@@ -18,46 +18,6 @@ char *keyHandlerHelp[NUM_MODES][NUM_KEYS];
 char *macro[256];
 char *macroHelp[256];
 
-char builtinMacros[NUM_BUILTIN_MACROS][MAX_BUILTIN_MACRO_LEN] = {
-    {KEY_BACKSPACE, KEY_LEFT, KEY_DELETE, '\0'},
-    {'p', KEY_RIGHT, 'P', '\0'},
-    {'c', 'x', 'P', '\0'},
-    {'a', KEY_RIGHT, 'i', '\0'},
-    {'e', '$', '\0'},
-    {'I', '0', 'i', '\0'},
-    {' ', 'i', ' ', '\0'},
-    {'\n', 'i', '\n', '\0'},
-    {'A', '$', 'i', '\0'},
-    {'o', '$', '\n', '\0'},
-    {'O', '0', '\n', KEY_LEFT, '\0'},
-    {'J', '$', KEY_DELETE, '\0'},
-    {KEY_INSERT, 'i', '\0'},
-    {';', '0', 'i', '/', '/', KEY_LEFT, KEY_LEFT, '\0'},
-    {'x', KEY_DELETE, '\0'},
-    {'w', KEY_SHIFT_RIGHT, '\0'},
-    {'b', KEY_SHIFT_LEFT, '\0'},
-};
-
-char *builtinMacrosHelp[NUM_BUILTIN_MACROS] = {
-    "backspace",
-    "paste to the right",
-    "copy",
-    "append",
-    "move to end of line",
-    "insert at start of line",
-    "insert space",
-    "insert newline",
-    "append at end of line",
-    "insert new line after current line",
-    "insert new line before current line",
-    "join lines",
-    "insert",
-    "comment region",
-    "cut/delete",
-    "forward word",
-    "backward word",
-};
-
 void macrosInit(void) {
   memset(macro, 0, sizeof(macro));
   for (int i = 0; i < NUM_BUILTIN_MACROS; ++i) {
@@ -148,6 +108,47 @@ void keyNameInit(void) {
   keyName[KEY_SHIFT_UP] = "SHIFT_UP";
 }
 
+char builtinMacros[NUM_BUILTIN_MACROS][MAX_BUILTIN_MACRO_LEN] = {
+    {KEY_BACKSPACE, KEY_LEFT, KEY_DELETE, '\0'},
+    {'p', KEY_RIGHT, 'P', '\0'},
+    {'c', 'x', 'P', '\0'},
+    {'a', KEY_RIGHT, 'i', '\0'},
+    {'e', '$', '\0'},
+    {'I', '0', 'i', '\0'},
+    {' ', 'i', ' ', '\0'},
+    {'\n', 'i', '\n', '\0'},
+    {'A', '$', 'i', '\0'},
+    {'o', '$', '\n', '\0'},
+    {'O', '0', '\n', KEY_LEFT, '\0'},
+    {'J', '$', KEY_DELETE, '\0'},
+    {KEY_INSERT, 'i', '\0'},
+    {';', '0', 'i', '/', '/', KEY_LEFT, KEY_LEFT, '\0'},
+    {'x', KEY_DELETE, '\0'},
+    {'d', KEY_DELETE, '\0'},
+    {'w', KEY_SHIFT_RIGHT, '\0'},
+    {'b', KEY_SHIFT_LEFT, '\0'},
+};
+
+char *builtinMacrosHelp[NUM_BUILTIN_MACROS] = {
+    "backspace",
+    "paste to the right",
+    "copy",
+    "append",
+    "move to end of line",
+    "insert at start of line",
+    "insert space",
+    "insert newline",
+    "append at end of line",
+    "insert new line after current line",
+    "insert new line before current line",
+    "join lines",
+    "insert",
+    "comment region",
+    "cut/delete",
+    "forward word",
+    "backward word",
+};
+
 void keysymInit(void) {
   memset(keyHandlerHelp, 0, sizeof(keyHandlerHelp));
   keyNameInit();
@@ -159,6 +160,7 @@ void keysymInit(void) {
 
   keyHandler[INSERT_MODE][KEY_ESCAPE] = (keyHandler_t)doEscape;
   keyHandlerHelp[INSERT_MODE][KEY_ESCAPE] = "set navigate mode";
+
   keyHandler[NAVIGATE_MODE][KEY_ESCAPE] = (keyHandler_t)resetSearch;
   keyHandlerHelp[NAVIGATE_MODE][KEY_ESCAPE] = "reset search";
 
