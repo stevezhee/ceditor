@@ -1089,11 +1089,12 @@ void stInit(int argc, char **argv) {
   for (int i = 0; i < NUM_FRAMES; ++i) {
     frame_t *frame = arrayPushUninit(&st.frames);
     frameInit(frame);
-    int numViews = i == BUILTINS_FRAME ? NUM_BUILTIN_BUFFERS : argc;
-    for(int j = 0; j < numViews; ++j)
+    bool isBuiltinsFrame = i == BUILTINS_FRAME
+    int docStart = isBuiltinsFrame ? 0 : NUM_BUILTIN_BUFFERS;
+    int docEnd = isBuiltinsFrame ? NUM_BUILTIN_BUFFERS : (NUM_BUILTIN_BUFFERS + argc);
+    for(int j = docStart; j < docEnd; ++j)
       {
-        int refDoc = i == BUILTINS_FRAME ? j : NUM_BUILTIN_BUFFERS + j;
-        viewInit(arrayPushUninit(&frame->views), refDoc);
+        viewInit(arrayPushUninit(&frame->views), j);
       }
 
     setFrameView(i, 0);
