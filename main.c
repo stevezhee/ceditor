@@ -1082,25 +1082,26 @@ void stInit(int argc, char **argv) {
   arrayInit(&st.frames, sizeof(frame_t));
   arrayInit(&st.replace, sizeof(char));
 
-  for (int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) {
-    doc_t *doc = arrayPushUninit(&st.docs);
-    docInit(doc, builtinBufferTitle[i], false, builtinBufferReadOnly[i]);
+  for (int i = 0; i < NUM_FRAMES; ++i) {
+    printf("here\n");
+    frame_t *frame = arrayPushUninit(&st.frames);
+    printf("frame = %p\n", frame);
+    frameInit(frame);
   }
+  printf("frameInit done\n");
 
-  for (int i = 0; i < argc; ++i) {
-    doc_t *doc = arrayPushUninit(&st.docs);
-    docInit(doc, argv[i], true, false);
-    docRead(doc);
-  }
-  printf("docInit done\n");
-
-  /* for (int i = 0; i < NUM_FRAMES; ++i) { */
-  /*   printf("here\n"); */
-  /*   frame_t *frame = arrayPushUninit(&st.frames); */
-  /*   printf("frame = %p\n", frame); */
-  /*   frameInit(frame); */
+  /* for (int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) { */
+  /*   doc_t *doc = arrayPushUninit(&st.docs); */
+  /*   docInit(doc, builtinBufferTitle[i], false, builtinBufferReadOnly[i]); */
   /* } */
-  /* printf("frameInit done\n"); */
+
+  /* for (int i = 0; i < argc; ++i) { */
+  /*   doc_t *doc = arrayPushUninit(&st.docs); */
+  /*   docInit(doc, argv[i], true, false); */
+  /*   docRead(doc); */
+  /* } */
+  /* printf("docInit done\n"); */
+
 
   /* for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) */
   /*   { */
