@@ -1086,22 +1086,22 @@ void stInit(int argc, char **argv) {
     docRead(doc);
   }
 
-  gui = hcat(frame(0), hcat(frame(1), frame(2)));
-
   for (int i = 0; i < NUM_FRAMES; ++i) {
-    frame_t *v = arrayPushUninit(&st.frames);
-    frameInit(v);
+    frame_t *frame = arrayPushUninit(&st.frames);
+    frameInit(frame);
     if (i == BUILTINS_FRAME) {
       for (int j = 0; j < NUM_BUILTIN_BUFFERS; ++j) {
-        viewInit(arrayPushUninit(&v->views), j);
+        viewInit(arrayPushUninit(&frame->views), j);
       }
     } else {
       for (int j = 0; j < argc; ++j) {
-        viewInit(arrayPushUninit(&v->views), NUM_BUILTIN_BUFFERS + j);
+        viewInit(arrayPushUninit(&frame->views), NUM_BUILTIN_BUFFERS + j);
       }
     }
     setFrameView(i, 0);
   }
+
+  gui = hcat(frame(0), hcat(frame(1), frame(2)));
 
   helpBufInit();
 
