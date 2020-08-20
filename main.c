@@ -1086,6 +1086,8 @@ void stInit(int argc, char **argv) {
     docRead(doc);
   }
 
+  gui = hcat(frame(0), hcat(frame(1), frame(2)));
+
   for (int i = 0; i < NUM_FRAMES; ++i) {
     frame_t *v = arrayPushUninit(&st.frames);
     frameInit(v);
@@ -1098,10 +1100,8 @@ void stInit(int argc, char **argv) {
         viewInit(arrayPushUninit(&v->views), NUM_BUILTIN_BUFFERS + j);
       }
     }
-    // setFrameView(i, 0);
+    setFrameView(i, 0);
   }
-
-  gui = hcat(frame(0), hcat(frame(1), frame(2)));
 
   helpBufInit();
 
