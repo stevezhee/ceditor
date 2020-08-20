@@ -1079,6 +1079,10 @@ void stInit(int argc, char **argv) {
 
   keysymInit();
 
+  for (int i = 0; i < NUM_FRAMES; ++i) {
+    frameInit(arrayPushUninit(&st.frames));
+  }
+
   for (int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) {
     doc_t *doc = arrayPushUninit(&st.docs);
     docInit(doc, builtinBufferTitle[i], false, builtinBufferReadOnly[i]);
@@ -1088,11 +1092,6 @@ void stInit(int argc, char **argv) {
     doc_t *doc = arrayPushUninit(&st.docs);
     docInit(doc, argv[i], true, false);
     docRead(doc);
-  }
-
-  for (int i = 0; i < NUM_FRAMES; ++i) {
-    frame_t *frame = arrayPushUninit(&st.frames);
-    frameInit(frame);
   }
 
   frame_t *frame = frameOf(BUILTINS_FRAME);
