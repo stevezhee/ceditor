@@ -158,11 +158,11 @@ void keysymInit(void) {
     keyHandler[INSERT_MODE][i] = doKeyPressInNavigateMode;
   }
 
-  keyHandler[INSERT_MODE][KEY_ESCAPE] = (keyHandler_t)doEscape;
+  keyHandler[INSERT_MODE][KEY_ESCAPE] = (keyHandler_t)doEscapeInsert;
   keyHandlerHelp[INSERT_MODE][KEY_ESCAPE] = "set navigate mode";
 
-  keyHandler[NAVIGATE_MODE][KEY_ESCAPE] = (keyHandler_t)resetSearch;
-  keyHandlerHelp[NAVIGATE_MODE][KEY_ESCAPE] = "reset search";
+  keyHandler[NAVIGATE_MODE][KEY_ESCAPE] = (keyHandler_t)doEscapeNavigate;
+  keyHandlerHelp[NAVIGATE_MODE][KEY_ESCAPE] = "context dependent";
 
   keyHandler[NAVIGATE_MODE]['\t'] = (keyHandler_t)indent;
   keyHandlerHelp[NAVIGATE_MODE]['\t'] = "indent region";

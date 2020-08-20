@@ -2094,8 +2094,10 @@ void insertOpenCloseChars(uchar c) {
   backwardChar();
   setInsertMode();
 }
-void doEscape() {
+void doEscapeInsert() {
   setNavigateMode();
+}
+void doEscapeNavigate() {
   if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF) {
     setFocusFrame(st.searchFrameRef);
   }
