@@ -1335,13 +1335,18 @@ done:
   free(temp);
 }
 
+char *viewElem(view_t *view) {
+  int offset = view->cursor.offset;
+  char *s = docOf(view)->contents.start;
+  int i = distanceToStartOfElem(s, offset);
+  char *p = s + offset + i;
+  return p;
+}
+
 char *focusElem() {
   if (focusFrameRef() != BUILTINS_FRAME)
     return NULL;
-  int offset = focusView()->cursor.offset;
-  int i = distanceToStartOfElem(focusDoc()->contents.start, offset);
-  char *p = focusDoc()->contents.start + offset + i;
-  return p;
+  return viewElem(focusFrame());
 }
 
 void resetSearch() {
