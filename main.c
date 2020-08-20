@@ -68,7 +68,7 @@ int focusFrameRef() { return st.frames.offset; }
 
 frame_t *focusFrame() { return arrayFocus(&st.frames); }
 
-frame_t *frameOf(int i) { return arrayElemAt(&st.frames, i); }
+frame_t *frameOf(int frameRef) { return arrayElemAt(&st.frames, frameRef); }
 
 int focusViewRef() { return focusFrame()->views.offset; }
 
@@ -1056,7 +1056,9 @@ void helpBufInit(void);
 void pushView(int frameRef, int docRef)
 {
   frame_t *frame = frameOf(frameRef);
+  assert(frame);
   view_t *view = arrayPushUninit(&frame->views);
+  assert(view);
   viewInit(view, docRef);
 }
 
