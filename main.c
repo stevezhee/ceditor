@@ -1102,10 +1102,10 @@ void stInit(int argc, char **argv) {
   }
   printf("frameInit done\n");
 
-  for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
-    {
-      pushViewInit(BUILTINS_FRAME, i);
-    }
+  /* for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) */
+  /*   { */
+  /*     pushViewInit(BUILTINS_FRAME, i); */
+  /*   } */
 
   /* for(int i = NUM_BUILTIN_BUFFERS; i < NUM_BUILTIN_BUFFERS + argc; ++i) */
   /*   { */
