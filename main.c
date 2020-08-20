@@ -165,6 +165,7 @@ void frameInit(frame_t *frame) {
 
 void viewInit(view_t *view, uint refDoc) {
   assert(view);
+  printf("%p\n", view);
   memset(view, 0, sizeof(view_t));
   view->refDoc = refDoc;
 }
@@ -1060,6 +1061,7 @@ void pushView(int frameRef, int docRef)
   assert(frame);
   view_t *view = arrayPushUninit(&frame->views);
   assert(view);
+  printf("%p %p\n", view, frame);
   viewInit(view, docRef);
 }
 
@@ -1076,7 +1078,6 @@ void stInit(int argc, char **argv) {
   arrayInit(&st.frames, sizeof(frame_t));
   arrayInit(&st.replace, sizeof(char));
 
-  
   for (int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) {
     doc_t *doc = arrayPushUninit(&st.docs);
     docInit(doc, builtinBufferTitle[i], false, builtinBufferReadOnly[i]);
@@ -1096,6 +1097,7 @@ void stInit(int argc, char **argv) {
     {
       pushView(BUILTINS_FRAME, i);
     }
+
   for(int i = NUM_BUILTIN_BUFFERS; i < NUM_BUILTIN_BUFFERS + argc; ++i)
     {
       pushView(MAIN_FRAME, i);
