@@ -37,8 +37,8 @@ void arrayInit(dynamicArray_t *arr, int elemSize) {
 void *arrayElemAt(dynamicArray_t *arr, int i) {
   assert(arr);
   assert(arr->start);
-  // BAL: assert(i >= 0);
-  // BAL: assert(i < arr->numElems);
+  assert(i >= 0);
+  assert(i < arr->numElems);
 
   return arr->start + i * arr->elemSize;
 }

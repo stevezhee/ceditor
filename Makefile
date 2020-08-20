@@ -21,7 +21,7 @@ pretty:
 checkpoint:
 	-git commit -am"cp"
 
-debug:
+debug: ceditor
 	lldb -- ./ceditor main.c Util.c Util.h
 
 clean:

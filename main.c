@@ -1027,8 +1027,8 @@ int frameScrollY(frame_t *frame) {
   return view->scrollY;
 }
 
-widget_t *frame(int i) {
-  frame_t *frame = arrayElemAt(&st.frames, i);
+widget_t *frame(int frameRef) {
+  frame_t *frame = frameOf(frameRef);
   widget_t *textarea = wid(i, scrollY(frameScrollY, frame,
                                       over(draw(drawFrameDoc, frame),
                                            draw(drawFrameCursor, frame))));
@@ -1829,7 +1829,6 @@ void backwardSearch() {
     int *offset = arrayElemAt(results, i);
     if (*offset < cursor->offset) {
       stMoveCursorOffset(*offset);
-      //  cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
       return;
     }
   }
