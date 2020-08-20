@@ -1068,7 +1068,6 @@ void pushView(int frameRef, int docRef)
 
 void stInit(int argc, char **argv) {
   printf("stInit\n");
-  memset(&st, 0, sizeof(state_t));
   argc--;
   argv++;
   if (argc == 0) {
@@ -1076,6 +1075,7 @@ void stInit(int argc, char **argv) {
     exit(0);
   }
 
+  memset(&st, 0, sizeof(state_t));
   arrayInit(&st.docs, sizeof(doc_t));
   arrayInit(&st.frames, sizeof(frame_t));
   arrayInit(&st.replace, sizeof(char));
@@ -1090,10 +1090,14 @@ void stInit(int argc, char **argv) {
     docInit(doc, argv[i], true, false);
     docRead(doc);
   }
+  printf("docInit done\n");
 
   for (int i = 0; i < NUM_FRAMES; ++i) {
-    frameInit(arrayPushUninit(&st.frames));
+    frame_t *frame = arrayPushUninit(&st.frames);
+    printf("frame = %p\n", frame);
+    frameInit(frame);
   }
+  printf("frameInit done\n");
 
   for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
     {
