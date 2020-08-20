@@ -24,7 +24,7 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
   if (arr->start)
     {
       arr->start = dieIfNull(realloc(arr->start, sz));
-      return
+      return;
     }
   arr->start = dieIfNull(malloc(sz));
 }
