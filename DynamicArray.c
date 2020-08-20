@@ -75,7 +75,7 @@ void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len) {
     arrayGrow(arr, n);
 
   int sz = len * arr->elemSize;
-  int top = arrayTop(arr);
+  void *top = arrayTop(arr);
 
   arr->numElems = n; // needs to be before call to arrayElemAt
   void *p = arrayElemAt(arr, offset);
