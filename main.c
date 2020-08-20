@@ -1032,7 +1032,7 @@ int frameScrollY(frame_t *frame) {
   return view->scrollY;
 }
 
-widget_t *frame(int frameRef) {
+widget_t *frameWidget(int frameRef) {
   frame_t *frame = frameOf(frameRef);
   widget_t *textarea = wid(frameRef, scrollY(frameScrollY, frame,
                                       over(draw(drawFrameDoc, frame),
@@ -1123,7 +1123,7 @@ void stInit(int argc, char **argv) {
   /* assert(docOf(viewOf(frame))); */
   /* frameUpdate(frame); */
 
-  gui = hcat(frame(0), hcat(frame(1), frame(2)));
+  gui = hcat(frameWidget(0), hcat(frameWidget(1), frameWidget(2)));
 
   helpBufInit();
 
