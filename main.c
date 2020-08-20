@@ -1090,7 +1090,7 @@ void stInit(int argc, char **argv) {
     frame_t *frame = arrayPushUninit(&st.frames);
     frameInit(frame);
     int numViews = i == BUILTINS_FRAME ? NUM_BUILTIN_BUFFERS : argc;
-    for(int j = 0; j < numFrames; ++j)
+    for(int j = 0; j < numViews; ++j)
       {
         int refDoc = i == BUILTINS_FRAME ? j : NUM_BUILTIN_BUFFERS + j;
         viewInit(arrayPushUninit(&frame->views), refDoc);
