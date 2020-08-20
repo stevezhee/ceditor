@@ -34,7 +34,7 @@ void arrayInit(dynamicArray_t *arr, int elemSize) {
   arr->elemSize = elemSize;
 }
 
-void *arrayElemAt_unsafe(dynamicArray_t *arr, int i) {
+static inline void *arrayElemAt_unsafe(dynamicArray_t *arr, int i) {
   assert(arr);
   assert(arr->start);
   assert(i >= 0);
