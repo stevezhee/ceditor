@@ -1107,7 +1107,7 @@ void stInit(int argc, char **argv) {
       view_t *view = arrayPushUninit(&frame->views);
       viewInit(view, i);
       frame = frameOf(SECONDARY_FRAME);
-      view_t *view = arrayPushUninit(&frame->views);
+      view = arrayPushUninit(&frame->views);
       viewInit(view, i);
     }
   /* bool isBuiltinsFrame = i == BUILTINS_FRAME; */
