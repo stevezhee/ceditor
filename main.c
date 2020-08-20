@@ -1641,7 +1641,6 @@ int docPushDelete(doc_t *doc, int offset, int len) {
 void docPushInsert(doc_t *doc, int offset, char *s, int len) {
   if (len <= 0 || doc->isReadOnly)
     return;
-  printf("here\n");
   docPushCommand(INSERT, doc, offset, s, len);
   docInsert(doc, offset, s, len);
   updateBuiltinsState(true);
