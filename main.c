@@ -125,8 +125,11 @@ void setFocusFrame(int i) {
 }
 
 void frameUpdate(frame_t *frame) {
+  assert(frame);
   view_t *view = viewOf(frame);
+  assert(view);
   doc_t *doc = docOf(view);
+  assert(doc);
   // BAL: make sure we don't overflow the buffer
   arrayReinit(&frame->status);
   sprintf(frame->status.start, "<%s> %3d:%2d %s", editorModeDescr[view->mode],
@@ -1097,7 +1100,7 @@ void stInit(int argc, char **argv) {
         viewInit(arrayPushUninit(&frame->views), j);
       }
 
-    // setFrameView(i, 0);
+    frameUpdate(frame);
   }
 
   gui = hcat(frame(0), hcat(frame(1), frame(2)));
