@@ -1360,7 +1360,7 @@ view_t *builtinsViewOf(int viewRef)
   assert(viewRef >= 0);
   frame_t *frame = frameOf(BUILTINS_FRAME);
   assert(viewRef < frame->views.numElems);
-  return arrayElemAt(frame->views, viewRef);
+  return arrayElemAt(&frame->views, viewRef);
 }
 
 void recomputeSearch() {
