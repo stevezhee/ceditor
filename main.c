@@ -1053,6 +1053,12 @@ void message(char *s) {
 
 void helpBufInit(void);
 
+void pushView(frame_t *frame, int docRef)
+{
+  view_t *view = arrayPushUninit(&frame->views);
+  viewInit(view, docRef);
+}
+
 void stInit(int argc, char **argv) {
   memset(&st, 0, sizeof(state_t));
   argc--;
@@ -1079,10 +1085,6 @@ void stInit(int argc, char **argv) {
 
   keysymInit();
 
-  for (int i = 0; i < NUM_FRAMES; ++i) {
-    frameInit(arrayPushUninit(&st.frames));
-  }
-
   for (int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) {
     doc_t *doc = arrayPushUninit(&st.docs);
     docInit(doc, builtinBufferTitle[i], false, builtinBufferReadOnly[i]);
@@ -1094,20 +1096,18 @@ void stInit(int argc, char **argv) {
     docRead(doc);
   }
 
-  frame_t *frame = frameOf(BUILTINS_FRAME);
+  for (int i = 0; i < NUM_FRAMES; ++i) {
+    frameInit(arrayPushUninit(&st.frames));
+  }
+
   for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
     {
-          view_t *view = arrayPushUninit(&frame->views);
-          viewInit(view, i);
+      pushView(BUILTINS_FRAME, i);
     }
-  for(int i = 0; i < argc; ++i)
+  for(int i = NUM_BUILTIN_BUFFERS; i < NUM_BUILTIN_BUFFERS + argc; ++i)
     {
-      frame = frameOf(MAIN_FRAME);
-      view_t *view = arrayPushUninit(&frame->views);
-      viewInit(view, i);
-      frame = frameOf(SECONDARY_FRAME);
-      view = arrayPushUninit(&frame->views);
-      viewInit(view, i);
+      pushView(MAIN_FRAME, i);
+      pushView(SECONDARY_FRAME, i);
     }
   /* bool isBuiltinsFrame = i == BUILTINS_FRAME; */
   /* int docStart = isBuiltinsFrame ? 0 : NUM_BUILTIN_BUFFERS; */
