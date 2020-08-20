@@ -1107,6 +1107,7 @@ void stInit(int argc, char **argv) {
 }
 
 void saveAll() {
+  if(DEMO_MODE) return;
   bool changes = false;
 
   for (int i = NUM_BUILTIN_BUFFERS; i < st.docs.numElems; ++i) {
@@ -1115,7 +1116,7 @@ void saveAll() {
     changes |= doc->modified;
     docWrite(doc);
   }
-  if (changes)
+  if (changes && !NO_BUILD)
     system("make");
 }
 

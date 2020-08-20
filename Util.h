@@ -94,8 +94,7 @@ void setTextureColorMod(SDL_Texture *t, color_t c);
 #define DISPLAY_NEWLINES false
 #define DISPLAY_EOF false
 #define DEMO_MODE true
-#define NO_GIT false
-#define NO_COMPILE false
+#define NO_BUILD false
 
 enum {
   HELP_BUF,
