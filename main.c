@@ -159,9 +159,9 @@ void frameInit(frame_t *frame) {
   arrayGrow(&frame->status, 1024);
 }
 
-void viewInit(view_t *view, uint i) {
+void viewInit(view_t *view, uint refDoc) {
   memset(view, 0, sizeof(view_t));
-  view->refDoc = i;
+  view->refDoc = refDoc;
 }
 
 /* bool noActiveSearch(frame_t *frame) */
@@ -1089,15 +1089,13 @@ void stInit(int argc, char **argv) {
   for (int i = 0; i < NUM_FRAMES; ++i) {
     frame_t *frame = arrayPushUninit(&st.frames);
     frameInit(frame);
-    if (i == BUILTINS_FRAME) {
-      for (int j = 0; j < NUM_BUILTIN_BUFFERS; ++j) {
-        viewInit(arrayPushUninit(&frame->views), j);
+    int numViews = i == BUILTINS_FRAME ? NUM_BUILTIN_BUFFERS : argc;
+    for(j = 0; j < numFrames; ++j)
+      {
+        int refDoc = i == BUILTINS_FRAME ? j : NUM_BUILTIN_BUFFERS + j;
+        viewInit(arrayPushUninit(&frame->views), refDoc);
       }
-    } else {
-      for (int j = 0; j < argc; ++j) {
-        viewInit(arrayPushUninit(&frame->views), NUM_BUILTIN_BUFFERS + j);
-      }
-    }
+
     setFrameView(i, 0);
   }
 
