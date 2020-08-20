@@ -20,6 +20,7 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
   arr->maxElems = n;
   int sz = arr->elemSize * n;
   assert(sz > 0);
+  assert(arr->start);
   printf("attempting to realloc %d bytes (elem size = %d)\n", sz, arr->elemSize);
   arr->start = dieIfNull(realloc(arr->start, sz));
   assert(arr->start);
