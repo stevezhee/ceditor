@@ -1382,12 +1382,20 @@ void recomputeSearch() {
 }
 
 void updateBuiltinsState(bool isModify) {
+  int frameRef = focusFrameRef();
+
+  if (frameRef != BUILTINS_FRAME)
+    {
+      
+    }
+
   if (focusViewRef() != SEARCH_BUF) {
     if (isModify)
       resetSearch();
     return;
   }
-  switch() {
+  
+  switch(focusViewRef()) {
   case SEARCH_BUF:
     recomputeSearch();
     break;
