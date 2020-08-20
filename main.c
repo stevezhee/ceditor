@@ -1067,6 +1067,7 @@ void pushView(int frameRef, int docRef)
 }
 
 void stInit(int argc, char **argv) {
+  printf("stInit\n");
   memset(&st, 0, sizeof(state_t));
   argc--;
   argv++;
