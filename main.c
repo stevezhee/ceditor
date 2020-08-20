@@ -164,6 +164,7 @@ void frameInit(frame_t *frame) {
 }
 
 void viewInit(view_t *view, uint refDoc) {
+  assert(view);
   memset(view, 0, sizeof(view_t));
   view->refDoc = refDoc;
 }
