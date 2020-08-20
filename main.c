@@ -2100,7 +2100,9 @@ void doEscapeInsert() {
 void doEscapeNavigate() {
   if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF) {
     setFocusFrame(st.searchFrameRef);
+    return;
   }
+  resetSearch();
 }
 int main(int argc, char **argv) {
   assert(sizeof(char) == 1);
