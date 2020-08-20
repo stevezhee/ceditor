@@ -1107,7 +1107,8 @@ void stInit(int argc, char **argv) {
 }
 
 void saveAll() {
-  if(DEMO_MODE) return;
+  if (DEMO_MODE)
+    return;
   bool changes = false;
 
   for (int i = NUM_BUILTIN_BUFFERS; i < st.docs.numElems; ++i) {
@@ -1355,8 +1356,7 @@ void resetSearch() {
   st.searchLen = 0;
 }
 
-view_t *builtinsViewOf(int viewRef)
-{
+view_t *builtinsViewOf(int viewRef) {
   assert(viewRef >= 0);
   frame_t *frame = frameOf(BUILTINS_FRAME);
   assert(viewRef < frame->views.numElems);
@@ -1384,15 +1384,13 @@ void recomputeSearch() {
 void updateBuiltinsState(bool isModify) {
   int frameRef = focusFrameRef();
 
-  if (frameRef != BUILTINS_FRAME)
-    {
-      if (isModify)
-        resetSearch();
-      return;
-    }
+  if (frameRef != BUILTINS_FRAME) {
+    if (isModify)
+      resetSearch();
+    return;
+  }
 
-
-  switch(focusViewRef()) {
+  switch (focusViewRef()) {
   case SEARCH_BUF:
     recomputeSearch();
     break;
@@ -1793,11 +1791,10 @@ void stopRecordingOrPlayMacro() {
 void forwardSearch() {
   doc_t *doc = focusDoc();
   searchBuffer_t *results = &doc->searchResults;
-  if (results->numElems == 0)
-    {
-      recomputeSearch();
-      return;
-    }
+  if (results->numElems == 0) {
+    recomputeSearch();
+    return;
+  }
   cursor_t *cursor = focusCursor();
 
   for (int i = 0; i < results->numElems; ++i) {
@@ -1818,11 +1815,10 @@ void forwardSearch() {
 void backwardSearch() {
   doc_t *doc = focusDoc();
   searchBuffer_t *results = &doc->searchResults;
-  if (results->numElems == 0)
-    {
-      recomputeSearch();
-      return;
-    }
+  if (results->numElems == 0) {
+    recomputeSearch();
+    return;
+  }
   cursor_t *cursor = focusCursor();
 
   int last = results->numElems - 1;
@@ -2094,9 +2090,7 @@ void insertOpenCloseChars(uchar c) {
   backwardChar();
   setInsertMode();
 }
-void doEscapeInsert() {
-  setNavigateMode();
-}
+void doEscapeInsert() { setNavigateMode(); }
 void doEscapeNavigate() {
   if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF) {
     setFocusFrame(st.searchFrameRef);
