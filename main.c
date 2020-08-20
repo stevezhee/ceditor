@@ -1093,19 +1093,35 @@ void stInit(int argc, char **argv) {
   for (int i = 0; i < NUM_FRAMES; ++i) {
     frame_t *frame = arrayPushUninit(&st.frames);
     frameInit(frame);
-    bool isBuiltinsFrame = i == BUILTINS_FRAME;
-    int docStart = isBuiltinsFrame ? 0 : NUM_BUILTIN_BUFFERS;
-    int docEnd = isBuiltinsFrame ? NUM_BUILTIN_BUFFERS : (NUM_BUILTIN_BUFFERS + argc);
-    for(int j = docStart; j < docEnd; ++j)
-      {
-        view_t *view = arrayPushUninit(&frame->views);
-        viewInit(view, j);
-      }
-    printf("here\n");
-    assert(viewOf(frame));
-    assert(docOf(viewOf(frame)));
-    frameUpdate(frame);
   }
+
+  frame_t *frame = frameOf(BUILTINS_FRAME);
+  for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
+    {
+          view_t *view = arrayPushUninit(&frame->views);
+          viewInit(view, i);
+    }
+  for(int i = 0; i < argc; ++i)
+    {
+      frame = frameOf(MAIN_FRAME);
+      view_t *view = arrayPushUninit(&frame->views);
+      viewInit(view, i);
+      frame = frameOf(SECONDARY_FRAME);
+      view_t *view = arrayPushUninit(&frame->views);
+      viewInit(view, i);
+    }
+  /* bool isBuiltinsFrame = i == BUILTINS_FRAME; */
+  /* int docStart = isBuiltinsFrame ? 0 : NUM_BUILTIN_BUFFERS; */
+  /* int docEnd = isBuiltinsFrame ? NUM_BUILTIN_BUFFERS : (NUM_BUILTIN_BUFFERS + argc); */
+  /* for(int j = docStart; j < docEnd; ++j) */
+  /*   { */
+  /*     view_t *view = arrayPushUninit(&frame->views); */
+  /*     viewInit(view, j); */
+  /*   } */
+  /* printf("here\n"); */
+  /* assert(viewOf(frame)); */
+  /* assert(docOf(viewOf(frame))); */
+  /* frameUpdate(frame); */
 
   gui = hcat(frame(0), hcat(frame(1), frame(2)));
 
