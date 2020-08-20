@@ -1097,7 +1097,7 @@ void stInit(int argc, char **argv) {
         viewInit(arrayPushUninit(&frame->views), j);
       }
 
-    setFrameView(i, 0);
+    // setFrameView(i, 0);
   }
 
   gui = hcat(frame(0), hcat(frame(1), frame(2)));
