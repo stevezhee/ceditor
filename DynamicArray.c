@@ -37,8 +37,8 @@ void arrayInit(dynamicArray_t *arr, int elemSize) {
 void *arrayElemAt(dynamicArray_t *arr, int i) {
   assert(arr);
   assert(arr->start);
-  // assert(i >= 0);
-  // assert(i < arr->numElems);
+  // BAL: assert(i >= 0);
+  // BAL: assert(i < arr->numElems);
 
   return arr->start + i * arr->elemSize;
 }
@@ -72,11 +72,11 @@ void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len) {
 
   int sz = len * arr->elemSize;
 
-  arr->numElems = n; // needs to be before call to arrayElemAt
   void *p = arrayElemAt(arr, offset);
 
   memmove(p + sz, p, arrayTop(arr) - p);
   memcpy(p, s, sz);
+  arr->numElems = n; // needs to be before call to arrayElemAt
 }
 
 void *arrayPushUninit(dynamicArray_t *arr) {
