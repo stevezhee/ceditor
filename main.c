@@ -1053,8 +1053,9 @@ void message(char *s) {
 
 void helpBufInit(void);
 
-void pushView(frame_t *frame, int docRef)
+void pushView(int frameRef, int docRef)
 {
+  frame_t *frame = frameOf(frameRef);
   view_t *view = arrayPushUninit(&frame->views);
   viewInit(view, docRef);
 }
