@@ -1578,11 +1578,6 @@ void copyElemToClipboard() {
 }
 
 void pasteBefore() {
-  if (focusViewRef() == COPY_BUF) {
-    copyElemToClipboard();
-    return;
-  }
-
   char *s = getClipboardText();
   if (s)
     insertCString(s);
