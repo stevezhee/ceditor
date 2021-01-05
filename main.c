@@ -1069,7 +1069,7 @@ void pushViewInit(int frameRef, int docRef)
 }
 
 void stInit(int argc, char **argv) {
-  printf("stInit\n");
+  printf("Starting stInit...\n");
   argc--;
   argv++;
   if (argc == 0) {
@@ -1082,13 +1082,14 @@ void stInit(int argc, char **argv) {
   arrayInit(&st.frames, sizeof(frame_t));
   arrayInit(&st.replace, sizeof(char));
 
-  /* for (int i = 0; i < NUM_FRAMES; ++i) { */
-  /*   frame_t *frame = arrayPushUninit(&st.frames); */
-  /*   printf("frame = %p\n", frame); */
-  /*   frameInit(frame); */
-  /*   printf("frame = %p done\n", frame); */
-  /* } */
-  /* printf("frameInit done\n"); */
+  // BAL: this is triggering a bug for some reason...
+  for (int i = 0; i < NUM_FRAMES; ++i) {
+    frame_t *frame = arrayPushUninit(&st.frames);
+    printf("frame = %p\n", frame);
+    frameInit(frame);
+    printf("frame = %p done\n", frame);
+  }
+  printf("frameInit done\n");
 
   /* for (int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) { */
   /*   doc_t *doc = arrayPushUninit(&st.docs); */
