@@ -15,6 +15,8 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
   assert(maxElems >= 1);
   assert(arr->elemSize > 0);
 
+  printf("arrayGrow on %p\n", arr);
+
   if (maxElems <= arr->maxElems)
     return;
 
