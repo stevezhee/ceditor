@@ -1082,12 +1082,13 @@ void stInit(int argc, char **argv) {
   arrayInit(&st.frames, sizeof(frame_t));
   arrayInit(&st.replace, sizeof(char));
 
+  printf("arrays initialized\n");
   // BAL: this is triggering a bug for some reason...
   for (int i = 0; i < NUM_FRAMES; ++i) {
     frame_t *frame = arrayPushUninit(&st.frames);
-    printf("frame = %p\n", frame);
+    //    printf("frame = %p\n", frame);
     frameInit(frame);
-    printf("frame = %p done\n", frame);
+    // printf("frame = %p done\n", frame);
   }
   printf("frameInit done\n");
 
