@@ -28,7 +28,7 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
   if (maxElems <= arr->maxElems)
     return;
 
-  int n = max(maxElems, arr->maxElems * 10);
+  int n = max(maxElems, arr->maxElems * 2);
   // printf("growing array %d elements (%d) was (%d)\n", n, maxElems, arr->maxElems);
 
   int oldSize = arr->elemSize * arr->maxElems;
