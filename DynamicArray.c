@@ -18,7 +18,7 @@ void *myRealloc(void *p0, int oldSize, int newSize)
   assert(ret == p);
 
   printf("memcpy worked %d\n", oldSize);
-  free(p0);
+  //  free(p0);
   printf("free %p workd\n", p0);
   return p;
 }
