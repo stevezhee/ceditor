@@ -23,18 +23,13 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
 
   int oldSize = arr->elemSize * arr->maxElems;
 
-  // arr->maxElems = n;
-
-  // int sz = arr->elemSize * n;
-
-  // assert(sz > 0);
-
   int sz = arr->elemSize * n;
 
-  printf("attempting to reallocate %d bytes (elem size = %d)\n", sz, arr->elemSize);
+  printf("attempting to reallocate %p %d bytes (elem size = %d)\n", arr->start, sz, arr->elemSize);
 
   arr->start = dieIfNull(realloc(arr->start, sz));
   printf("realloc worked...\n");
+  printf("attempting to memset %p at %p (%d bytes)\n", arr->start, arr->start + oldSize, 0, sz - oldSize);
   memset(arr->start + oldSize, 0, sz - oldSize); // BAL: zeroing memory - remove
   arr->maxElems = n;
   printf("memset worked...\n");
