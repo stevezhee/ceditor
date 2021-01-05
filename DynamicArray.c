@@ -8,6 +8,14 @@
 
 #include "DynamicArray.h"
 
+void *myRealloc(void *p0, int oldSize, int newSize)
+{
+  void *p = malloc(newSize);
+  assert(p);
+  memcpy(p, p0, oldSize);
+  free(p0);
+  return p;
+}
 // BAL: we seem to call this function way too much ... probably undo causing
 // problems(?)
 void arrayGrow(dynamicArray_t *arr, int maxElems) {
@@ -29,7 +37,8 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
 
   printf("attempting to reallocate %p %d bytes (elem size = %d)\n", arr->start, sz, arr->elemSize);
 
-  void *p = realloc(arr->start, sz);
+  void *p = myRealloc(arr->start, oldSize, sz);
+  // void *p = realloc(arr->start, sz);
   printf("realloc worked...\n");
   arr->start = dieIfNull(p);
   assert(arr->start == p);
