@@ -10,6 +10,7 @@
 
 void *myRealloc(void *p0, int oldSize, int newSize)
 {
+  printf("starting myRealloc\n");
   void *p = malloc(newSize);
   assert(p);
   printf("malloc worked %p\n", p);
