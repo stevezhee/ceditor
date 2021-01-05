@@ -12,8 +12,13 @@ void *myRealloc(void *p0, int oldSize, int newSize)
 {
   void *p = malloc(newSize);
   assert(p);
-  memcpy(p, p0, oldSize);
+  printf("malloc worked %p\n", p);
+  void *ret = memcpy(p, p0, oldSize);
+  assert(ret == p);
+
+  printf("memcpy worked %d\n", oldSize);
   free(p0);
+  printf("free %p workd\n", p0);
   return p;
 }
 // BAL: we seem to call this function way too much ... probably undo causing
