@@ -1,5 +1,4 @@
-#CFLAGS= $(shell sdl2-config --cflags) -g
-CFLAGS=
+CFLAGS= $(shell sdl2-config --cflags) -g
 LIBS=$(shell sdl2-config --libs) -lSDL2_ttf
 CFILES=$(shell ls *.c)
 OFILES=$(CFILES:.c=.o)
