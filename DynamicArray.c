@@ -13,18 +13,29 @@
 void arrayGrow(dynamicArray_t *arr, int maxElems) {
   assert(arr);
   assert(maxElems >= 1);
+  assert(arr->elemSize > 0);
+
   if (maxElems <= arr->maxElems)
     return;
-  int n = maxElems; //BAL: max(maxElems, arr->maxElems * 2);
-  printf("growing array %d elements (%d)\n", n, maxElems);
-  int sz0 = arr->elemSize * arr->maxElems;
-  arr->maxElems = n;
-  int sz = arr->elemSize * n;
-  assert(sz > 0);
-  printf("attempting to allocate %d bytes (elem size = %d)\n", sz, arr->elemSize);
+
+  //  int n = maxElems; //BAL: max(maxElems, arr->maxElems * 2);
+  // printf("growing array %d elements (%d) was (%d)\n", n, maxElems, arr->maxElems);
+
+  int oldSize = arr->elemSize * arr->maxElems;
+
+  // arr->maxElems = n;
+
+  // int sz = arr->elemSize * n;
+
+  // assert(sz > 0);
+
+  int sz = arr->elemSize * maxElems;
+
+  printf("attempting to reallocate %d bytes (elem size = %d)\n", sz, arr->elemSize);
+
   arr->start = dieIfNull(realloc(arr->start, sz));
   printf("realloc worked...\n");
-  memset(arr->start + sz0, 0, sz - sz0); // BAL: zeroing memory - remove
+  memset(arr->start + oldSize, 0, sz - oldSize); // BAL: zeroing memory - remove
   printf("memset worked...\n");
   printf("allocate complete\n");
 }
