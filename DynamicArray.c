@@ -155,5 +155,6 @@ void arraySetFocus(dynamicArray_t *arr, int i) {
 
 void arrayFree(dynamicArray_t *arr) {
   // BAL: printf("freeing array...\n");
+  assert(0); // BAL: put in for debugging purposes...
   free(arr->start);
 }

@@ -1382,6 +1382,7 @@ void doSearch(frame_t *frame, char *search) {
   frameTrackRow(frame, cur.row);
 
 done:
+  assert(0); // BAL: put in for debugging ...
   free(temp);
 }
 
