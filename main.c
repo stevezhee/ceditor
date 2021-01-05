@@ -1127,6 +1127,7 @@ void stInit(int argc, char **argv) {
   /* assert(docOf(viewOf(frame))); */
   /* frameUpdate(frame); */
 
+  printf("it worked...\n");
   exit(0);
   /* keysymInit(); */
 
