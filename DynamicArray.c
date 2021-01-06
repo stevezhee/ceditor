@@ -123,12 +123,17 @@ void *arrayPushUninit(dynamicArray_t *arr) {
   assert(arr);
   assert(arr->numElems >= 0);
   assert(arr->numElems <= arr->maxElems);
+  printf("arrayPushUninit\n");
+  printf("array top %p\n", arrayTop(arr));
   if (arr->numElems == arr->maxElems) {
+    printf("not enough space, increasing maxElems");
     arrayGrow(arr, 1 + arr->maxElems);
   }
   assert(arr->start);
   void *p = arrayTop(arr);
+  printf("array top is now%p\n", arrayTop(arr));
   arr->numElems++;
+  printf("array num elems is now%p\n", arr->numElems);
   return p;
 }
 
