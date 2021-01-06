@@ -158,7 +158,7 @@ void frameInit(frame_t *frame) {
   memset(frame, 0, sizeof(frame_t));
   frame->color = FRAME_COLOR;
 
-  arrayInit(&frame->views, sizeof(view_t));
+  // BAL: put back in! arrayInit(&frame->views, sizeof(view_t));
   // BAL: put back in! arrayInit(&frame->status, sizeof(char));
   // BAL:  arrayGrow(&frame->status, 1024);
 }
