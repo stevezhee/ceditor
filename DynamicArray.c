@@ -79,6 +79,7 @@ void *arrayElemAt(dynamicArray_t *arr, int i) {
 void *arrayFocus(dynamicArray_t *arr) { return arrayElemAt(arr, arr->offset); }
 
 void *arrayTop(dynamicArray_t *arr) {
+  if(!arr || !arr->start) return NULL; // BAL: take out.  for debugging purposes only
   assert(arr);
   assert(arr->start);
   return elemAt(arr, arr->numElems);
