@@ -1079,7 +1079,7 @@ void stInit(int argc, char **argv) {
 
   memset(&st, 0, sizeof(state_t));
   /* arrayInit(&st.docs, sizeof(doc_t)); */
-  /* arrayInit(&st.frames, sizeof(frame_t)); */
+  arrayInit(&st.frames, sizeof(frame_t));
   /* arrayInit(&st.replace, sizeof(char)); */
 
   printf("arrays initialized\n");
