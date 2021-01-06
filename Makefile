@@ -4,7 +4,7 @@ CFILES=$(shell ls *.c)
 OFILES=$(CFILES:.c=.o)
 HFILES=$(shell ls *.h)
 
-all: ceditor checkpoint
+all: ceditor
 
 run: ceditor
 	./ceditor *.txt *.[ch]

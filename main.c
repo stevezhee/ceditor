@@ -1085,10 +1085,13 @@ void stInit(int argc, char **argv) {
 
   printf("doing frame initialization\n");
   // BAL: this is triggering a bug for some reason...
-  for (int i = 0; i < NUM_FRAMES; ++i) {
+  // BAL: put back in for (int i = 0; i < NUM_FRAMES; ++i) {
+  for (int i = 0; i < 2; ++i) {
     frame_t *frame = arrayPushUninit(&st.frames);
     printf("frame = %p\n", frame);
+    printf("frame array top %p\n", arrayTop(&st.frames));
     frameInit(frame);
+    printf("frame array top %p (after frameInit)\n", arrayTop(&st.frames));
     // printf("frame = %p done\n", frame);
   }
   printf("frameInit done\n");
