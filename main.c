@@ -155,7 +155,7 @@ void setFocusBuiltinsView(int ref) {
 }
 
 void frameInit(frame_t *frame) {
-  memset(frame, 0, sizeof(frame_t));
+  // BAL: put back in! memset(frame, 0, sizeof(frame_t));
   frame->color = FRAME_COLOR;
 
   // BAL: put back in! arrayInit(&frame->views, sizeof(view_t));
