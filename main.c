@@ -155,7 +155,7 @@ void setFocusBuiltinsView(int ref) {
 }
 
 void frameInit(frame_t *frame) {
-  printf("zeroing frame %p %d\n", frame, sizeof(frame_t));
+  printf("zeroing frame %p %ul\n", frame, sizeof(frame_t));
   memset(frame, 0, sizeof(frame_t));
   // BAL: put back in! frame->color = FRAME_COLOR;
 
