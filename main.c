@@ -1087,7 +1087,7 @@ void stInit(int argc, char **argv) {
   for (int i = 0; i < NUM_FRAMES; ++i) {
     frame_t *frame = arrayPushUninit(&st.frames);
     //    printf("frame = %p\n", frame);
-    frameInit(frame);
+    // frameInit(frame);
     // printf("frame = %p done\n", frame);
   }
   printf("frameInit done\n");
