@@ -8,20 +8,6 @@
 
 #include "DynamicArray.h"
 
-void *myRealloc(void *p0, int oldSize, int newSize)
-{
-  //  printf("starting myRealloc\n");
-  void *p = malloc(newSize);
-  assert(p);
-  //printf("malloc worked %p\n", p);
-  void *ret = memcpy(p, p0, oldSize);
-  assert(ret == p);
-
-  //printf("memcpy worked %d\n", oldSize);
-  //  free(p0);
-  // printf("free %p worked\n", p0);
-  return p;
-}
 // BAL: we seem to call this function way too much ... probably undo causing
 // problems(?)
 void arrayGrow(dynamicArray_t *arr, int maxElems) {
@@ -29,30 +15,18 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
   assert(maxElems >= 1);
   assert(arr->elemSize > 0);
 
-  printf("arrayGrow on %p\n", arr);
-
   if (maxElems <= arr->maxElems)
     return;
 
   int n = max(maxElems, arr->maxElems * 2);
-  // printf("growing array %d elements (%d) was (%d)\n", n, maxElems, arr->maxElems);
 
   int oldSize = arr->elemSize * arr->maxElems;
 
   int sz = arr->elemSize * n;
 
-  // printf("attempting to reallocate %p %d bytes (elem size = %d)\n", arr->start, sz, arr->elemSize);
-
-  void *p = myRealloc(arr->start, oldSize, sz);
-  // void *p = realloc(arr->start, sz);
-  // printf("realloc worked...\n");
-  arr->start = dieIfNull(p);
-  assert(arr->start == p);
-  // printf("attempting to zero out %p at %p (%d bytes)\n", arr->start, arr->start + oldSize, sz - oldSize);
-  memset(arr->start + oldSize, 0, sz - oldSize); // BAL: zeroing memory - remove
+  arr->start = dieIfNull(realloc(arr->start, sz));
+  memset(arr->start + oldSize, 0, sz - oldSize);  // BAL: shouldn't need to zero memory
   arr->maxElems = n;
-  //  printf("memset worked...\n");
-  // printf("allocate complete\n");
 }
 
 void arrayReinit(dynamicArray_t *arr) {
@@ -79,7 +53,6 @@ void *arrayElemAt(dynamicArray_t *arr, int i) {
 void *arrayFocus(dynamicArray_t *arr) { return arrayElemAt(arr, arr->offset); }
 
 void *arrayTop(dynamicArray_t *arr) {
-  if(!arr || !arr->start) return NULL; // BAL: take out.  for debugging purposes only
   assert(arr);
   assert(arr->start);
   return elemAt(arr, arr->numElems);
@@ -124,23 +97,12 @@ void *arrayPushUninit(dynamicArray_t *arr) {
   assert(arr);
   assert(arr->numElems >= 0);
   assert(arr->numElems <= arr->maxElems);
-  printf("arrayPushUninit\n");
-  printf("num elems is %d max elems is %d\n", arr->numElems, arr->maxElems);
-  printf("elem size is %d\n", arr->elemSize);
-  printf("array top is %p\n", arrayTop(arr));
   if (arr->numElems == arr->maxElems) {
-    printf("not enough space, increasing maxElems\n");
     arrayGrow(arr, 1 + arr->maxElems);
   }
   assert(arr->start);
   void *p = arrayTop(arr);
-  printf("array top is now %p\n", arrayTop(arr));
-  printf("elem size is %d\n", arr->elemSize);
   arr->numElems++;
-  printf("array top is now %p (again)\n", arrayTop(arr));
-  printf("array num elems is now %d\n", arr->numElems);
-  printf("elem size is %d (still)\n", arr->elemSize);
-  printf("done with push init **\n");
   return p;
 }
 
@@ -166,7 +128,5 @@ void arraySetFocus(dynamicArray_t *arr, int i) {
 }
 
 void arrayFree(dynamicArray_t *arr) {
-  // BAL: printf("freeing array...\n");
-  assert(0); // BAL: put in for debugging purposes...
   free(arr->start);
 }

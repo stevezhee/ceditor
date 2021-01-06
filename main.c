@@ -155,18 +155,16 @@ void setFocusBuiltinsView(int ref) {
 }
 
 void frameInit(frame_t *frame) {
-  printf("zeroing frame %p %lu\n", frame, sizeof(frame_t));
   memset(frame, 0, sizeof(frame_t));
-  // BAL: put back in! frame->color = FRAME_COLOR;
+  frame->color = FRAME_COLOR;
 
-  // BAL: put back in! arrayInit(&frame->views, sizeof(view_t));
-  // BAL: put back in! arrayInit(&frame->status, sizeof(char));
-  // BAL:  arrayGrow(&frame->status, 1024);
+  arrayInit(&frame->views, sizeof(view_t));
+  arrayInit(&frame->status, sizeof(char));
+  arrayGrow(&frame->status, 1024);
 }
 
 void viewInit(view_t *view, uint refDoc) {
   assert(view);
-  printf("viewInit %p\n", view);
   memset(view, 0, sizeof(view_t));
   view->refDoc = refDoc;
 }
@@ -1058,19 +1056,14 @@ void helpBufInit(void);
 
 void pushViewInit(int frameRef, int docRef)
 {
-  printf("pushView %d\n", frameRef);
   frame_t *frame = frameOf(frameRef);
-  printf("pushView frame %p\n", frame);
   assert(frame);
   view_t *view = arrayPushUninit(&frame->views);
   assert(view);
-  printf("pushViewInit view = %p\n", view);
   viewInit(view, docRef);
-  printf("done with view init\n");
 }
 
 void stInit(int argc, char **argv) {
-  printf("Starting stInit...\n");
   argc--;
   argv++;
   if (argc == 0) {
@@ -1079,83 +1072,73 @@ void stInit(int argc, char **argv) {
   }
 
   memset(&st, 0, sizeof(state_t));
-  /* arrayInit(&st.docs, sizeof(doc_t)); */
+  arrayInit(&st.docs, sizeof(doc_t));
   arrayInit(&st.frames, sizeof(frame_t));
-  /* arrayInit(&st.replace, sizeof(char)); */
+  arrayInit(&st.replace, sizeof(char));
 
-  printf("doing frame initialization\n");
-  // BAL: this is triggering a bug for some reason...
-  // BAL: put back in for (int i = 0; i < NUM_FRAMES; ++i) {
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < NUM_FRAMES; ++i) {
     frame_t *frame = arrayPushUninit(&st.frames);
-    printf("frame = %p\n", frame);
-    printf("frame array top %p\n", arrayTop(&st.frames));
     frameInit(frame);
-    printf("frame array top %p (after frameInit)\n", arrayTop(&st.frames));
-    // printf("frame = %p done\n", frame);
   }
-  printf("frameInit done\n");
 
-  /* for (int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) { */
-  /*   doc_t *doc = arrayPushUninit(&st.docs); */
-  /*   docInit(doc, builtinBufferTitle[i], false, builtinBufferReadOnly[i]); */
-  /* } */
+  for (int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) {
+    doc_t *doc = arrayPushUninit(&st.docs);
+    docInit(doc, builtinBufferTitle[i], false, builtinBufferReadOnly[i]);
+  }
 
-  /* for (int i = 0; i < argc; ++i) { */
-  /*   doc_t *doc = arrayPushUninit(&st.docs); */
-  /*   docInit(doc, argv[i], true, false); */
-  /*   docRead(doc); */
-  /* } */
-  /* printf("docInit done\n"); */
+  for (int i = 0; i < argc; ++i) {
+    doc_t *doc = arrayPushUninit(&st.docs);
+    docInit(doc, argv[i], true, false);
+    docRead(doc);
+  }
 
+  for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
+    {
+      pushViewInit(BUILTINS_FRAME, i);
+    }
 
-  /* for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i) */
-  /*   { */
-  /*     pushViewInit(BUILTINS_FRAME, i); */
-  /*   } */
-
-  /* for(int i = NUM_BUILTIN_BUFFERS; i < NUM_BUILTIN_BUFFERS + argc; ++i) */
-  /*   { */
-  /*     pushViewInit(MAIN_FRAME, i); */
-  /*     pushViewInit(SECONDARY_FRAME, i); */
-  /*   } */
+  for(int i = NUM_BUILTIN_BUFFERS; i < NUM_BUILTIN_BUFFERS + argc; ++i)
+    {
+      pushViewInit(MAIN_FRAME, i);
+      pushViewInit(SECONDARY_FRAME, i);
+    }
 
   /* bool isBuiltinsFrame = i == BUILTINS_FRAME; */
   /* int docStart = isBuiltinsFrame ? 0 : NUM_BUILTIN_BUFFERS; */
   /* int docEnd = isBuiltinsFrame ? NUM_BUILTIN_BUFFERS : (NUM_BUILTIN_BUFFERS + argc); */
   /* for(int j = docStart; j < docEnd; ++j) */
   /*   { */
-  /*     view_t *view = arrayPushUninit(&frame->views); */
-  /*     viewInit(view, j); */
+  // /*     view_t *view = arrayPushUninit(&frame->views); */
+  // /*     viewInit(view, j); */
   /*   } */
-  /* printf("here\n"); */
-  /* assert(viewOf(frame)); */
-  /* assert(docOf(viewOf(frame))); */
-  /* frameUpdate(frame); */
+  
+  // assert(viewOf(frame));
+  // assert(docOf(viewOf(frame)));
 
-  printf("it worked...\n");
-  exit(0);
-  /* keysymInit(); */
+  frameUpdate(frameOf(MAIN_FRAME));
+  frameUpdate(frameOf(SECONDARY_FRAME));
+  frameUpdate(frameOf(BUILTINS_FRAME));
 
-  /* macrosInit(); */
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
+    die(SDL_GetError());
 
-  /* helpBufInit(); */
+  windowInit(&st.window, INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT);
 
-  /* if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) */
-  /*   die(SDL_GetError()); */
+  rendererInit(st.window.window);
 
-  /* windowInit(&st.window, INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT); */
+  initFont(&st.font, INIT_FONT_FILE, INIT_FONT_SIZE);
 
-  /* rendererInit(st.window.window); */
+  gui = hcat(frameWidget(0), hcat(frameWidget(1), frameWidget(2)));
 
-  /* initFont(&st.font, INIT_FONT_FILE, INIT_FONT_SIZE); */
+  stResize();
 
-  /* gui = hcat(frameWidget(0), hcat(frameWidget(1), frameWidget(2))); */
+  setFocusBuiltinsView(HELP_BUF);
+  setFocusFrame(MAIN_FRAME);
 
-  /* stResize(); */
+  keysymInit();
+  macrosInit();
+  helpBufInit();
 
-  /* setFocusBuiltinsView(HELP_BUF); */
-  /* setFocusFrame(MAIN_FRAME); */
 }
 
 void saveAll() {
@@ -1223,6 +1206,7 @@ void setFocusScrollY(int dR) { setFrameScrollY(focusFrame(), dR); }
 void frameTrackRow(frame_t *frame, int row) {
   view_t *view = viewOf(frame);
   int height = AUTO_SCROLL_HEIGHT;
+  assert(st.font.lineSkip > 0);
   int scrollR = view->scrollY / st.font.lineSkip;
 
   int dR = scrollR + row;
@@ -1386,7 +1370,6 @@ void doSearch(frame_t *frame, char *search) {
   frameTrackRow(frame, cur.row);
 
 done:
-  assert(0); // BAL: put in for debugging ...
   free(temp);
 }
 
@@ -1571,7 +1554,9 @@ void forwardPage() {
 
 void backwardSOF() { stMoveCursorOffset(0); }
 
-void forwardEOF() { stMoveCursorOffset(INT_MAX - 1); }
+void forwardEOF() {
+  stMoveCursorOffset(INT_MAX);
+}
 
 void backwardSOL() { stMoveCursorRowCol(focusCursor()->row, 0); }
 
@@ -1624,7 +1609,6 @@ void helpAppendKeysym(uchar c, char *s) {
 
 void helpBufInit() {
   setFocusBuiltinsView(HELP_BUF);
-
   builtinAppendCString("Builtin Keys:\n");
   for (int i = 0; i < NUM_MODES; ++i) {
     for (int c = 0; c < NUM_KEYS; ++c) {
