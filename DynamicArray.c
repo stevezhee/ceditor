@@ -133,7 +133,7 @@ void *arrayPushUninit(dynamicArray_t *arr) {
   void *p = arrayTop(arr);
   printf("array top is now %p\n", arrayTop(arr));
   arr->numElems++;
-  printf("array num elems is now%p\n", arr->numElems);
+  printf("array num elems is now%d\n", arr->numElems);
   return p;
 }
 
