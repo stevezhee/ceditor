@@ -48,7 +48,7 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
   printf("realloc worked...\n");
   arr->start = dieIfNull(p);
   assert(arr->start == p);
-  printf("attempting to memset %p at %p (%d bytes)\n", arr->start, arr->start + oldSize, sz - oldSize);
+  printf("attempting to zero out %p at %p (%d bytes)\n", arr->start, arr->start + oldSize, sz - oldSize);
   memset(arr->start + oldSize, 0, sz - oldSize); // BAL: zeroing memory - remove
   arr->maxElems = n;
   printf("memset worked...\n");
