@@ -1103,18 +1103,6 @@ void stInit(int argc, char **argv) {
       pushViewInit(SECONDARY_FRAME, i);
     }
 
-  /* bool isBuiltinsFrame = i == BUILTINS_FRAME; */
-  /* int docStart = isBuiltinsFrame ? 0 : NUM_BUILTIN_BUFFERS; */
-  /* int docEnd = isBuiltinsFrame ? NUM_BUILTIN_BUFFERS : (NUM_BUILTIN_BUFFERS + argc); */
-  /* for(int j = docStart; j < docEnd; ++j) */
-  /*   { */
-  // /*     view_t *view = arrayPushUninit(&frame->views); */
-  // /*     viewInit(view, j); */
-  /*   } */
-  
-  // assert(viewOf(frame));
-  // assert(docOf(viewOf(frame)));
-
   frameUpdate(frameOf(MAIN_FRAME));
   frameUpdate(frameOf(SECONDARY_FRAME));
   frameUpdate(frameOf(BUILTINS_FRAME));
