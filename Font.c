@@ -29,10 +29,12 @@ static inline void initCharTexture(font_t *font, TTF_Font *ttfFont, uchar c) {
 
 static inline void initFontData(font_t *font) {
   TTF_Font *ttfFont = TTF_OpenFont(font->filepath, font->size);
-  // BAL: ensure font is fixed width
 
   if (ttfFont == NULL)
     die(TTF_GetError());
+
+  if (TTF_FontFaceIsFixedWidth(ttfFont) == 0)
+    die("Requested font face is not fixed width\n");
 
   for (int c = 0; c < 256; ++c) {
     initCharTexture(font, ttfFont, c);

@@ -23,8 +23,6 @@ void docInsert(doc_t *doc, int offset, char *s, int len) {
   arrayInsert(&doc->contents, offset, s, len);
 }
 
-char systemBuf[1024]; // BAL: use string_t
-
 void docWrite(doc_t *doc) {
   if (DEMO_MODE)
     return;
@@ -55,9 +53,7 @@ void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly) {
 }
 
 void docRead(doc_t *doc) {
-  // BAL: FILE *fp = fopen(doc->filepath, "a+"); // create file if it doesn't
-  // exist
-  FILE *fp = fopen(doc->filepath, "r"); // create file if it doesn't exist
+  FILE *fp = fopen(doc->filepath, "a+"); // create file if it doesn't
 
   if (!fp)
     die("unable to open file");

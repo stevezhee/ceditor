@@ -8,19 +8,23 @@
 
 #include "DynamicArray.h"
 
-// BAL: we seem to call this function way too much ... probably undo causing
-// problems(?)
+int arrayMaxSize(dynamicArray_t *arr) {
+  return arr->elemSize * arr->maxElems;
+}
+
 void arrayGrow(dynamicArray_t *arr, int maxElems) {
   assert(arr);
   assert(maxElems >= 1);
   assert(arr->elemSize > 0);
 
   if (maxElems <= arr->maxElems)
-    return;
+    {
+      return;
+    }
 
   int n = max(maxElems, arr->maxElems * 2);
 
-  int oldSize = arr->elemSize * arr->maxElems;
+  int oldSize = arrayMaxSize(arr);
 
   int sz = arr->elemSize * n;
 

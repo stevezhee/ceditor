@@ -110,7 +110,7 @@ void keyNameInit(void) {
 
 char builtinMacros[NUM_BUILTIN_MACROS][MAX_BUILTIN_MACRO_LEN] = {
     {KEY_BACKSPACE, KEY_LEFT, KEY_DELETE, '\0'},
-    {'p', KEY_RIGHT, 'P', '\0'},
+    {'P', '0', 'p', '\0'},
     {'c', 'x', 'P', '\0'},
     {'a', KEY_RIGHT, 'i', '\0'},
     {'e', '$', '\0'},
@@ -131,7 +131,7 @@ char builtinMacros[NUM_BUILTIN_MACROS][MAX_BUILTIN_MACRO_LEN] = {
 
 char *builtinMacrosHelp[NUM_BUILTIN_MACROS] = {
     "backspace",
-    "paste to the right",
+    "paste at start of line",
     "copy",
     "append",
     "move to end of line",
@@ -175,8 +175,8 @@ void keysymInit(void) {
 
   //    keyHandler[NAVIGATE_MODE][KEY_SHIFT_RETURN] = (keyHandler_t)prependLine;
 
-  keyHandler[NAVIGATE_MODE]['P'] = (keyHandler_t)pasteBefore;
-  keyHandlerHelp[NAVIGATE_MODE]['P'] = "paste before";
+  keyHandler[NAVIGATE_MODE]['p'] = (keyHandler_t)pasteBefore;
+  keyHandlerHelp[NAVIGATE_MODE]['p'] = "paste before";
 
   keyHandler[NAVIGATE_MODE]['v'] = (keyHandler_t)selectChars;
   keyHandlerHelp[NAVIGATE_MODE]['v'] = "select characters";
@@ -248,10 +248,11 @@ void keysymInit(void) {
   keyHandler[NAVIGATE_MODE]['S'] = (keyHandler_t)saveAll;
   keyHandlerHelp[NAVIGATE_MODE]['S'] = "save all and run make";
 
-  // BAL: 'h' or '?' goto help buffer?
-  //    keyHandler[NAVIGATE_MODE]['-'] = decreaseFont;
-  //    keyHandler[NAVIGATE_MODE]['+'] = increaseFont;
-  //
+  keyHandler[NAVIGATE_MODE]['-'] = (keyHandler_t)decreaseFont;
+  keyHandlerHelp[NAVIGATE_MODE]['-'] = "decrease font size";
+  keyHandler[NAVIGATE_MODE]['+'] = (keyHandler_t)increaseFont;
+  keyHandlerHelp[NAVIGATE_MODE]['+'] = "increase font size";
+
   for (char c = '!'; c <= '~'; ++c) {
     keyHandler[INSERT_MODE][c] = insertChar;
   }
@@ -332,17 +333,4 @@ uchar getKeyChar(SDL_Keycode c) {
   }
 }
 
-// void increaseFont()
-//{
-//    if (font->size >= 140) return;
-//    font->size++;
-//    reinitFont(font);
-//}
-//
-// void decreaseFont()
-//{
-//    if (font->size <= 4) return;
-//    font->size--;
-//    reinitFont(font);
-//}
-//
+

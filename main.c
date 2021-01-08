@@ -138,9 +138,9 @@ void frameUpdate(frame_t *frame) {
   assert(view);
   doc_t *doc = docOf(view);
   assert(doc);
-  // BAL: make sure we don't overflow the buffer
   arrayReinit(&frame->status);
-  sprintf(frame->status.start, "<%s> %3d:%2d %s", editorModeDescr[view->mode],
+
+  snprintf(frame->status.start, arrayMaxSize(&frame->status), "<%s> %3d:%2d %s", editorModeDescr[view->mode],
           view->cursor.row + 1, view->cursor.column, doc->filepath);
   frame->status.numElems = strlen(frame->status.start);
 }
@@ -162,13 +162,15 @@ void setFocusBuiltinsView(int ref) {
   setFocusView(ref);
 }
 
+#define FRAME_STATUS_SIZE 1024
+
 void frameInit(frame_t *frame) {
   memset(frame, 0, sizeof(frame_t));
   frame->color = FRAME_COLOR;
 
   arrayInit(&frame->views, sizeof(view_t));
   arrayInit(&frame->status, sizeof(char));
-  arrayGrow(&frame->status, 1024);
+  arrayGrow(&frame->status, FRAME_STATUS_SIZE);
 }
 
 void viewInit(view_t *view, uint refDoc) {
@@ -746,7 +748,7 @@ bool cursorEq(cursor_t *a, cursor_t *b) {
 }
 
 bool searchActive(frame_t *frame) {
-  // if the doc in the builtins frame is searche
+  // if the doc in the builtins frame is search
   // and this isn't the searches view
   return frameOf(BUILTINS_FRAME)->views.offset == SEARCH_BUF &&
          frame->views.offset != SEARCH_BUF;
@@ -1006,29 +1008,12 @@ void stResize(void) {
   for (int i = 0; i < numFrames(); ++i) {
     frameResize(i);
   }
-  // BAL: show the window size somewhere (or update config?)
-  // char s[1024];
-  // sprintf(s, "resize %dx%d", w, h);
-  // message(s);
 }
 
 void insertNewElem() {
   backwardSOF();
   builtinInsertString("\0\n", 2);
 }
-
-// BAL: delete
-/* void buffersBufInit() */
-/* { */
-/*   setFocusView(BUFFERS_BUF); */
-
-/*   for(int i = 0; i < numViews(); ++i) */
-/*   { */
-/*     view_t *view = arrayElemAt(&st.views, i); */
-/*     insertNewElem(); */
-/*     builtinInsertCString(docOf(view)->filepath); */
-/*   } */
-/* } */
 
 void drawFrameCursor(frame_t *frame) { drawCursorOrSelection(frame); }
 
@@ -1128,12 +1113,12 @@ void stInit(int argc, char **argv) {
 
   stResize();
 
-  setFocusBuiltinsView(HELP_BUF);
-  setFocusFrame(MAIN_FRAME);
-
   keysymInit();
   macrosInit();
   helpBufInit();
+
+  setFocusBuiltinsView(HELP_BUF);
+  setFocusFrame(MAIN_FRAME);
 
 }
 
@@ -1271,6 +1256,7 @@ void mouseButtonDownEvent() {
 void mouseMotionEvent() {
   if (st.mouseSelectionInProgress) {
     selectionSetRowCol();
+    // BAL: fix it so that window will scroll when selecting
     /* int height = 1; */
     /* view_t *view = focusView(); */
     /* int scrollR = view->scrollY / st.font.lineSkip; */
@@ -1598,8 +1584,9 @@ void builtinAppendCString(char *s) {
 }
 
 void helpAppendKeysym(uchar c, char *s) {
-  char buf[1024];
-  sprintf(buf, "'%s': %s\n", keysymName(c), s);
+  #define HELP_BUF_SIZE 1024
+  char buf[HELP_BUF_SIZE];
+  snprintf(buf, sizeof(buf), "'%s': %s\n", keysymName(c), s);
   builtinAppendCString(buf);
 }
 
@@ -1808,6 +1795,7 @@ void stopRecordingOrPlayMacro() {
   playMacroCString(doc->contents.start + view->cursor.offset);
 }
 
+// BAL:
 /* void setCursorToSearch() */
 /* { */
 /*     frame_t *frame = focusFrame(); */
@@ -1832,12 +1820,14 @@ void forwardSearch() {
     int *offset = arrayElemAt(results, i);
     if (*offset > cursor->offset) {
       stMoveCursorOffset(*offset);
+      // BAL: needed?
       //  cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
       return;
     }
   }
   int *offset = arrayElemAt(results, 0);
   stMoveCursorOffset(*offset);
+  // BAL: needed?
   /*     st.searchResults.offset++; */
   /*     st.searchResults.offset %= st.searchResults.numElems; */
   /*     setCursorToSearch(); */
@@ -1862,13 +1852,16 @@ void backwardSearch() {
   }
   int *offset = arrayElemAt(results, last);
   stMoveCursorOffset(*offset);
+  // BAL: needed?
   /*     st.searchResults.offset += st.searchResults.numElems - 1; */
   /*     st.searchResults.offset %= st.searchResults.numElems; */
   /*     setCursorToSearch(); */
 }
 
+// BAL: needed?
 /* void setCursorToSearch(); */
 
+// BAL: needed?
 /* void computeSearchResults() */
 /* { */
 /*     view_t *view = arrayElemAt(&st.views, st.searchRefView); */
@@ -1917,6 +1910,7 @@ void newSearch() {
   insertNewElem();
 }
 
+// BAL: needed?
 /* void gotoView() */
 /* { */
 /* int frame = st.frames.offset; */
@@ -1955,20 +1949,15 @@ int numLinesSelected(char *s, int len) {
   return n;
 }
 
-void insertChars(char c, int n) {
-  assert(n < 1024);
-  char s[1024];
-  memset(s, c, n);
-  insertString(s, n);
-}
-
 int indentLine() {
   string_t *s = &focusDoc()->contents;
   backwardSOL();
   int offset = focusCursor()->offset;
   int x = distanceToIndent(s->start + offset, arrayTop(s));
   int n = INDENT_LENGTH - x % INDENT_LENGTH;
-  insertChars(' ', n);
+  char buf[INDENT_LENGTH];
+  memset(buf, ' ', n);
+  insertString(buf, n);
   return n;
 }
 
@@ -2052,6 +2041,8 @@ void outdent() {
   cursorSetOffset(focusCursor(), coff - m, focusDoc());
   cursorSetOffset(focusSelection(), soff - m0, focusDoc());
 }
+
+// BAL: needed?
 /* void timerEvent() */
 /* { */
 /*   if (st.mouseSelectionInProgress) */
@@ -2121,6 +2112,22 @@ void insertOpenCloseChars(uchar c) {
   setInsertMode();
 }
 
+void increaseFont()
+{
+  if (st.font.size >= 140) return;
+  st.font.size += 2;
+  reinitFont(&st.font);
+  stResize();
+}
+
+void decreaseFont()
+{
+  if (st.font.size <= 4) return;
+  st.font.size -= 1;
+  reinitFont(&st.font);
+  stResize();
+}
+
 void doEscapeInsert() { setNavigateMode(); }
 
 void doEscapeNavigate() {
@@ -2140,6 +2147,7 @@ int main(int argc, char **argv) {
 
   stInit(argc, argv);
   stDraw();
+  // BAL: needed?
   //    SDL_AddTimer(1000, timerInit, NULL);
   while (SDL_WaitEvent(&st.event)) {
     switch (st.event.type) {
@@ -2172,6 +2180,7 @@ int main(int argc, char **argv) {
     }
     frameUpdate(focusFrame());
     stDraw();
+    // BAL: needed?
     /* { */
     /*     computeSearchResults(&st); */
     /* } */
@@ -2210,7 +2219,7 @@ CORE:
     status bar that has modified,etc.
     cut/copy/paste with mouse
     create new file
-    input screen (for search, paste,load, tab completion, etc.)
+    input screen (for search, paste, load, tab completion, etc.)
     Hook Cut/Copy/Paste into system Cut/Copy/Paste
     support editor API
     Name macro

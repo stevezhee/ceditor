@@ -67,5 +67,7 @@ void insertChar(uchar c);
 void cut();
 void insertOpenCloseChars(uchar c);
 void saveAll();
+void increaseFont();
+void decreaseFont();
 
 #endif /* Keysym_h */
