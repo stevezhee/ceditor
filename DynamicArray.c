@@ -1,9 +1,9 @@
 //
 //  DynamicArray.c
-//  editordebugger
+//  ceditor
 //
 //  Created by Brett Letner on 5/27/20.
-//  Copyright © 2020 Brett Letner. All rights reserved.
+//  Copyright (c) 2021 Brett Letner. All rights reserved.
 //
 
 #include "DynamicArray.h"
@@ -25,7 +25,7 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
   int sz = arr->elemSize * n;
 
   arr->start = dieIfNull(realloc(arr->start, sz));
-  memset(arr->start + oldSize, 0, sz - oldSize);  // BAL: shouldn't need to zero memory
+  // don't need to zero memory memset(arr->start + oldSize, 0, sz - oldSize);
   arr->maxElems = n;
 }
 

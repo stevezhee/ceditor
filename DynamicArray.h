@@ -1,9 +1,9 @@
 //
 //  DynamicArray.h
-//  editordebugger
+//  ceditor
 //
 //  Created by Brett Letner on 5/27/20.
-//  Copyright © 2020 Brett Letner. All rights reserved.
+//  Copyright (c) 2021 Brett Letner. All rights reserved.
 //
 
 #ifndef DynamicArray_h

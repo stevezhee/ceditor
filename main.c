@@ -1,3 +1,11 @@
+//
+//  main.c
+//  ceditor
+//
+//  Created by Brett Letner on 4/23/20.
+//  Copyright (c) 2021 Brett Letner. All rights reserved.
+//
+
 #include "Cursor.h"
 #include "Doc.h"
 #include "DynamicArray.h"
@@ -2112,7 +2120,9 @@ void insertOpenCloseChars(uchar c) {
   backwardChar();
   setInsertMode();
 }
+
 void doEscapeInsert() { setNavigateMode(); }
+
 void doEscapeNavigate() {
   if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF) {
     setFocusFrame(st.searchFrameRef);
@@ -2121,6 +2131,7 @@ void doEscapeNavigate() {
   resetSearch();
   cancelSelection();
 }
+
 int main(int argc, char **argv) {
   assert(sizeof(char) == 1);
   assert(sizeof(int) == 4);

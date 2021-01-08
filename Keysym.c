@@ -1,9 +1,9 @@
 //
 //  Keysym.c
-//  editordebugger
+//  ceditor
 //
 //  Created by Brett Letner on 5/17/20.
-//  Copyright © 2020 Brett Letner. All rights reserved.
+//  Copyright (c) 2021 Brett Letner. All rights reserved.
 //
 
 #include "Keysym.h"
@@ -144,6 +144,7 @@ char *builtinMacrosHelp[NUM_BUILTIN_MACROS] = {
     "join lines",
     "insert",
     "comment region",
+    "cut/delete",
     "cut/delete",
     "forward word",
     "backward word",
