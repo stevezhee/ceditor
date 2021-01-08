@@ -13,53 +13,13 @@
 #include "Keysym.h"
 #include "Search.h"
 #include "Util.h"
+#include "Widget.h"
 
 void insertCString(char *s);
 void insertString(char *s, uint len);
 void builtinInsertCString(char *s);
 void builtinInsertString(char *s, uint len);
 void builtinInsertChar(uchar c);
-
-typedef enum {
-  HSPC,
-  VSPC,
-  DRAW,
-  COLOR,
-  FONT,
-  SCROLL_Y,
-  WID,
-  OVER,
-  HCAT,
-  VCAT,
-  HCATR,
-  VCATR,
-  NUM_WIDGET_TAGS
-} widgetTag_t;
-
-struct widget_s;
-
-typedef struct widget_s widget_t;
-
-struct widget_s {
-  widgetTag_t tag;
-  union {
-    int wid;
-    int *length;
-    int *color;
-    font_t **font;
-    widget_t *child;
-    void (*drawFun)(void *);
-    int (*scrollYFun)(void *);
-    void *data;
-  } a;
-  union {
-    widget_t *child;
-    void *data;
-  } b;
-  union {
-    void *data;
-  } c;
-};
 
 state_t st;
 widget_t *gui;
@@ -187,78 +147,6 @@ void viewInit(view_t *view, uint refDoc) {
 /*       st.searchLen == 0 || */
 /*       st.searchResults.numElems == 0; */
 /* } */
-
-widget_t *newWidget() { return dieIfNull(malloc(sizeof(widget_t))); }
-
-widget_t *leaf(widgetTag_t tag, void *a) {
-  widget_t *p = newWidget();
-  p->tag = tag;
-  p->a.data = a;
-  return p;
-}
-
-#define hspc(len) leaf(HSPC, len)
-#define vspc(len) leaf(VSPC, len)
-
-widget_t *singleton(widgetTag_t tag, void *a, widget_t *b) {
-  widget_t *p = newWidget();
-  p->tag = tag;
-  p->a.data = a;
-  p->b.child = b;
-  return p;
-}
-
-widget_t *singleton2(widgetTag_t tag, void *a, widget_t *b, void *c) {
-  widget_t *p = newWidget();
-  p->tag = tag;
-  p->a.data = a;
-  p->b.child = b;
-  p->c.data = c;
-  return p;
-}
-
-#define color(a, b) singleton(COLOR, a, b)
-#define font(a, b) singleton(FONT, a, b)
-#define scrollY(a, c, b) singleton2(SCROLL_Y, a, b, c)
-
-widget_t *wid(int i, widget_t *a) {
-  widget_t *p = newWidget();
-  p->tag = WID;
-  p->a.wid = i;
-  p->b.child = a;
-  return p;
-}
-
-widget_t *node(widgetTag_t tag, void *a, void *b) {
-  widget_t *p = newWidget();
-  p->tag = tag;
-  p->a.data = a;
-  p->b.data = b;
-  return p;
-}
-
-typedef struct {
-  int x;
-  int y;
-  int w;
-  int h;
-  int color;
-  font_t *font;
-  int dy;
-  int wid;
-} context_t;
-
-context_t context;
-
-void drawBox(void *_unused) { fillRect(context.w, context.h); }
-
-#define over(a, b) node(OVER, a, b)
-#define hcat(a, b) node(HCAT, a, b)
-#define hcatr(a, b) node(HCATR, a, b)
-#define vcat(a, b) node(VCAT, a, b)
-#define vcatr(a, b) node(VCATR, a, b)
-#define draw(a, b) node(DRAW, a, b)
-#define box() node(DRAW, drawBox, NULL)
 
 int maxLineLength(char *s) {
   assert(s);
@@ -510,74 +398,6 @@ void drawString(string_t *s) {
     }
   }
 }
-
-int widgetWidth(widget_t *widget) {
-  int w = 0;
-
-  switch (widget->tag) {
-  case HCATR: // fall through
-  case HCAT:
-    w = widgetWidth(widget->a.child) + widgetWidth(widget->b.child);
-    break;
-  case OVER:  // fall through
-  case VCATR: // fall through
-  case VCAT:
-    w = max(widgetWidth(widget->a.child), widgetWidth(widget->b.child));
-    break;
-  case SCROLL_Y: // fall through
-  case WID:      // fall through
-  case COLOR:    // fall through
-  case FONT:
-    w = widgetWidth(widget->b.child);
-    break;
-  case HSPC:
-    w = *widget->a.length;
-    break;
-  default:
-    assert(widget->tag == VSPC || widget->tag == DRAW);
-    break;
-  }
-
-  return min(w, context.w);
-}
-
-int widgetHeight(widget_t *widget) {
-  int h = 0;
-  switch (widget->tag) {
-  case OVER:  // fall through
-  case HCATR: // fall through
-  case HCAT:
-    h = max(widgetHeight(widget->a.child), widgetHeight(widget->b.child));
-    break;
-  case VCATR: // fall through
-  case VCAT:
-    h = widgetHeight(widget->a.child) + widgetHeight(widget->b.child);
-    break;
-  case SCROLL_Y: // fall through
-  case COLOR:    // fall through
-  case WID:      // fall through
-  case FONT:
-    h = widgetHeight(widget->b.child);
-    break;
-  case VSPC:
-    h = *widget->a.length;
-    break;
-  default:
-    assert(widget->tag == HSPC || widget->tag == DRAW);
-    break;
-  }
-  return min(h, context.h);
-}
-
-void contextSetViewport() {
-  SDL_Rect rect;
-  rect.x = context.x;
-  rect.y = context.y;
-  rect.w = context.w;
-  rect.h = context.h;
-  setViewport(&rect);
-}
-
 int columnToX(int column) { return column * st.font.charSkip; }
 
 int rowToY(int row) { return row * st.font.lineSkip + context.dy; }
@@ -628,6 +448,7 @@ int distanceToNextSpace(char *s0, char *t) {
 
   return s - s0;
 }
+
 int distanceToIndent(char *p0, char *q) {
   char *p = p0;
   while (p < q && *p == ' ') {
@@ -635,6 +456,7 @@ int distanceToIndent(char *p0, char *q) {
   }
   return p - p0;
 }
+
 int distanceToPrevSpace(char *t, char *s0) {
   char *s = s0;
   char c = *s;
@@ -765,223 +587,10 @@ void drawCursorOrSelection(frame_t *frame) {
   }
   drawCursor(view);
 }
-
-void widgetAt(widget_t *widget, int x, int y) {
-  assert(context.w >= 0);
-  assert(context.h >= 0);
-
-  if (x >= context.w || y >= context.h) {
-    context.wid = -1;
-    return;
-  }
-
-  switch (widget->tag) {
-  case HCAT: {
-    int w = widgetWidth(widget->a.child);
-    if (x < w) {
-      context.w = w;
-      widgetAt(widget->a.child, x, y);
-      return;
-    }
-    context.w = context.w - w;
-    context.x += w;
-    widgetAt(widget->b.child, x - w, y);
-    return;
-  }
-  case HCATR: {
-    int w = context.w - widgetWidth(widget->b.child);
-    if (context.x < w) {
-      context.w = w;
-      widgetAt(widget->a.child, x, y);
-      return;
-    }
-    context.w = context.w - w;
-    context.x += w;
-    widgetAt(widget->b.child, x - w, y);
-    return;
-  }
-  case VCAT: {
-    int h = widgetHeight(widget->a.child);
-    if (context.y < h) {
-      context.h = h;
-      widgetAt(widget->a.child, x, y);
-      return;
-    }
-    context.h = context.h - h;
-    context.y += h;
-    widgetAt(widget->b.child, x, y - h);
-    return;
-  }
-  case VCATR: {
-    int h = context.h - widgetHeight(widget->b.child);
-    if (context.y < h) {
-      context.h = h;
-      widgetAt(widget->a.child, x, y);
-      return;
-    }
-    context.h = context.h - h;
-    context.y += h;
-    widgetAt(widget->b.child, x, y - h);
-    return;
-  }
-  case OVER:
-    widgetAt(widget->a.child, x, y);
-    return;
-  case WID:
-    context.wid = widget->a.wid;
-    widgetAt(widget->b.child, x, y);
-    return;
-  case COLOR: // fall through
-  case FONT:  // fall through
-    widgetAt(widget->b.child, x, y);
-    return;
-  case SCROLL_Y: {
-    int dy = widget->a.scrollYFun(widget->c.data);
-    context.y += dy;
-    widgetAt(widget->b.child, x, y + dy);
-    return;
-  }
-  default:
-    assert(widget->tag == VSPC || widget->tag == HSPC || widget->tag == DRAW);
-    return;
-  }
-}
-void widgetDraw(widget_t *widget) {
-  switch (widget->tag) {
-  case HCAT: {
-    int x = context.x;
-    int w = context.w;
-    int wa = widgetWidth(widget->a.child);
-
-    context.x += wa;
-    context.w = context.w - wa;
-    contextSetViewport();
-    widgetDraw(widget->b.child);
-
-    context.x = x;
-    context.w = wa;
-    contextSetViewport();
-    widgetDraw(widget->a.child);
-
-    context.w = w;
-    contextSetViewport();
-    return;
-  }
-  case HCATR: {
-    int x = context.x;
-    int w = context.w;
-
-    context.w = context.w - widgetWidth(widget->b.child);
-    contextSetViewport();
-    widgetDraw(widget->a.child);
-
-    context.x += context.w;
-    context.w = w - context.w;
-    contextSetViewport();
-    widgetDraw(widget->b.child);
-
-    context.x = x;
-    context.w = w;
-    contextSetViewport();
-    return;
-  }
-  case VCAT: {
-    int y = context.y;
-    int h = context.h;
-
-    context.h = widgetHeight(widget->a.child);
-    contextSetViewport();
-    widgetDraw(widget->a.child);
-
-    context.y += context.h;
-    context.h = h - context.h;
-    contextSetViewport();
-    widgetDraw(widget->b.child);
-
-    context.h = h;
-    context.y = y;
-    contextSetViewport();
-    return;
-  }
-  case VCATR: {
-    int y = context.y;
-    int h = context.h;
-
-    context.h = context.h - widgetHeight(widget->b.child);
-    contextSetViewport();
-    widgetDraw(widget->a.child);
-
-    context.y += context.h;
-    context.h = h - context.h;
-    contextSetViewport();
-    widgetDraw(widget->b.child);
-
-    context.h = h;
-    context.y = y;
-    contextSetViewport();
-    return;
-  }
-  case OVER: {
-    widgetDraw(widget->b.child);
-    widgetDraw(widget->a.child);
-    return;
-  }
-  case SCROLL_Y: {
-    int dy = context.dy;
-    context.dy += widget->a.scrollYFun(widget->c.data);
-    widgetDraw(widget->b.child);
-    context.dy = dy;
-    return;
-  }
-  case FONT: {
-    font_t *font = context.font;
-    context.font = *widget->a.font;
-    widgetDraw(widget->b.child);
-    context.font = font;
-    return;
-  }
-  case WID:
-    widgetDraw(widget->b.child);
-    return;
-  case COLOR: {
-    int color = context.color;
-    context.color = *widget->a.color;
-    setDrawColor(context.color);
-    widgetDraw(widget->b.child);
-    context.color = color;
-    setDrawColor(context.color);
-    return;
-  }
-  case DRAW:
-    widget->a.drawFun(widget->b.data);
-    return;
-  default:
-    assert(widget->tag == VSPC || widget->tag == HSPC);
-    return;
-  }
-}
-
-void contextReinit() {
-  context.x = 0;
-  context.y = 0;
-  context.color = BRWHITE;
-  context.font = &st.font;
-  context.w = st.window.width;
-  context.h = st.window.height;
-  context.dy = 0;
-  context.wid = -1;
-  SDL_Rect rect;
-  rect.x = 0;
-  rect.y = 0;
-  rect.w = context.w;
-  rect.h = context.h;
-  setViewport(&rect);
-  setDrawColor(context.color);
-}
 void stDraw(void) {
   setDrawColor(WHITE);
   rendererClear();
-  contextReinit();
+  contextReinit(&st.font, st.window.width, st.window.height);
   widgetDraw(gui);
   rendererPresent();
 }
@@ -995,8 +604,6 @@ void windowInit(window_t *win, int width, int height) {
   win->width = width;
   win->height = height;
 }
-
-void message(char *s);
 
 void stResize(void) {
   int w;
@@ -1232,7 +839,7 @@ void mouseButtonUpEvent() {
 }
 
 void mouseButtonDownEvent() {
-  contextReinit();
+  contextReinit(&st.font, st.window.width, st.window.height);
   widgetAt(gui, st.event.button.x, st.event.button.y);
   if (context.wid < 0 || context.wid > numFrames()) {
     return;

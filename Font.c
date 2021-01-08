@@ -18,10 +18,10 @@ static inline void initCharTexture(font_t *font, TTF_Font *ttfFont, uchar c) {
   s[1] = '\0';
 
   SDL_Surface *srfc = TTF_RenderUNICODE_Blended(ttfFont, s, white);
-  if (srfc == NULL)
+  if (!srfc)
     die(TTF_GetError());
   font->charTexture[c] = SDL_CreateTextureFromSurface(renderer, srfc);
-  if (font->charTexture[c] == NULL)
+  if (!font->charTexture[c])
     die(TTF_GetError());
 
   SDL_FreeSurface(srfc);
@@ -30,7 +30,7 @@ static inline void initCharTexture(font_t *font, TTF_Font *ttfFont, uchar c) {
 static inline void initFontData(font_t *font) {
   TTF_Font *ttfFont = TTF_OpenFont(font->filepath, font->size);
 
-  if (ttfFont == NULL)
+  if (!ttfFont)
     die(TTF_GetError());
 
   if (TTF_FontFaceIsFixedWidth(ttfFont) == 0)

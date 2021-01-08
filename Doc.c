@@ -29,7 +29,7 @@ void docWrite(doc_t *doc) {
   if (!doc->modified)
     return;
   FILE *fp = fopen(doc->filepath, "w");
-  if (fp == NULL)
+  if (!fp)
     die("unable to open file for write");
 
   if (fwrite(doc->contents.start, sizeof(char), doc->contents.numElems, fp) !=

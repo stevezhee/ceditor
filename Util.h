@@ -44,6 +44,7 @@ void rendererPresent(void);
 char *getClipboardText(void);
 void setClipboardText(const char *text);
 int numLinesString(char *s, int len);
+void message(char *s);
 
 typedef enum { NAVIGATE_MODE, INSERT_MODE, NUM_MODES } editorMode_t;
 extern char *editorModeDescr[NUM_MODES];
