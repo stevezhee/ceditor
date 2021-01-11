@@ -140,15 +140,6 @@ void viewInit(view_t *view, uint refDoc) {
   view->refDoc = refDoc;
 }
 
-/* bool noActiveSearch(frame_t *frame) */
-/* { */
-/*     return */
-/*       frame->refView != st.searchRefView || // BAL: there are now multiple
- * views per frame */
-/*       st.searchLen == 0 || */
-/*       st.searchResults.numElems == 0; */
-/* } */
-
 int maxLineLength(char *s) {
   assert(s);
   char c;
@@ -1416,18 +1407,6 @@ void stopRecordingOrPlayMacro() {
   playMacroCString(doc->contents.start + view->cursor.offset);
 }
 
-// BAL:
-/* void setCursorToSearch() */
-/* { */
-/*     frame_t *frame = focusFrame(); */
-/*     if (noActiveSearch(frame)) return; */
-/*     view_t *view = focusView(); */
-/*     doc_t *doc = focusDoc(); */
-/*     uint *off = arrayFocus(&st.searchResults); */
-/*     cursorSetOffset(&view->cursor, *off, doc); */
-/*     cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc); */
-/* } */
-
 void forwardSearch() {
   doc_t *doc = focusDoc();
   searchBuffer_t *results = &doc->searchResults;
@@ -1441,17 +1420,11 @@ void forwardSearch() {
     int *offset = arrayElemAt(results, i);
     if (*offset > cursor->offset) {
       stMoveCursorOffset(*offset);
-      // BAL: needed?
-      //  cursorSetOffset(&view->selection, *off + st.searchLen - 1, doc);
       return;
     }
   }
   int *offset = arrayElemAt(results, 0);
   stMoveCursorOffset(*offset);
-  // BAL: needed?
-  /*     st.searchResults.offset++; */
-  /*     st.searchResults.offset %= st.searchResults.numElems; */
-  /*     setCursorToSearch(); */
 }
 
 void backwardSearch() {
@@ -1473,10 +1446,6 @@ void backwardSearch() {
   }
   int *offset = arrayElemAt(results, last);
   stMoveCursorOffset(*offset);
-  // BAL: needed?
-  /*     st.searchResults.offset += st.searchResults.numElems - 1; */
-  /*     st.searchResults.offset %= st.searchResults.numElems; */
-  /*     setCursorToSearch(); */
 }
 
 void replace() {
@@ -1488,50 +1457,6 @@ void replace() {
   forwardSearch(); // skip over where we are at
   forwardSearch();
 }
-// BAL: needed?
-/* void setCursorToSearch(); */
-
-// BAL: needed?
-/* void computeSearchResults() */
-/* { */
-/*     view_t *view = arrayElemAt(&st.views, st.searchRefView); */
-/*     doc_t *doc = docOf(view); */
-
-/*     int refView = focusViewRef(); */
-/*     setFocusBuiltinsView(SEARCH_BUF); */
-
-/*     view_t *viewFind = focusView(); */
-/*     doc_t *find = focusDoc(); */
-
-/*     cursor_t cursorFind; */
-/*     cursorCopy(&cursorFind, &viewFind->cursor); */
-/*     cursorSetRowCol(&cursorFind, cursorFind.row, 0, find); */
-
-/*     char *search = find->contents.start + cursorFind.offset; */
-/*     if (!search) goto nofree; */
-/*     char *replace = dieIfNull(strdup(search)); */
-/*     char *needle = strsep(&replace, "/"); */
-/*     st.searchLen = (uint)strlen(needle); */
-/*     if (st.searchLen == 0) goto done; */
-
-/*     char *haystack = doc->contents.start; */
-/*     char *p = haystack; */
-/*     arrayReinit(&st.searchResults); */
-/*     while ((p = strcasestr(p, needle))) */
-/*     { */
-/*         uint *off = arrayPushUninit(&st.searchResults); */
-/*         *off = (uint)(p - haystack); */
-/*         p++; */
-/*     } */
-
-/*     // copy replace string to copy buffer // BAL: don't use copy buffer ...
- */
-/*     if (replace) copy(replace, (uint)strlen(replace)); */
-/* done: */
-/*     free(needle); */
-/* nofree: */
-/*     setFocusBuiltinsView(refView); */
-/* } */
 
 void newSearch() {
   st.searchFrameRef = focusFrameRef(); // BAL: last user frame ref
@@ -1539,22 +1464,6 @@ void newSearch() {
   setInsertMode();
   insertNewElem();
 }
-
-// BAL: needed?
-/* void gotoView() */
-/* { */
-/* int frame = st.frames.offset; */
-
-/* if (frame == BUILTINS_FRAME) frame = MAIN_FRAME; */
-
-/* setFocusFrame(BUILTINS_FRAME); */
-/* stSetViewFocus(BUFFERS_BUF); */
-
-/* view_t *view = focusView(); */
-
-/* setFocusFrame(frame); */
-/* stSetViewFocus(view->cursor.row); */
-/* } */
 
 void forwardFrame() { setFocusFrame((focusFrameRef() + 1) % numFrames()); }
 
