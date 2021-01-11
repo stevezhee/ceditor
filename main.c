@@ -23,6 +23,7 @@ void builtinInsertChar(uchar c);
 
 state_t st;
 widget_t *gui;
+
 int xToColumn(int x) { return x / st.font.charSkip; }
 int yToRow(int x) { return x / st.font.lineSkip; }
 
@@ -398,6 +399,7 @@ void drawString(string_t *s) {
     }
   }
 }
+
 int columnToX(int column) { return column * st.font.charSkip; }
 
 int rowToY(int row) { return row * st.font.lineSkip + context.dy; }
@@ -587,6 +589,7 @@ void drawCursorOrSelection(frame_t *frame) {
   }
   drawCursor(view);
 }
+
 void stDraw(void) {
   setDrawColor(WHITE);
   rendererClear();
@@ -1180,6 +1183,17 @@ void insertChar(uchar c) {
   forwardChar();
 }
 
+void insertNewline() {
+  if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF)
+    {
+      setFocusFrame(MAIN_FRAME);
+      setNavigateMode();
+      forwardSearch();
+      return;
+    }
+  insertChar('\n');
+}
+
 void builtinInsertChar(uchar c) {
   builtinInsertString((char *)&c, 1);
   forwardChar();
@@ -1465,6 +1479,15 @@ void backwardSearch() {
   /*     setCursorToSearch(); */
 }
 
+void replace() {
+  if (!st.isReplace) return;
+  int offset = focusCursor()->offset;
+  doc_t *doc = focusDoc();
+  docPushDelete(doc, offset, st.searchLen);
+  docPushInsert(doc, offset, st.replace.start, st.replace.numElems);
+  forwardSearch(); // skip over where we are at
+  forwardSearch();
+}
 // BAL: needed?
 /* void setCursorToSearch(); */
 
@@ -1719,23 +1742,28 @@ void insertOpenCloseChars(uchar c) {
   setInsertMode();
 }
 
+void resizeFont(int dx)
+{
+  st.font.size += dx;
+  reinitFont(&st.font);
+  stResize();
+}
+
 void increaseFont()
 {
   if (st.font.size >= 140) return;
-  st.font.size += 2;
-  reinitFont(&st.font);
-  stResize();
+  resizeFont(2);
 }
 
 void decreaseFont()
 {
   if (st.font.size <= 4) return;
-  st.font.size -= 1;
-  reinitFont(&st.font);
-  stResize();
+  resizeFont(-1);
 }
 
-void doEscapeInsert() { setNavigateMode(); }
+void doEscapeInsert() {
+  setNavigateMode();
+}
 
 void doEscapeNavigate() {
   if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF) {
@@ -1819,7 +1847,6 @@ CORE:
     add pretty-print hotkey
     remember your place in the file on close (restore all settings/state?)
     modify frame widths based on columns (e.g. focus doc frame is 80/120 chars)
-    Search and replace
     Goto line
     Scroll when mouse selection goes off screen command line
     args/config to set config items (e.g. demo mode)
@@ -1864,6 +1891,7 @@ MACRO:
     select all
 
 DONE:
+Search and replace
 add save/build hotkey
 insert both open/close characters (e.g. "" or {}).  If selection is on, use
 that for contents.

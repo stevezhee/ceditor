@@ -45,6 +45,7 @@ void stopRecordingOrPlayMacro();
 void pasteBefore();
 void forwardSearch();
 void backwardSearch();
+void replace();
 void setInsertMode();
 void setNavigateMode();
 void forwardPage();
@@ -69,5 +70,6 @@ void insertOpenCloseChars(uchar c);
 void saveAll();
 void increaseFont();
 void decreaseFont();
+void insertNewline();
 
 #endif /* Keysym_h */

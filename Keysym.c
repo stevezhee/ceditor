@@ -231,6 +231,8 @@ void keysymInit(void) {
   keyHandlerHelp[NAVIGATE_MODE]['n'] = "search forward";
   keyHandler[NAVIGATE_MODE]['N'] = (keyHandler_t)backwardSearch;
   keyHandlerHelp[NAVIGATE_MODE]['N'] = "search backward";
+  keyHandler[NAVIGATE_MODE]['R'] = (keyHandler_t)replace;
+  keyHandlerHelp[NAVIGATE_MODE]['R'] = "replace";
   keyHandler[NAVIGATE_MODE][','] = (keyHandler_t)stopRecordingOrPlayMacro;
   keyHandlerHelp[NAVIGATE_MODE][','] = "play/stop recording macro";
   keyHandler[NAVIGATE_MODE]['m'] = (keyHandler_t)startOrStopRecording;
@@ -257,7 +259,7 @@ void keysymInit(void) {
     keyHandler[INSERT_MODE][c] = insertChar;
   }
 
-  keyHandler[INSERT_MODE]['\n'] = insertChar;
+  keyHandler[INSERT_MODE]['\n'] = (keyHandler_t)insertNewline;
   keyHandler[INSERT_MODE][' '] = insertChar;
 }
 

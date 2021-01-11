@@ -83,6 +83,7 @@ int arrayDelete(dynamicArray_t *arr, int offset, int len0) {
 
 void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len) {
   assert(arr);
+  if (len <= 0) return;
   int n = arr->numElems + len;
   if (n > arr->maxElems)
     arrayGrow(arr, n);
