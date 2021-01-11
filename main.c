@@ -1524,29 +1524,10 @@ int main(int argc, char **argv) {
     }
     frameUpdate(focusFrame());
     stDraw();
-    // BAL: needed?
-    /* { */
-    /*     computeSearchResults(&st); */
-    /* } */
-    /* { */
-    /*   stDraw(); */
-    /*   stRenderFull(&st); */
-    /* { */
-    /*     stRender(&st); */
-    /* } */
   }
   return 0;
 }
 
-/*
-  search:
-  - do search interactive when in search buffer
-  - do search on current line from search buffer
-  - move forward/back among search items
-  - clear search
-  - do replace
-  /
- */
 /*
 TODO:
 CORE:
