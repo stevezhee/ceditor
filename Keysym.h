@@ -45,6 +45,7 @@ void stopRecordingOrPlayMacro();
 void pasteBefore();
 void forwardSearch();
 void backwardSearch();
+void enter();
 void replace();
 void setInsertMode();
 void setNavigateMode();

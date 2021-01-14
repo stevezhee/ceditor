@@ -28,7 +28,7 @@ void docWrite(doc_t *doc) {
     return;
   if (!doc->modified)
     return;
-  FILE *fp = fopen(doc->filepath, "w");
+  FILE *fp = fopen(cstringOf(&doc->filepath), "w");
   if (!fp)
     die("unable to open file for write");
 
@@ -43,17 +43,19 @@ void docWrite(doc_t *doc) {
 }
 
 void docInit(doc_t *doc, char *filepath, bool isUserDoc, bool isReadOnly) {
-  memset(doc, 0, sizeof(doc_t));
-  doc->filepath = filepath;
+  myMemset(doc, 0, sizeof(doc_t));
   doc->isUserDoc = isUserDoc;
   doc->isReadOnly = isReadOnly;
+  arrayInit(&doc->filepath, sizeof(char));
+  arrayInsert(&doc->filepath, 0, filepath, strlen(filepath));
   arrayInit(&doc->contents, sizeof(char));
   arrayInit(&doc->undoStack, sizeof(command_t));
   arrayInit(&doc->searchResults, sizeof(int));
 }
 
 void docRead(doc_t *doc) {
-  FILE *fp = fopen(doc->filepath, "a+"); // create file if it doesn't
+  FILE *fp = fopen(cstringOf(&doc->filepath), "r"); // create file if it doesn't exist
+  // BAL: don't do this? FILE *fp = fopen(doc->filepath, "a+"); // create file if it doesn't exist
 
   if (!fp)
     die("unable to open file");

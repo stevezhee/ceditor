@@ -125,7 +125,7 @@ void renderAndAdvChar(font_t *font, char c) {
 }
 
 void unicodeInit(void) {
-  memset(unicode, UINT16_MAX, sizeof(unicode));
+  myMemset(unicode, UINT16_MAX, sizeof(unicode));
   for (int i = '!'; i <= '~'; ++i) {
     unicode[i] = i;
   }

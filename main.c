@@ -15,12 +15,19 @@
 #include "Util.h"
 #include "Widget.h"
 #include "Syntax.h"
+#include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 void insertCString(char *s);
 void insertString(char *s, uint len);
 void builtinInsertCString(char *s);
 void builtinInsertString(char *s, uint len);
 void builtinInsertChar(uchar c);
+void directoryBufInit();
+void docLoad(char *filepath);
+bool isFile(char *filename);
+bool isDirectory(char *filename);
 
 state_t st;
 widget_t *gui;
@@ -94,27 +101,12 @@ void setFocusFrame(int i) {
   }
 }
 
-void frameUpdate(frame_t *frame) {
-  assert(frame);
-  view_t *view = viewOf(frame);
-  assert(view);
-  doc_t *doc = docOf(view);
-  assert(doc);
-  arrayReinit(&frame->status);
-
-  snprintf(frame->status.start, arrayMaxSize(&frame->status), "<%s> %3d:%2d %s", editorModeDescr[view->mode],
-          view->cursor.row + 1, view->cursor.column, doc->filepath);
-  frame->status.numElems = strlen(frame->status.start);
-}
-
-void setFrameView(int refFrame, int refView) {
-  frame_t *frame = frameOf(refFrame);
+void setFrameView(int frameRef, int refView) {
+  frame_t *frame = frameOf(frameRef);
   assert(frame);
   assert(refView < frame->views.numElems);
 
   arraySetFocus(&frame->views, refView);
-
-  frameUpdate(frame);
 }
 
 void setFocusView(int refView) { setFrameView(focusFrameRef(), refView); }
@@ -124,20 +116,16 @@ void setFocusBuiltinsView(int ref) {
   setFocusView(ref);
 }
 
-#define FRAME_STATUS_SIZE 1024
-
 void frameInit(frame_t *frame) {
-  memset(frame, 0, sizeof(frame_t));
+  myMemset(frame, 0, sizeof(frame_t));
   frame->color = FRAME_COLOR;
 
   arrayInit(&frame->views, sizeof(view_t));
-  arrayInit(&frame->status, sizeof(char));
-  arrayGrow(&frame->status, FRAME_STATUS_SIZE);
 }
 
 void viewInit(view_t *view, uint refDoc) {
   assert(view);
-  memset(view, 0, sizeof(view_t));
+  myMemset(view, 0, sizeof(view_t));
   view->refDoc = refDoc;
 }
 
@@ -390,7 +378,7 @@ void stDraw(void) {
 }
 
 void windowInit(window_t *win, int width, int height) {
-  memset(win, 0, sizeof(window_t));
+  myMemset(win, 0, sizeof(window_t));
   win->window = dieIfNull(
       SDL_CreateWindow("Editor", 0, 0, width, height,
                        SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI));
@@ -427,23 +415,33 @@ int frameScrollY(frame_t *frame) {
   return view->scrollY;
 }
 
+void drawFrameStatus(frame_t *frame) {
+  view_t *view = viewOf(frame);
+  doc_t *doc = docOf(view);
+  char buf[1024];
+  size_t n = sizeof(buf) - 1;
+  buf[n] = '\0';
+  snprintf(buf, n, "<%s> %3d:%2d %s", editorModeDescr[view->mode], view->cursor.row + 1, view->cursor.column, cstringOf(&doc->filepath));
+  drawCString(buf, strlen(buf));
+}
+
 widget_t *frameWidget(int frameRef) {
   frame_t *frame = frameOf(frameRef);
   widget_t *textarea = wid(frameRef, scrollY(frameScrollY, frame,
                                       over(draw(drawFrameDoc, frame),
                                            draw(drawFrameCursor, frame))));
   widget_t *status =
-      over(draw(drawString, &frame->status), vspc(&st.font.lineSkip));
+      over(draw(drawFrameStatus, frame), vspc(&st.font.lineSkip));
   widget_t *background = color(&frame->color, over(box(), hspc(&frame->width)));
   return over(vcatr(textarea, status), background);
 }
 
 void message(char *s) {
-  int refFrame = focusFrameRef();
+  int frameRef = focusFrameRef();
   setFocusBuiltinsView(MESSAGE_BUF);
   insertNewElem();
   builtinInsertCString(s);
-  setFocusFrame(refFrame);
+  setFocusFrame(frameRef);
 }
 
 void helpBufInit(void);
@@ -457,15 +455,42 @@ void pushViewInit(int frameRef, int docRef)
   viewInit(view, docRef);
 }
 
+void builtinAppendCString(char *s) {
+  forwardEOF();
+  builtinInsertCString(s);
+}
+
+void buffersBufInit() {
+  setFocusBuiltinsView(BUFFERS_BUF);
+  doc_t *doc = focusDoc();
+  arrayReinit(&doc->contents);
+  for(int i = 0; i < st.docs.numElems; ++i)
+    {
+      doc_t *doc = arrayElemAt(&st.docs, i);
+      builtinAppendCString(cstringOf(&doc->filepath));
+      builtinAppendCString("\n");
+    }
+}
+
+void docLoad(char *filepath)
+{
+  // BAL: if filepath already loaded, do nothing
+  int i = st.docs.numElems;
+  doc_t *doc = arrayPushUninit(&st.docs);
+  docInit(doc, filepath, true, false);
+  docRead(doc);
+  pushViewInit(MAIN_FRAME, i);
+  pushViewInit(SECONDARY_FRAME, i);
+}
+
 void stInit(int argc, char **argv) {
   argc--;
   argv++;
   if (argc == 0) {
-    printf("no input files\n");
-    exit(0);
+    die("no input files\n");
   }
 
-  memset(&st, 0, sizeof(state_t));
+  myMemset(&st, 0, sizeof(state_t));
   arrayInit(&st.docs, sizeof(doc_t));
   arrayInit(&st.frames, sizeof(frame_t));
   arrayInit(&st.replace, sizeof(char));
@@ -481,9 +506,7 @@ void stInit(int argc, char **argv) {
   }
 
   for (int i = 0; i < argc; ++i) {
-    doc_t *doc = arrayPushUninit(&st.docs);
-    docInit(doc, argv[i], true, false);
-    docRead(doc);
+    docLoad(argv[i]);
   }
 
   for(int i = 0; i < NUM_BUILTIN_BUFFERS; ++i)
@@ -491,15 +514,9 @@ void stInit(int argc, char **argv) {
       pushViewInit(BUILTINS_FRAME, i);
     }
 
-  for(int i = NUM_BUILTIN_BUFFERS; i < NUM_BUILTIN_BUFFERS + argc; ++i)
-    {
-      pushViewInit(MAIN_FRAME, i);
-      pushViewInit(SECONDARY_FRAME, i);
-    }
-
-  frameUpdate(frameOf(MAIN_FRAME));
-  frameUpdate(frameOf(SECONDARY_FRAME));
-  frameUpdate(frameOf(BUILTINS_FRAME));
+  // frameUpdate(MAIN_FRAME);
+  // frameUpdate(SECONDARY_FRAME);
+  // frameUpdate(BUILTINS_FRAME);
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
     die(SDL_GetError());
@@ -517,6 +534,8 @@ void stInit(int argc, char **argv) {
   keysymInit();
   macrosInit();
   helpBufInit();
+  buffersBufInit();
+  directoryBufInit();
 
   setFocusBuiltinsView(HELP_BUF);
   setFocusFrame(MAIN_FRAME);
@@ -682,12 +701,12 @@ void mouseWheelEvent() { setFocusScrollY(st.event.wheel.y); }
 void doKeyPress(uchar c) { keyHandler[focusView()->mode][c](c); }
 
 void recordKeyPress(uchar c) {
-  int refFrame = focusFrameRef();
-  if (refFrame == BUILTINS_FRAME)
+  int frameRef = focusFrameRef();
+  if (frameRef == BUILTINS_FRAME)
     return;
   setFocusBuiltinsView(MACRO_BUF);
   builtinInsertChar(c);
-  setFocusFrame(refFrame);
+  setFocusFrame(frameRef);
 }
 
 void keyDownEvent() {
@@ -702,11 +721,6 @@ void keyDownEvent() {
   }
 }
 
-void stringAppendNull(string_t *s) {
-  char *c = arrayPushUninit(s);
-  *c = '\0';
-  arrayPop(s);
-}
 void doSearch(frame_t *frame, char *search) {
   assert(frame);
   assert(search);
@@ -714,8 +728,7 @@ void doSearch(frame_t *frame, char *search) {
   doc_t *doc = docOf(view);
   cursor_t *cursor = &view->cursor;
 
-  stringAppendNull(&doc->contents);
-  char *haystack = doc->contents.start;
+  char *haystack = cstringOf(&doc->contents);
   char *replace = dieIfNull(strdup(search));
   char *temp = replace;
   char *needle = strsep(&replace, "/");
@@ -974,6 +987,52 @@ void insertChar(uchar c) {
   forwardChar();
 }
 
+void enter() {
+  if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == BUFFERS_BUF)
+    {
+      int i = focusCursor()->row;
+      if (i >= st.docs.numElems) return;
+      if (i < NUM_BUILTIN_BUFFERS)
+        {
+          setFocusView(i);
+          return;
+        }
+      setFocusFrame(MAIN_FRAME);
+      setFocusView(i);
+      return;
+    }
+
+  if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == DIRECTORY_BUF)
+    {
+      backwardSOL();
+      char *s = focusDoc()->contents.start + focusCursor()->offset;
+      int n = distanceToEOL(s);
+      char filename[PATH_MAX + 1];
+      if (filename != strncpy(filename, s, n)) die("unrecognized filename");
+      filename[n] = '\0';
+      if (isDirectory(filename))
+        {
+          chdir(filename);
+          directoryBufInit();
+          return;
+        }
+      if (isFile(filename))
+        {
+          docLoad(filename);
+          buffersBufInit();
+          setFocusBuiltinsView(DIRECTORY_BUF);
+          setFocusFrame(MAIN_FRAME);
+          setFocusView(focusFrame()->views.numElems - 1);
+          return;
+        }
+      // otherwise
+      message("not a directory or regular file");
+      return;
+    }
+
+  setInsertMode();
+  insertChar('\n');
+}
 void insertNewline() {
   if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF)
     {
@@ -990,11 +1049,6 @@ void builtinInsertChar(uchar c) {
   forwardChar();
 }
 
-void builtinAppendCString(char *s) {
-  forwardEOF();
-  builtinInsertCString(s);
-}
-
 void helpAppendKeysym(uchar c, char *s) {
   #define HELP_BUF_SIZE 1024
   char buf[HELP_BUF_SIZE];
@@ -1002,10 +1056,58 @@ void helpAppendKeysym(uchar c, char *s) {
   builtinAppendCString(buf);
 }
 
+int fileMode(char *filename)
+{
+  struct stat fnst;
+  if (stat(filename, &fnst) != 0)
+    {
+      return -1;
+    }
+  return fnst.st_mode;
+}
+
+bool isDirectory(char *filename)
+{
+  return S_ISDIR(fileMode(filename));
+}
+
+bool isFile(char *filename)
+{
+  return S_ISREG(fileMode(filename));
+}
+
+void appendDirBufEntry(char *fn) {
+  builtinAppendCString(fn);
+  if (isDirectory(fn)) builtinAppendCString("/");
+}
+
+void directoryBufInit() {
+ 	struct dirent *dp;
+
+  setFocusBuiltinsView(DIRECTORY_BUF);
+  doc_t *doc = focusDoc();
+  arrayReinit(&doc->contents);
+
+  char dir[PATH_MAX + 1];
+  dieIfNull(getwd(dir));
+  builtinAppendCString(dir);
+
+	DIR *dfd = dieIfNull(opendir("."));
+  readdir(dfd); // skip "."
+  while((dp = readdir(dfd)) != NULL) {
+    builtinAppendCString("\n");
+    appendDirBufEntry(dp->d_name);
+  }
+  closedir(dfd);
+  backwardSOF();
+}
+
 void helpBufInit() {
   setFocusBuiltinsView(HELP_BUF);
   builtinAppendCString("Builtin Keys:\n");
   for (int i = 0; i < NUM_MODES; ++i) {
+    if (i == NAVIGATE_MODE) builtinAppendCString("Navigate Mode:\n");
+    if (i == INSERT_MODE) builtinAppendCString("Insert Mode:\n");
     for (int c = 0; c < NUM_KEYS; ++c) {
       if (!keyHandlerHelp[i][c])
         continue;
@@ -1013,6 +1115,7 @@ void helpBufInit() {
     }
   }
 
+  builtinAppendCString("Macros:\n");
   for (int i = 0; i < NUM_BUILTIN_MACROS; ++i) {
     helpAppendKeysym(builtinMacros[i][0], builtinMacrosHelp[i]);
   }
@@ -1107,12 +1210,12 @@ void redo() {
 }
 
 void copy(char *s, uint len) {
-  int refFrame = focusFrameRef();
+  int frameRef = focusFrameRef();
   setFocusBuiltinsView(COPY_BUF);
   insertNewElem();
   builtinInsertString(s, len);
   setClipboardText(focusDoc()->contents.start);
-  setFocusFrame(refFrame);
+  setFocusFrame(frameRef);
 }
 
 void cut() {
@@ -1159,17 +1262,17 @@ void doNothing(uchar c) {
 }
 
 void stopRecording() {
-  int refFrame = focusFrameRef();
+  int frameRef = focusFrameRef();
   st.isRecording = false;
   setFocusBuiltinsView(MACRO_BUF);
   backwardStartOfElem();
-  setFocusFrame(refFrame);
+  setFocusFrame(frameRef);
 }
 
 void startOrStopRecording() {
-  int refFrame = focusFrameRef();
+  int frameRef = focusFrameRef();
 
-  if (st.isRecording || refFrame == BUILTINS_FRAME) {
+  if (st.isRecording || frameRef == BUILTINS_FRAME) {
     stopRecording();
     return;
   }
@@ -1179,13 +1282,13 @@ void startOrStopRecording() {
   setFocusBuiltinsView(MACRO_BUF);
   insertNewElem();
   // BAL: if 1st line in macro buf is empty delete it (or reuse it)
-  setFocusFrame(refFrame);
+  setFocusFrame(frameRef);
 }
 
 void stopRecordingOrPlayMacro() {
-  int refFrame = focusFrameRef();
+  int frameRef = focusFrameRef();
 
-  if (st.isRecording || refFrame == BUILTINS_FRAME ||
+  if (st.isRecording || frameRef == BUILTINS_FRAME ||
       focusViewRef() == MACRO_BUF) {
     stopRecording();
     return;
@@ -1199,11 +1302,11 @@ void stopRecordingOrPlayMacro() {
 
   if (!doc->contents.start) {
     message("no macros to play");
-    setFocusFrame(refFrame);
+    setFocusFrame(frameRef);
     return;
   }
 
-  setFocusFrame(refFrame);
+  setFocusFrame(frameRef);
   playMacroCString(doc->contents.start + view->cursor.offset);
 }
 
@@ -1295,7 +1398,7 @@ int indentLine() {
   int x = distanceToIndent(s->start + offset, arrayTop(s));
   int n = INDENT_LENGTH - x % INDENT_LENGTH;
   char buf[INDENT_LENGTH];
-  memset(buf, ' ', n);
+  myMemset(buf, ' ', n);
   insertString(buf, n);
   return n;
 }
@@ -1495,6 +1598,12 @@ int main(int argc, char **argv) {
   //    SDL_AddTimer(1000, timerInit, NULL);
   while (SDL_WaitEvent(&st.event)) {
     switch (st.event.type) {
+    case SDL_KEYDOWN:
+      keyDownEvent();
+      break;
+    case SDL_QUIT:
+      quitEvent();
+      break;
     case SDL_WINDOWEVENT:
       windowEvent();
       break;
@@ -1510,20 +1619,13 @@ int main(int argc, char **argv) {
     case SDL_MOUSEMOTION:
       mouseMotionEvent();
       break;
-    case SDL_KEYDOWN:
-      keyDownEvent();
-      break;
-    case SDL_QUIT:
-      quitEvent();
-      break;
     case SDL_USEREVENT:
       //                timerEvent();
       break;
     default:
       break;
     }
-    frameUpdate(focusFrame());
-    stDraw();
+    stDraw(); // BAL: only do when needed
   }
   return 0;
 }
@@ -1531,32 +1633,33 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
-    do brace insertion on different lines
+    Fix macros
     reload file when changed outside of editor (inotify?  polling?)
     periodically save all (modified) files
     add pretty-print hotkey
+    do brace insertion on different lines
     remember your place in the file on close (restore all settings/state?)
-    modify frame widths based on columns (e.g. focus doc frame is 80/120 chars)
-    Goto line
     Scroll when mouse selection goes off screen command line
-    args/config to set config items (e.g. demo mode)
-    status bar that has modified,etc.
     cut/copy/paste with mouse
     create new file
+    Hook Cut/Copy/Paste into system Cut/Copy/Paste (done?)
+    Goto line
+    tab completion
+    sort lines
+    check spelling
+    modify frame widths based on columns (e.g. focus doc frame is 80/120 chars)
+    args/config to set config items (e.g. demo mode)
+    status bar that has modified, etc.
     input screen (for search, paste, load, tab completion, etc.)
-    Hook Cut/Copy/Paste into system Cut/Copy/Paste
     support editor API
     Name macro
     highlight compile errors/warnings
     jump to next error
-    tab completion
-    sort lines
-    check spelling
     jump to prev/next placeholders
     jump to prev/next change
     collapse/expand selection (code folding)
-    (tons of) optimizations
     make builtin buffers readonly (except config and search?)
+    (tons of) optimizations
 
 VIS:
     make font smaller in non-focused frames

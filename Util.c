@@ -12,12 +12,24 @@ SDL_Renderer *renderer;
 
 char *builtinBufferTitle[NUM_BUILTIN_BUFFERS] = {
     "*help",   "*messages", "*buffers", "*macros",
-    "*copies", "*searches", "*config"};
+    "*copies", "*searches", "*config", "*directory"};
 bool builtinBufferReadOnly[NUM_BUILTIN_BUFFERS] = {true, true,  true, true,
-                                                   true, false, false};
+                                                   true, false, false, true};
 
 char *editorModeDescr[NUM_MODES] = {"NAV", "INS"};
 
+void myMemcpy(void *dst, const void *src, size_t n)
+{
+  // BAL: inline
+  // printf("memcpy\n");
+  memcpy(dst, src, n); // BAL: check return value
+}
+void myMemset(void *b, int c, size_t len)
+{
+  // BAL: inline
+  // printf("memset\n");
+  memset(b, c, len); // BAL: check return value
+}
 void die(const char *msg) {
   fprintf(stdout, "error: %s\n", msg);
   exit(1);

@@ -144,12 +144,11 @@ tok_begin:
   return unknownColor;
 }
 
-void drawString(string_t *s) {
-  if (!s)
-    return;
+void drawCString(char *s, int n)
+{
   assert(s);
-  if (!s->start)
-    return;
+  assert(n >= 0);
+
   uchar c;
   SDL_Texture *txtr;
   SDL_Rect rect;
@@ -158,8 +157,8 @@ void drawString(string_t *s) {
   rect.w = context.font->charSkip;
   rect.h = context.font->lineSkip;
 
-  char *p = s->start;
-  char *q = arrayTop(s);
+  char *p = s;
+  char *q = s + n;
   tokSt_t acc = TOKBEGIN;
 
   while (p < q) {
@@ -185,5 +184,14 @@ void drawString(string_t *s) {
       rect.x += rect.w;
     }
   }
+
+}
+void drawString(string_t *s) {
+  if (!s)
+    return;
+  assert(s);
+  if (!s->start)
+    return;
+  drawCString(s->start, s->numElems);
 }
 

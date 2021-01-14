@@ -45,6 +45,8 @@ char *getClipboardText(void);
 void setClipboardText(const char *text);
 int numLinesString(char *s, int len);
 void message(char *s);
+void myMemcpy(void *dst, const void *src, size_t n);
+void myMemset(void *b, int c, size_t len);
 
 typedef enum { NAVIGATE_MODE, INSERT_MODE, NUM_MODES } editorMode_t;
 extern char *editorModeDescr[NUM_MODES];
@@ -105,6 +107,7 @@ enum {
   COPY_BUF,
   SEARCH_BUF,
   CONFIG_BUF,
+  DIRECTORY_BUF,
   NUM_BUILTIN_BUFFERS
 }; // BAL: DIRECTORY_BUF for loading files?  or just put in config?
 
@@ -154,7 +157,7 @@ typedef dynamicArray_t undoStack_t;    // contains commands
 typedef dynamicArray_t searchBuffer_t; // contains result offsets
 
 struct doc_s {
-  char *filepath;
+  string_t filepath;
   bool isUserDoc;
   bool isReadOnly;
   bool modified;
@@ -202,7 +205,6 @@ struct frame_s {
   color_t color;
   int height;
   int width;
-  string_t status;
 };
 
 typedef struct frame_s frame_t;

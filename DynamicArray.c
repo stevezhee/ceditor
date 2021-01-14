@@ -29,7 +29,8 @@ void arrayGrow(dynamicArray_t *arr, int maxElems) {
   int sz = arr->elemSize * n;
 
   arr->start = dieIfNull(realloc(arr->start, sz));
-  // don't need to zero memory memset(arr->start + oldSize, 0, sz - oldSize);
+  // don't need to zero memory myMemset(arr->start + oldSize, 0, sz - oldSize);
+  // printf("arrayGrow %p %d\n", arr, sz);
   arr->maxElems = n;
 }
 
@@ -40,7 +41,7 @@ void arrayReinit(dynamicArray_t *arr) {
 }
 
 void arrayInit(dynamicArray_t *arr, int elemSize) {
-  memset(arr, 0, sizeof(dynamicArray_t));
+  myMemset(arr, 0, sizeof(dynamicArray_t));
   arr->elemSize = elemSize;
 }
 
@@ -95,7 +96,7 @@ void arrayInsert(dynamicArray_t *arr, int offset, void *s, int len) {
   void *p = arrayElemAt(arr, offset);
 
   memmove(p + sz, p, top - p);
-  memcpy(p, s, sz);
+  myMemcpy(p, s, sz);
 }
 
 void *arrayPushUninit(dynamicArray_t *arr) {
@@ -114,7 +115,7 @@ void *arrayPushUninit(dynamicArray_t *arr) {
 void arrayPush(dynamicArray_t *arr, void *elem) {
   assert(arr);
   assert(elem);
-  memcpy(arrayPushUninit(arr), elem, sizeof(arr->elemSize));
+  myMemcpy(arrayPushUninit(arr), elem, sizeof(arr->elemSize));
 }
 
 void *arrayPop(dynamicArray_t *arr) {
@@ -135,3 +136,11 @@ void arraySetFocus(dynamicArray_t *arr, int i) {
 void arrayFree(dynamicArray_t *arr) {
   free(arr->start);
 }
+
+char *cstringOf(string_t *s) {
+  char *c = arrayPushUninit(s);
+  *c = '\0';
+  arrayPop(s);
+  return s->start;
+}
+

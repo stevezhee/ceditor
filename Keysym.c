@@ -19,7 +19,7 @@ char *macro[256];
 char *macroHelp[256];
 
 void macrosInit(void) {
-  memset(macro, 0, sizeof(macro));
+  myMemset(macro, 0, sizeof(macro));
   for (int i = 0; i < NUM_BUILTIN_MACROS; ++i) {
     macro[builtinMacros[i][0]] = &builtinMacros[i][1];
   }
@@ -39,7 +39,7 @@ char *keysymName(uchar key) {
 }
 
 void keyNameInit(void) {
-  memset(keyName, 0, sizeof(keyName));
+  myMemset(keyName, 0, sizeof(keyName));
   keyName['\n'] = "\\n";
   keyName['\t'] = "\\t";
   keyName['\''] = "\\'";
@@ -116,7 +116,6 @@ char builtinMacros[NUM_BUILTIN_MACROS][MAX_BUILTIN_MACRO_LEN] = {
     {'e', '$', '\0'},
     {'I', '0', 'i', '\0'},
     {' ', 'i', ' ', '\0'},
-    {'\n', 'i', '\n', '\0'},
     {'A', '$', 'i', '\0'},
     {'o', '$', '\n', '\0'},
     {'O', '0', '\n', KEY_LEFT, '\0'},
@@ -137,7 +136,6 @@ char *builtinMacrosHelp[NUM_BUILTIN_MACROS] = {
     "move to end of line",
     "insert at start of line",
     "insert space",
-    "insert newline",
     "append at end of line",
     "insert new line after current line",
     "insert new line before current line",
@@ -151,7 +149,7 @@ char *builtinMacrosHelp[NUM_BUILTIN_MACROS] = {
 };
 
 void keysymInit(void) {
-  memset(keyHandlerHelp, 0, sizeof(keyHandlerHelp));
+  myMemset(keyHandlerHelp, 0, sizeof(keyHandlerHelp));
   keyNameInit();
 
   for (int i = 0; i < NUM_KEYS; ++i) {
@@ -167,6 +165,8 @@ void keysymInit(void) {
 
   keyHandler[NAVIGATE_MODE]['\t'] = (keyHandler_t)indent;
   keyHandlerHelp[NAVIGATE_MODE]['\t'] = "indent region";
+  keyHandler[NAVIGATE_MODE]['\n'] = (keyHandler_t)enter;
+  keyHandlerHelp[NAVIGATE_MODE]['\n'] = "insert newline";
   keyHandler[NAVIGATE_MODE][KEY_SHIFT_TAB] = (keyHandler_t)outdent;
   keyHandlerHelp[NAVIGATE_MODE][KEY_SHIFT_TAB] = "outdent region";
 

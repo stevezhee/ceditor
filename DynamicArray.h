@@ -27,5 +27,6 @@ void *arrayTop(dynamicArray_t *arr);
 void arrayFree(dynamicArray_t *arr);
 bool arrayAtTop(dynamicArray_t *arr);
 int arrayMaxSize(dynamicArray_t *arr);
+char *cstringOf(string_t *s);
 
 #endif /* DynamicArray_h */

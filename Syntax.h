@@ -35,6 +35,7 @@ typedef enum {
   IN_CHAR_ESC
 } tokSt_t;
 
+void drawCString(char *s, int n);
 void drawString(string_t *s);
 
 #endif /* Syntax_h */

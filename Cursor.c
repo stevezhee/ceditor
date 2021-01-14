@@ -9,10 +9,10 @@
 #include "Cursor.h"
 
 void cursorCopy(cursor_t *dst, cursor_t *src) {
-  memcpy(dst, src, sizeof(cursor_t));
+  myMemcpy(dst, src, sizeof(cursor_t));
 }
 
-void cursorInit(cursor_t *c) { memset(c, 0, sizeof(cursor_t)); }
+void cursorInit(cursor_t *c) { myMemset(c, 0, sizeof(cursor_t)); }
 
 void cursorSetOffsetString(cursor_t *cursor, int offset, char *s0, int len) {
   offset = clamp(0, offset, len);
