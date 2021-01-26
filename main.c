@@ -426,11 +426,6 @@ void drawFrameStatus(int frameRef) {
   drawCString(buf, strlen(buf));
 }
 
-frameColor(int frameRef)
-{
-  return frameOf(frameRef)->color;
-}
-
 widget_t *frameWidget(int frameRef) {
   frame_t *frame = frameOf(frameRef); // BAL: remove
   widget_t *textarea = wid(frameRef, scrollY(frameScrollY, frameRef,
