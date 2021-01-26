@@ -1081,25 +1081,34 @@ void appendDirBufEntry(char *fn) {
   builtinAppendCString(fn);
   if (isDirectory(fn)) builtinAppendCString("/");
 }
+int direntSort(const struct dirent **d1, const struct dirent **d2)
+{
+  return strcasecmp((*d1)->d_name, (*d2)->d_name);
+}
 
 void directoryBufInit() {
- 	struct dirent *dp;
+  char dir[PATH_MAX + 1];
+  dieIfNull(getwd(dir));
+  struct dirent **namelist;
+
+  int n = scandir(dir, &namelist, NULL, direntSort);
+
+  if (n < 0) die("unable to scan directory");
 
   setFocusBuiltinsView(DIRECTORY_BUF);
   doc_t *doc = focusDoc();
   arrayReinit(&doc->contents);
-
-  char dir[PATH_MAX + 1];
-  dieIfNull(getwd(dir));
   builtinAppendCString(dir);
 
-	DIR *dfd = dieIfNull(opendir("."));
-  readdir(dfd); // skip "."
-  while((dp = readdir(dfd)) != NULL) {
-    builtinAppendCString("\n");
-    appendDirBufEntry(dp->d_name);
-  }
-  closedir(dfd);
+  int i = 0;
+  while(i < n)
+    {
+      builtinAppendCString("\n");
+      appendDirBufEntry(namelist[i]->d_name);
+      free(namelist[i]);
+      i++;
+    }
+  free(namelist);
   backwardSOF();
 }
 
@@ -1634,6 +1643,7 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
+    allow searching in builtin buffers
     reload file when changed outside of editor (inotify?  polling? I think polling, it's simpler)
     periodically save all (modified) files
     add pretty-print hotkey
@@ -1662,11 +1672,11 @@ CORE:
     (tons of) optimizations
 
 VIS:
+    Put border on frames
     make font smaller in non-focused frames
     italics, underline and bold in syntax highlighting
     reserved words syntax highlighting
     context sensitive syntax highlighting (parser)
-    Put border on frames
     Make the active frame the biggest (both in width and font size)
     Make builtin frame very thin when not in use
     Make frame widths resizeable
@@ -1684,6 +1694,7 @@ MACRO:
     select all
 
 DONE:
+sort directories by name
 Search and replace
 add save/build hotkey
 insert both open/close characters (e.g. "" or {}).  If selection is on, use
