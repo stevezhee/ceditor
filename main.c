@@ -999,7 +999,7 @@ void enter() {
           return;
         }
       setFocusFrame(MAIN_FRAME);
-      setFocusView(i);
+      setFocusView(i - NUM_BUILTIN_BUFFERS);
       return;
     }
 
