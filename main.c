@@ -404,18 +404,19 @@ void insertNewElem() {
   builtinInsertString("\0\n", 2);
 }
 
-void drawFrameCursor(frame_t *frame) { drawCursorOrSelection(frame); }
+void drawFrameCursor(int frameRef) { drawCursorOrSelection(frameOf(frameRef)); }
 
-void drawFrameDoc(frame_t *frame) {
-  drawString(&docOf(viewOf(frame))->contents);
+void drawFrameDoc(int frameRef) {
+  drawString(&docOf(viewOf(frameOf(frameRef)))->contents);
 }
 
-int frameScrollY(frame_t *frame) {
-  view_t *view = viewOf(frame);
+int frameScrollY(int frameRef) {
+  view_t *view = viewOf(frameOf(frameRef));
   return view->scrollY;
 }
 
-void drawFrameStatus(frame_t *frame) {
+void drawFrameStatus(int frameRef) {
+  frame_t *frame = frameOf(frameRef);
   view_t *view = viewOf(frame);
   doc_t *doc = docOf(view);
   char buf[1024];
@@ -425,13 +426,18 @@ void drawFrameStatus(frame_t *frame) {
   drawCString(buf, strlen(buf));
 }
 
+frameColor(int frameRef)
+{
+  return frameOf(frameRef)->color;
+}
+
 widget_t *frameWidget(int frameRef) {
-  frame_t *frame = frameOf(frameRef);
-  widget_t *textarea = wid(frameRef, scrollY(frameScrollY, frame,
-                                      over(draw(drawFrameDoc, frame),
-                                           draw(drawFrameCursor, frame))));
+  frame_t *frame = frameOf(frameRef); // BAL: remove
+  widget_t *textarea = wid(frameRef, scrollY(frameScrollY, frameRef,
+                                      over(draw(drawFrameDoc, frameRef),
+                                           draw(drawFrameCursor, frameRef))));
   widget_t *status =
-      over(draw(drawFrameStatus, frame), vspc(&st.font.lineSkip));
+      over(draw(drawFrameStatus, frameRef), vspc(&st.font.lineSkip));
   widget_t *background = color(&frame->color, over(box(), hspc(&frame->width)));
   return over(vcatr(textarea, status), background);
 }
@@ -1633,8 +1639,7 @@ int main(int argc, char **argv) {
 /*
 TODO:
 CORE:
-    Fix macros
-    reload file when changed outside of editor (inotify?  polling?)
+    reload file when changed outside of editor (inotify?  polling? I think polling, it's simpler)
     periodically save all (modified) files
     add pretty-print hotkey
     do brace insertion on different lines

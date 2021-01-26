@@ -192,7 +192,7 @@ void widgetAt(widget_t *widget, int x, int y) {
     widgetAt(widget->b.child, x, y);
     return;
   case SCROLL_Y: {
-    int dy = widget->a.scrollYFun(widget->c.data);
+    int dy = widget->a.scrollYFun(widget->c.ref);
     context.y += dy;
     widgetAt(widget->b.child, x, y + dy);
     return;
@@ -285,7 +285,7 @@ void widgetDraw(widget_t *widget) {
   }
   case SCROLL_Y: {
     int dy = context.dy;
-    context.dy += widget->a.scrollYFun(widget->c.data);
+    context.dy += widget->a.scrollYFun(widget->c.ref);
     widgetDraw(widget->b.child);
     context.dy = dy;
     return;
@@ -310,7 +310,7 @@ void widgetDraw(widget_t *widget) {
     return;
   }
   case DRAW:
-    widget->a.drawFun(widget->b.data);
+    widget->a.drawFun(widget->b.ref);
     return;
   default:
     assert(widget->tag == VSPC || widget->tag == HSPC);

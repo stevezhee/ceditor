@@ -39,16 +39,18 @@ struct widget_s {
     int *color;
     font_t **font;
     widget_t *child;
-    void (*drawFun)(void *);
-    int (*scrollYFun)(void *);
+    void (*drawFun)(int);
+    int (*scrollYFun)(int);
     void *data;
   } a;
   union {
     widget_t *child;
     void *data;
+    int ref;
   } b;
   union {
     void *data;
+    int ref;
   } c;
 };
 
@@ -80,11 +82,11 @@ void drawBox(void *_unused);
 #define hcatr(a, b) node(HCATR, a, b)
 #define vcat(a, b) node(VCAT, a, b)
 #define vcatr(a, b) node(VCATR, a, b)
-#define draw(a, b) node(DRAW, a, b)
+#define draw(a, b) node(DRAW, a, (void *)(uintptr_t)(b))
 #define box() node(DRAW, drawBox, NULL)
 #define color(a, b) singleton(COLOR, a, b)
 #define font(a, b) singleton(FONT, a, b)
-#define scrollY(a, c, b) singleton2(SCROLL_Y, a, b, c)
+#define scrollY(a, c, b) singleton2(SCROLL_Y, a, b, (void *)(uintptr_t)(c))
 #define hspc(len) leaf(HSPC, len)
 #define vspc(len) leaf(VSPC, len)
 
