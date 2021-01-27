@@ -426,15 +426,22 @@ void drawFrameStatus(int frameRef) {
   drawCString(buf, strlen(buf));
 }
 
+int scrollBarColor = 0x000000ff;
+int scrollBarHeight = 5;
+int scrollBarWidth = 5;
+
 widget_t *frameWidget(int frameRef) {
   frame_t *frame = frameOf(frameRef); // BAL: remove
-  widget_t *textarea = wid(frameRef, scrollY(frameScrollY, frameRef,
+  widget_t *textarea = scrollY(frameScrollY, frameRef,
                                       over(draw(drawFrameDoc, frameRef),
-                                           draw(drawFrameCursor, frameRef))));
+                                           draw(drawFrameCursor, frameRef)));
   widget_t *status =
-      over(draw(drawFrameStatus, frameRef), vspc(&st.font.lineSkip));
+    over(draw(drawFrameStatus, frameRef), vspc(&st.font.lineSkip));
   widget_t *background = color(&frame->color, over(box(), hspc(&frame->width)));
-  return over(vcatr(textarea, status), background);
+
+  widget_t *hScrollBar = color(&scrollBarColor, over(box (), vspc(&scrollBarHeight)));
+  widget_t *vScrollBar = color(&scrollBarColor, over(box (), hspc(&scrollBarWidth)));
+  return wid(frameRef, over(vcatr(hcatr(vcatr(textarea, hScrollBar), vScrollBar), status), background));
 }
 
 void message(char *s) {
@@ -528,7 +535,7 @@ void stInit(int argc, char **argv) {
 
   initFont(&st.font, INIT_FONT_FILE, INIT_FONT_SIZE);
 
-  gui = hcat(frameWidget(0), hcat(frameWidget(1), frameWidget(2)));
+  gui = hcat(frameWidget(SECONDARY_FRAME), hcat(frameWidget(MAIN_FRAME), frameWidget(BUILTINS_FRAME)));
 
   stResize();
 
@@ -1669,10 +1676,10 @@ CORE:
     jump to prev/next change
     collapse/expand selection (code folding)
     make builtin buffers readonly (except config and search?)
+    vertical and horizontal scroll bars
     (tons of) optimizations
 
 VIS:
-    Put border on frames
     make font smaller in non-focused frames
     italics, underline and bold in syntax highlighting
     reserved words syntax highlighting
@@ -1694,6 +1701,7 @@ MACRO:
     select all
 
 DONE:
+Put border on frames
 sort directories by name
 Search and replace
 add save/build hotkey
