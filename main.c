@@ -472,12 +472,15 @@ void buffersBufInit() {
   setFocusBuiltinsView(BUFFERS_BUF);
   doc_t *doc = focusDoc();
   arrayReinit(&doc->contents);
-  for(int i = 0; i < st.docs.numElems; ++i)
+  doc_t *buffer = arrayElemAt(&st.docs, 0);
+  builtinAppendCString(cstringOf(&buffer->filepath));
+  for(int i = 1; i < st.docs.numElems; ++i)
     {
-      doc_t *doc = arrayElemAt(&st.docs, i);
-      builtinAppendCString(cstringOf(&doc->filepath));
       builtinAppendCString("\n");
+      buffer = arrayElemAt(&st.docs, i);
+      builtinAppendCString(cstringOf(&buffer->filepath));
     }
+  cstringOf(&focusDoc()->contents);
 }
 
 void docLoad(char *filepath)
@@ -999,7 +1002,6 @@ void enter() {
   if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == BUFFERS_BUF)
     {
       int i = focusCursor()->row;
-      if (i >= st.docs.numElems) return;
       if (i < NUM_BUILTIN_BUFFERS)
         {
           setFocusView(i);
@@ -1034,6 +1036,7 @@ void enter() {
           return;
         }
       // otherwise
+      message(filename);
       message("not a directory or regular file");
       return;
     }
@@ -1088,6 +1091,7 @@ void appendDirBufEntry(char *fn) {
   builtinAppendCString(fn);
   if (isDirectory(fn)) builtinAppendCString("/");
 }
+
 int direntSort(const struct dirent **d1, const struct dirent **d2)
 {
   return strcasecmp((*d1)->d_name, (*d2)->d_name);
@@ -1116,6 +1120,7 @@ void directoryBufInit() {
       i++;
     }
   free(namelist);
+  cstringOf(&focusDoc()->contents);
   backwardSOF();
 }
 
