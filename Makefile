@@ -11,6 +11,7 @@ run: ceditor
 
 ceditor: $(OFILES)
 	clang $(LIBS) -o $@ $^
+	cp ceditor ~/.local/bin
 
 %.o: %.c $(HFILES)
 	clang -c $(CFLAGS) $<

@@ -88,7 +88,7 @@ void setTextureColorMod(SDL_Texture *t, color_t c);
 #define INIT_WINDOW_WIDTH 2488
 #define INIT_WINDOW_HEIGHT 1300
 #define INIT_FONT_SIZE 20
-#define INIT_FONT_FILE "./assets/SourceCodePro-Semibold.ttf"
+#define INIT_FONT_FILE "/Library/Fonts/SourceCodePro-Semibold.ttf"
 #define SELECTION_RECT_GAP 8
 #define AUTO_SCROLL_HEIGHT 4
 
