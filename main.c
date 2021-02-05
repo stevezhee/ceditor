@@ -28,6 +28,10 @@ void directoryBufInit();
 void docLoad(char *filepath);
 bool isFile(char *filename);
 bool isDirectory(char *filename);
+void recomputeSearch();
+bool searchActive(); // BAL: remove?
+int searchFrameRef = 0;
+bool isSearchFocus();
 
 state_t st;
 widget_t *gui;
@@ -61,6 +65,8 @@ int numViews() { return focusFrame()->views.numElems; }
 
 doc_t *docOf(view_t *view) { return arrayElemAt(&st.docs, view->refDoc); }
 
+int focusDocRef() { return focusView()->refDoc; }
+
 doc_t *focusDoc() { return docOf(focusView()); }
 
 cursor_t *focusCursor() { return &focusView()->cursor; }
@@ -68,6 +74,14 @@ cursor_t *focusCursor() { return &focusView()->cursor; }
 cursor_t *focusSelection() { return &focusView()->selection; }
 
 bool selectionActive(view_t *view) { return (view->selectMode != NO_SELECT); }
+
+int searchDocRef = 0;
+
+void setupSearchFocus()
+{
+  searchDocRef = focusDocRef();
+  searchFrameRef = focusFrameRef();
+}
 
 void frameResize(int frameRef) {
   frame_t *frame = frameOf(frameRef);
@@ -80,7 +94,10 @@ void frameResize(int frameRef) {
     w /= 2;
 
   frame->width = w;
-  frame->height = st.window.height - st.font.lineSkip;
+
+  int h = st.window.height - st.font.lineSkip;
+
+  frame->height = h;
 }
 
 void setFocusFrame(int i) {
@@ -93,6 +110,7 @@ void setFocusFrame(int i) {
   frame_t *frame = frameOf(j);
   frame->color = FRAME_COLOR;
   arraySetFocus(&st.frames, i);
+
   frame = frameOf(i);
   frame->color = FOCUS_FRAME_COLOR;
 
@@ -109,7 +127,9 @@ void setFrameView(int frameRef, int refView) {
   arraySetFocus(&frame->views, refView);
 }
 
-void setFocusView(int refView) { setFrameView(focusFrameRef(), refView); }
+void setFocusView(int refView) {
+  setFrameView(focusFrameRef(), refView);
+}
 
 void setFocusBuiltinsView(int ref) {
   setFocusFrame(BUILTINS_FRAME);
@@ -350,18 +370,24 @@ bool cursorEq(cursor_t *a, cursor_t *b) {
   return (a->row == b->row && a->column == b->column);
 }
 
-bool searchActive(frame_t *frame) {
-  // if the doc in the builtins frame is search
-  // and this isn't the searches view
-  return frameOf(BUILTINS_FRAME)->views.offset == SEARCH_BUF &&
-         frame->views.offset != SEARCH_BUF;
+// BAL: not needed??
+// bool searchActive() {
+// return true;
+  //return searchIsActive;
+  // return (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF);
+// }
+
+bool isSearchDocRef(int docRef)
+{
+  return docRef == searchDocRef;
 }
 
-void drawCursorOrSelection(frame_t *frame) {
+void drawCursorOrSelection(int frameRef) {
+  frame_t *frame = frameOf(frameRef);
   view_t *view = viewOf(frame);
-  if (searchActive(frame)) {
+  if (isSearchDocRef(view->refDoc)) {
     drawSearch(view);
-  }
+    }
   if (selectionActive(view)) {
     drawSelection(view);
     return;
@@ -404,7 +430,7 @@ void insertNewElem() {
   builtinInsertString("\0\n", 2);
 }
 
-void drawFrameCursor(int frameRef) { drawCursorOrSelection(frameOf(frameRef)); }
+void drawFrameCursor(int frameRef) { drawCursorOrSelection(frameRef); }
 
 void drawFrameDoc(int frameRef) {
   drawString(&docOf(viewOf(frameOf(frameRef)))->contents);
@@ -439,8 +465,8 @@ widget_t *frameWidget(int frameRef) {
     over(draw(drawFrameStatus, frameRef), vspc(&st.font.lineSkip));
   widget_t *background = color(&frame->color, over(box(), hspc(&frame->width)));
 
-  widget_t *hScrollBar = color(&scrollBarColor, over(box (), vspc(&scrollBarHeight)));
-  widget_t *vScrollBar = color(&scrollBarColor, over(box (), hspc(&scrollBarWidth)));
+  widget_t *hScrollBar = color(&scrollBarColor, over(box(), vspc(&scrollBarHeight)));
+  widget_t *vScrollBar = color(&scrollBarColor, over(box(), hspc(&scrollBarWidth)));
   return wid(frameRef, over(vcatr(hcatr(vcatr(textarea, hScrollBar), vScrollBar), status), background));
 }
 
@@ -524,10 +550,6 @@ void stInit(int argc, char **argv) {
     {
       pushViewInit(BUILTINS_FRAME, i);
     }
-
-  // frameUpdate(MAIN_FRAME);
-  // frameUpdate(SECONDARY_FRAME);
-  // frameUpdate(BUILTINS_FRAME);
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
     die(SDL_GetError());
@@ -732,9 +754,10 @@ void keyDownEvent() {
   }
 }
 
-void doSearch(frame_t *frame, char *search) {
-  assert(frame);
+void doSearch(char *search) {
   assert(search);
+  frame_t *frame = frameOf(searchFrameRef);
+  assert(frame);
   view_t *view = viewOf(frame);
   doc_t *doc = docOf(view);
   cursor_t *cursor = &view->cursor;
@@ -813,33 +836,18 @@ void recomputeSearch() {
   if (!search)
     return;
 
-  // search main frame doc
-  frame_t *frame = frameOf(MAIN_FRAME);
-  doc_t *doc = docOf(viewOf(frame));
-  doSearch(frame, search);
+  doSearch(search);
 
-  // search secondary frame doc
-  frame = frameOf(SECONDARY_FRAME);
-  doc_t *doc1 = docOf(viewOf(frame));
-  doSearch(frame, search);
 }
 
 void updateBuiltinsState(bool isModify) {
-  int frameRef = focusFrameRef();
-
-  if (frameRef != BUILTINS_FRAME) {
-    if (isModify)
-      resetSearch();
-    return;
+  if (isModify) {
+    resetSearch();
   }
 
-  switch (focusViewRef()) {
-  case SEARCH_BUF:
+  if (isSearchFocus()) {
     recomputeSearch();
-    break;
-  default:
-    // do nothing
-    break;
+    return;
   }
 }
 
@@ -973,6 +981,7 @@ void insertString(char *s, uint len) {
   assert(s);
   if (len <= 0)
     return;
+
   docPushInsert(focusDoc(), focusCursor()->offset, s, len);
 }
 
@@ -1044,14 +1053,15 @@ void enter() {
   setInsertMode();
   insertChar('\n');
 }
+
 void insertNewline() {
-  if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF)
-    {
-      setFocusFrame(MAIN_FRAME);
-      setNavigateMode();
-      forwardSearch();
-      return;
-    }
+  /* if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF) // BAL: SEARCH remove? */
+  /*   { */
+  /*     setFocusFrame(MAIN_FRAME); */
+  /*     setNavigateMode(); */
+  /*     forwardSearch(); */
+  /*     return; */
+  /*   } */
   insertChar('\n');
 }
 
@@ -1333,12 +1343,20 @@ void stopRecordingOrPlayMacro() {
 }
 
 void forwardSearch() {
+  if (isSearchFocus()) {
+    setFocusFrame(searchFrameRef);
+  }
+
+  setupSearchFocus();
+
+  int docRef = focusDocRef();
   doc_t *doc = focusDoc();
   searchBuffer_t *results = &doc->searchResults;
-  if (results->numElems == 0) {
-    recomputeSearch();
-    return;
-  }
+
+  recomputeSearch(); // BAL: do only when necessary
+
+  if (results->numElems == 0) return;
+
   cursor_t *cursor = focusCursor();
 
   for (int i = 0; i < results->numElems; ++i) {
@@ -1353,12 +1371,20 @@ void forwardSearch() {
 }
 
 void backwardSearch() {
+  if (isSearchFocus()) {
+    setFocusFrame(searchFrameRef);
+  }
+
+  setupSearchFocus();
+
+  int docRef = focusDocRef();
   doc_t *doc = focusDoc();
   searchBuffer_t *results = &doc->searchResults;
-  if (results->numElems == 0) {
-    recomputeSearch();
-    return;
-  }
+
+  recomputeSearch(); // BAL: do only when necessary
+
+  if (results->numElems == 0) return;
+
   cursor_t *cursor = focusCursor();
 
   int last = results->numElems - 1;
@@ -1383,9 +1409,17 @@ void replace() {
   forwardSearch();
 }
 
+bool isSearchFocus()
+{
+  return (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF);
+}
+
 void newSearch() {
-  st.searchFrameRef = focusFrameRef(); // BAL: last user frame ref
-  setFocusBuiltinsView(SEARCH_BUF);
+  if (!isSearchFocus())
+    {
+      setupSearchFocus();
+      setFocusBuiltinsView(SEARCH_BUF);
+    }
   setInsertMode();
   insertNewElem();
 }
@@ -1600,8 +1634,7 @@ void doEscapeInsert() {
 }
 
 void doEscapeNavigate() {
-  if (focusFrameRef() == BUILTINS_FRAME && focusViewRef() == SEARCH_BUF) {
-    setFocusFrame(st.searchFrameRef);
+  if (isSearchFocus()) {
     return;
   }
   resetSearch();
@@ -1656,6 +1689,7 @@ int main(int argc, char **argv) {
 TODO:
 CORE:
     allow searching in builtin buffers
+    make sure that the copy buffer works
     reload file when changed outside of editor (inotify?  polling? I think polling, it's simpler)
     periodically save all (modified) files
     add pretty-print hotkey

@@ -12,9 +12,9 @@ SDL_Renderer *renderer;
 
 char *builtinBufferTitle[NUM_BUILTIN_BUFFERS] = {
     "*help",   "*messages", "*buffers", "*macros",
-    "*copies", "*searches", "*config", "*directory"};
-bool builtinBufferReadOnly[NUM_BUILTIN_BUFFERS] = {true, true,  true, true,
-                                                   true, false, false, true};
+    "*copies", "*config", "*directory", "*search"};
+bool builtinBufferReadOnly[NUM_BUILTIN_BUFFERS] = {true, true, true, true,
+                                                   true, false, true, false};
 
 char *editorModeDescr[NUM_MODES] = {"NAV", "INS"};
 

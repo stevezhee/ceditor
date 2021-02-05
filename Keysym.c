@@ -111,7 +111,7 @@ void keyNameInit(void) {
 char builtinMacros[NUM_BUILTIN_MACROS][MAX_BUILTIN_MACRO_LEN] = {
     {KEY_BACKSPACE, KEY_LEFT, KEY_DELETE, '\0'},
     {'P', '0', 'p', '\0'},
-    {'c', 'x', 'P', '\0'},
+    {'c', 'x', 'p', '\0'},
     {'a', KEY_RIGHT, 'i', '\0'},
     {'e', '$', '\0'},
     {'I', '0', 'i', '\0'},

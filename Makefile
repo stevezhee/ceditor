@@ -5,6 +5,7 @@ OFILES=$(CFILES:.c=.o)
 HFILES=$(shell ls *.h)
 
 all: ceditor
+	ceditor main.c Util.h
 
 run: ceditor
 	./ceditor *.txt *.[ch]
