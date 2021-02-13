@@ -89,8 +89,8 @@ void frameResize(int frameRef) {
   int w = st.window.width / 3;
 
   if (frameRef == focusRef && frameRef != BUILTINS_FRAME)
-    w += w / 2;
-  else if (frameRef != focusRef && frameRef == BUILTINS_FRAME)
+    w += w;
+  else
     w /= 2;
 
   frame->width = w;
